@@ -687,3 +687,74 @@ Required future evolution:
 ### Next Architecture Step
 
 Implement real wire-routing UI that writes explicit `ElectricalWire[]` to project state. After that, generated topology should remain only as a migration/fallback mode.
+
+## 2026-05-14 14:20 Europe/Istanbul - Phase 3 Wire Routing UI Architecture
+
+### Change Type
+
+UI and state architecture connected to the Phase 2 topology engine.
+
+### Core Rule
+
+`ElectricalWire[]` is now the user-authored electrical source of truth when present. React Flow renders wire edges from that state but does not own simulation truth.
+
+### New Module
+
+```text
+src/features/wire-routing/
+  WireRoutingPanel.tsx
+```
+
+### Updated Modules
+
+- `src/features/floor-plan/FloorPlan.tsx`
+- `src/store/useLabStore.ts`
+- `src/features/topology-engine/wireFactory.ts`
+- `src/features/topology-engine/wireFactory.test.ts`
+- `src/features/topology-engine/terminalCatalog.ts`
+- `src/types/electrical.ts`
+
+### State Flow
+
+1. User enables wire drawing mode.
+2. User clicks a terminal rendered on a component or virtual breaker.
+3. Store records `pendingTerminal`.
+4. User clicks a second terminal.
+5. Store calls pure `createElectricalWire`.
+6. `wireFactory` validates terminal compatibility.
+7. If valid, store appends the wire to `project.wires`.
+8. Floor plan renders the explicit wire.
+9. Topology engine uses `project.wires` as graph edges.
+10. Current engine and validation engine calculate status from explicit topology.
+
+### Terminal Rendering
+
+Terminals are rendered from the terminal catalog:
+
+- Panel: phase, neutral, earth placeholder.
+- Virtual breaker: line input, load output.
+- Switches: line input and switched outputs.
+- Outlet: phase, neutral, earth placeholder.
+- Lamp/appliance: phase and neutral.
+
+### Wire Inspector Architecture
+
+`WireRoutingPanel` composes:
+
+- Store wire state.
+- Current simulation results.
+- Terminal lookup from topology graph.
+- Wire validation.
+- Wire catalog data.
+- Cost estimate.
+- Topology warnings.
+
+It does not calculate electrical truth independently; it displays outputs from engines.
+
+### Remaining Architecture Limitation
+
+React Flow edges are used to visually draw wires between component nodes. This is acceptable because the edge list is derived from `ElectricalWire[]`. The edge layer must never become the source of truth.
+
+### Next Architecture Step
+
+Add real path geometry for wires so a wire can have intermediate route points and measured length instead of a manually edited length.

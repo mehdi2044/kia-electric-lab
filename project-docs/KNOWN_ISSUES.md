@@ -341,3 +341,70 @@ Recommended fix:
 
 - Keep educational scope explicit.
 - Add more advanced solver only if Vi approves the architecture and product need.
+
+## 2026-05-14 14:20 Europe/Istanbul - Known Issues Update After Wire Routing UI
+
+### KI-015 Status Update - Wire Routing UI Implemented At Logical Level
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Users can now create explicit `ElectricalWire[]` by clicking terminals.
+- Wires are persisted in Zustand.
+- Topology engine validates explicit wires.
+
+Remaining limitation:
+
+- Wire visuals connect component nodes rather than exact terminal coordinates.
+- Wires do not yet have route points or measured geometry.
+
+### KI-018 - Wire Length Still Manual
+
+Severity: Medium.
+
+Description:
+
+Wire length can be edited, but it is not calculated from route geometry.
+
+Impact:
+
+- Voltage drop and cost depend on manual input.
+
+Recommended fix:
+
+- Add route points and geometry-based length calculation.
+
+### KI-019 - Earth Is Placeholder Only
+
+Severity: Medium.
+
+Description:
+
+Earth terminals are visible for education, but grounding behavior is not simulated.
+
+Impact:
+
+- Learners see the earth concept, but the engine does not model protective earth current, fault clearing, or bonding.
+
+Recommended fix:
+
+- Add a grounding lesson/profile before deeper earth simulation.
+
+### KI-020 - Browser Visual Automation Timed Out
+
+Severity: Low.
+
+Description:
+
+The in-app browser automation timed out during Phase 3 visual verification.
+
+Impact:
+
+- Tests/build/local HTTP check passed, but no automated browser screenshot was recorded.
+
+Recommended fix:
+
+- Retry browser visual smoke test after automation runtime is stable.

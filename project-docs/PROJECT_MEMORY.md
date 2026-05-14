@@ -312,3 +312,40 @@ Topology warnings are integrated into `generateSafetyWarnings(project)`, so the 
 ### Current Limitation
 
 The engine is real and deterministic, but the UI still does not allow users to draw explicit wire paths. Until that UI exists, normal Phase 1 projects use generated topology based on circuit membership. Explicit malformed wire cases are already supported and tested at the engine level.
+
+## 2026-05-14 14:20 Europe/Istanbul - Phase 3 Terminal-Aware Wire Routing UI
+
+### Change Summary
+
+Phase 3 added user-authored terminal-aware wiring. The visual simulator can now create explicit `ElectricalWire[]` records by clicking source and target terminals. When explicit wires exist, Phase 2 topology uses them as the source of truth instead of generated fallback topology.
+
+### New UI Capability
+
+- Components expose clickable terminals.
+- Virtual breaker nodes are visible on the floor plan.
+- Wire drawing mode creates real `ElectricalWire` records.
+- Wires render visually from project state.
+- Selected wire is highlighted.
+- Invalid wires are visually marked by dashed red styling.
+- Wire inspector shows endpoints, type, wire size, length, resistance, voltage drop, current, safety status, and estimated cost.
+- Users can delete wires, edit size, edit length, assign kind, clear invalid wires, reset circuit wiring, and reset room wiring.
+- Guided mini-exercises were added for lamp/switch, two-gang switch, outlet, kitchen circuit, and refrigerator circuit practice.
+
+### New Pure Logic
+
+- `wireFactory.ts` validates terminal connections and creates explicit wires.
+- `wireFactory.test.ts` covers terminal ref creation, wire kind inference, invalid connections, explicit short circuits, and incomplete loops.
+
+### Engineering Decision
+
+React Flow remains a visual surface only. It renders nodes, terminals, and wire edges from `ElectricalWire[]`, but does not define electrical truth.
+
+### Verification
+
+- `npm test`: 18 tests passed.
+- `npm run build`: passed.
+- Local server check: HTTP 200 from `http://localhost:5173/`.
+
+Known verification gap:
+
+- In-app browser automation timed out again while trying to inspect the updated UI. This should be retried when the browser automation runtime is stable.
