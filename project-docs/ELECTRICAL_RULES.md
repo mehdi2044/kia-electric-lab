@@ -441,3 +441,147 @@ All scores are clamped to 0-100.
 - Add rule-profile abstraction.
 - Add clear UI labels that every rule is educational and simplified.
 
+## 2026-05-14 13:40 Europe/Istanbul - Phase 2 Topology Electrical Rules
+
+### New Electrical Concept
+
+The simulator now models electrical connectivity as a graph of terminals and wires.
+
+### Terminal Model
+
+Implemented terminal roles:
+
+- `phase-source`
+- `neutral-source`
+- `breaker-line`
+- `breaker-load`
+- `switch-line`
+- `switch-load`
+- `phase`
+- `neutral`
+- `junction`
+
+### Wire Model
+
+Each wire now has:
+
+- ID
+- Circuit ID
+- From terminal
+- To terminal
+- Length in meters
+- Wire size in mm2
+- Resistance from wire table
+- Educational ampacity from wire table
+
+### New Topology Rules
+
+#### ER-013 - Breaker Must Receive Phase
+
+Trigger:
+
+- Panel phase cannot reach breaker line input for a circuit.
+
+Educational explanation:
+
+- The breaker must sit in the phase path before loads.
+
+#### ER-014 - Load Phase Must Be Connected
+
+Trigger:
+
+- Breaker load output cannot reach a load phase terminal.
+
+Educational explanation:
+
+- A consumer cannot operate if phase never reaches it.
+
+#### ER-015 - Load Neutral Must Be Connected
+
+Trigger:
+
+- Panel neutral cannot reach a load neutral terminal.
+
+Educational explanation:
+
+- Current needs a return path; without neutral, the loop is incomplete.
+
+#### ER-016 - Incomplete Loop
+
+Trigger:
+
+- A load is missing phase or neutral connectivity.
+
+Educational explanation:
+
+- A circuit needs a complete path out and back.
+
+#### ER-017 - Invalid Switch Wiring
+
+Trigger:
+
+- In a lighting circuit, switch output does not reach lamp phase.
+
+Educational explanation:
+
+- A switch should control the phase feeding the lamp.
+
+#### ER-018 - Direct Phase-Neutral Short Circuit
+
+Trigger:
+
+- A wire directly connects terminals classified as phase and neutral roles.
+
+Educational explanation:
+
+- This creates a short circuit and is dangerous.
+
+#### ER-019 - Topology Breaker Overload
+
+Trigger:
+
+- Sum of connected graph load currents exceeds breaker rating.
+
+Educational explanation:
+
+- The actual connected branches demand more current than the breaker rating.
+
+#### ER-020 - Topology Wire Overload
+
+Trigger:
+
+- Propagated current through a wire exceeds that wire's educational ampacity.
+
+Educational explanation:
+
+- That wire segment may overheat under sustained load.
+
+### Current Propagation Rule
+
+For each connected load:
+
+```text
+LoadCurrent = LoadWatts / ProjectVoltage
+```
+
+For each circuit:
+
+```text
+CircuitCurrent = sum(connected load currents)
+```
+
+For each wire:
+
+```text
+WireCurrent = sum(downstream connected load currents)
+```
+
+For each wire voltage drop:
+
+```text
+WireVoltageDrop = WireCurrent x WireResistancePerMeter x WireLengthMeters
+```
+
+### Important Limitation
+
+The current propagation is deterministic and graph-based, but still educational. It assumes simplified radial/branch behavior and does not solve arbitrary analog electrical networks.

@@ -10,6 +10,7 @@ import {
   validateBreakerWireCompatibility,
   validateWireCapacity
 } from './electricalMath';
+import { generateTopologyWarnings } from '../validation-engine/validationEngine';
 
 function warning(
   id: string,
@@ -30,7 +31,7 @@ export function isWireOverdesigned(circuit: Circuit): boolean {
 }
 
 export function generateSafetyWarnings(project: ElectricalProject): SafetyWarning[] {
-  const warnings: SafetyWarning[] = [];
+  const warnings: SafetyWarning[] = [...generateTopologyWarnings(project)];
   const projectLoad = getProjectLoads(project);
 
   if (projectLoad.totalCurrent > project.mainBreakerAmp) {

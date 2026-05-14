@@ -20,6 +20,17 @@ export type ComponentType =
 
 export type WarningSeverity = 'info' | 'warning' | 'danger';
 
+export type ElectricalTerminalRole =
+  | 'phase-source'
+  | 'neutral-source'
+  | 'breaker-line'
+  | 'breaker-load'
+  | 'switch-line'
+  | 'switch-load'
+  | 'phase'
+  | 'neutral'
+  | 'junction';
+
 export interface Appliance {
   id: string;
   nameFa: string;
@@ -78,6 +89,21 @@ export interface Circuit {
   kind: 'lighting' | 'outlet' | 'heavy' | 'mixed';
 }
 
+export interface ElectricalTerminalRef {
+  componentId: string;
+  terminalId: string;
+}
+
+export interface ElectricalWire {
+  id: string;
+  circuitId: string;
+  from: ElectricalTerminalRef;
+  to: ElectricalTerminalRef;
+  lengthMeters: number;
+  wireSizeMm2: number;
+  labelFa?: string;
+}
+
 export interface CostItem {
   labelFa: string;
   quantity: number;
@@ -122,4 +148,5 @@ export interface ElectricalProject {
   rooms: Room[];
   components: ElectricalComponent[];
   circuits: Circuit[];
+  wires?: ElectricalWire[];
 }

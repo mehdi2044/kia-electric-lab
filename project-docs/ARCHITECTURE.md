@@ -498,3 +498,192 @@ Future architecture, electrical-rule, cost-rule, and persistence changes must in
 ### Reason
 
 Kia Electric Lab is expected to grow into a larger educational simulator and AI-assisted platform. Branch strategy and tagged baselines are required to preserve architectural continuity and allow safe rollback.
+
+## 2026-05-14 13:40 Europe/Istanbul - Phase 2 Topology Engine Architecture
+
+### Change Type
+
+Runtime simulation architecture.
+
+### Architecture Goal
+
+Make the electrical engine the source of truth for circuit connectivity while keeping React Flow as visualization only.
+
+### New Module Layout
+
+```text
+src/features/
+  topology-engine/
+    types.ts
+    terminalCatalog.ts
+    topologyEngine.ts
+    topologyEngine.test.ts
+  current-engine/
+    currentEngine.ts
+  validation-engine/
+    validationEngine.ts
+```
+
+### Module Responsibilities
+
+#### `topology-engine/types.ts`
+
+Defines graph-level types:
+
+- `ElectricalTerminal`
+- `TopologyNode`
+- `TopologyWire`
+- `ElectricalTopologyGraph`
+- terminal key helpers
+- wire helper utilities
+
+#### `topology-engine/terminalCatalog.ts`
+
+Defines electrical terminals exposed by component types:
+
+- Main panel:
+  - `phase-source`
+  - `neutral-source`
+- Virtual breaker:
+  - `line-in`
+  - `load-out`
+- Physical breaker:
+  - `line-in`
+  - `load-out`
+- One-way switch:
+  - `line-in`
+  - `line-out`
+- Two-gang switch:
+  - `line-in`
+  - `line-out-1`
+  - `line-out-2`
+- Outlet/lamp/appliance:
+  - `phase`
+  - `neutral`
+- Junction box:
+  - phase junction
+  - neutral junction
+- Wire path:
+  - endpoint A
+  - endpoint B
+
+#### `topology-engine/topologyEngine.ts`
+
+Builds the graph:
+
+- Converts project components into topology nodes.
+- Creates virtual breaker nodes for each circuit.
+- Converts explicit `project.wires` into topology edges when available.
+- Generates deterministic educational wires from circuit membership when explicit wires are absent.
+- Builds adjacency maps for traversal.
+- Provides terminal traversal.
+
+Important design:
+
+- Generated topology is a compatibility bridge, not a substitute for future wire-routing UI.
+- Explicit wires will become the authoritative topology once UI supports drawing wires.
+
+#### `current-engine/currentEngine.ts`
+
+Simulates simplified educational current flow:
+
+- Finds load components.
+- Checks phase/neutral connectivity.
+- Calculates load current from appliance watts.
+- Calculates total current per breaker/circuit.
+- Calculates current through each wire.
+- Calculates voltage drop per wire.
+- Flags wire overloads.
+
+#### `validation-engine/validationEngine.ts`
+
+Creates graph-based Persian warnings:
+
+- Missing/invalid breaker path.
+- Open phase.
+- Open neutral.
+- Incomplete loop.
+- Invalid switch wiring.
+- Direct phase-neutral short.
+- Breaker overload from graph load.
+- Wire overload from propagated current.
+
+### Source Of Truth Rule
+
+Electrical connectivity must be read from the topology engine, not from React Flow edges.
+
+React Flow may display:
+
+- Rooms.
+- Components.
+- Visual connections.
+- Future wire paths.
+
+But React Flow must not own:
+
+- Electrical terminals.
+- Circuit validity.
+- Current propagation.
+- Safety conclusions.
+- Wire overload logic.
+
+### Data Model Change
+
+`ElectricalProject` now supports optional `wires?: ElectricalWire[]`.
+
+`ElectricalWire` includes:
+
+- `id`
+- `circuitId`
+- `from`
+- `to`
+- `lengthMeters`
+- `wireSizeMm2`
+- optional Persian label
+
+This creates the future bridge to real wire-routing UI.
+
+### Current Topology Generation Strategy
+
+When explicit wires do not exist:
+
+1. A virtual breaker node is created for each circuit.
+2. Panel phase is connected to breaker input.
+3. Breaker output connects to load phase terminals.
+4. Load neutral terminals connect to panel neutral.
+5. If a switch exists in a lighting circuit, generated phase routing can pass through the switch before lamp phase.
+
+This generated graph is deterministic and testable. It allows Phase 1 projects to be analyzed by Phase 2 engines immediately.
+
+### Scalability Notes
+
+This architecture can later support:
+
+- Real wire routing.
+- Advanced voltage drop.
+- Three-phase systems.
+- Grounding systems.
+- Smart-home simulation.
+- Solar systems.
+- UPS systems.
+- Generator backup.
+
+Required future evolution:
+
+- Add `TopologyProfile` or `SystemProfile`.
+- Add grounding terminal roles.
+- Add multi-phase terminal roles.
+- Add protective device models.
+- Add explicit switch-state simulation.
+- Add graph normalization and validation for large projects.
+
+### Architecture Risks
+
+- Generated topology can hide missing visual wire-routing UI if not clearly documented.
+- Current engine assumes educational radial/branch behavior, not a full circuit solver.
+- `main-panel` is still treated as the canonical panel ID in parts of validation/current logic.
+- Load instances are still tied to component `applianceId`; repeated identical loads need a `LoadInstance` model.
+
+### Next Architecture Step
+
+Implement real wire-routing UI that writes explicit `ElectricalWire[]` to project state. After that, generated topology should remain only as a migration/fallback mode.
