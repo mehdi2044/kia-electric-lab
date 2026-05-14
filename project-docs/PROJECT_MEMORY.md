@@ -613,3 +613,42 @@ Phase 10 improved sandbox safety, UX, example integrity, append layout behavior,
 ### Performance Note
 
 Vite no longer reports the bundle-size warning after code splitting. The main chunk is now just under the warning threshold and lesson/data/diagnostics panels are separate async chunks.
+
+## 2026-05-14 21:43 Europe/Istanbul - Phase 11 UI Hardening, Accessibility, Visual QA, And Apply Result Audit
+
+### Change Summary
+
+Phase 11 strengthened learner trust around sandbox apply flows. The apply preview modal now has keyboard accessibility behavior, apply operations produce a visible Persian result summary, and project data can record audit entries for apply/example actions. Append placement was also upgraded from a small candidate list to a bounding-box layout planner that searches multiple directions and returns warnings if no clean placement is found.
+
+### New Completed Systems
+
+- Accessible Persian apply modal behavior:
+  - initial focus on cancel button
+  - focus trap between modal actions
+  - Escape key closes modal
+  - Enter confirms only when the confirm button is focused
+  - ARIA dialog metadata
+  - safe backdrop cancellation
+- Apply result summary screen after append/replace/save-example/import.
+- Apply audit history model stored on project state.
+- Audit entries for:
+  - replace
+  - append
+  - save-example
+  - import-example
+  - restore-example
+- Example import audit metadata:
+  - checksum status
+  - source compatibility
+  - warnings shown to the user
+- Better append layout planning using bounding-box collision checks.
+- Manual UI QA checklist for repeatable visual/accessibility checks.
+- Vite manual chunks for React, React Flow, and icons to keep bundle growth controlled.
+
+### Architecture Decision
+
+Audit and layout logic remain pure and testable in `lessonSandbox.ts`. React renders modal/result UX, but does not decide electrical validity, append remapping, audit payload shape, or import integrity status.
+
+### Electrical Simulation Note
+
+No electrical simulation behavior was changed in Phase 11. The topology/current/safety/cost engines remain untouched; this phase improves UX safety, transparency, auditability, and visual QA readiness.

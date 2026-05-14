@@ -460,3 +460,40 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add stronger append packing algorithm.
 - [ ] Add shared artifact envelope utilities.
 - [ ] Add browser visual tests for modal/lazy-loaded panels.
+
+## 2026-05-14 21:43 Europe/Istanbul - Phase 11 TODO Update
+
+### Completed
+
+- [x] Add modal focus trap for apply preview actions.
+- [x] Add Escape key close for apply modal.
+- [x] Ensure Enter confirms only when confirm button is focused.
+- [x] Add ARIA metadata to apply modal.
+- [x] Set initial modal focus on cancel button.
+- [x] Add safe backdrop cancellation.
+- [x] Add post-apply Persian result summary.
+- [x] Show circuits/components/wires affected after apply.
+- [x] Show diagnostics count after apply.
+- [x] Add button from result summary to diagnostics panel.
+- [x] Add apply audit history model.
+- [x] Record replace audit entries.
+- [x] Record append audit entries.
+- [x] Record save-example audit entries.
+- [x] Record import-example audit entries.
+- [x] Record restore-example audit entries.
+- [x] Record checksum status and source compatibility on import.
+- [x] Improve append layout planner with bounding-box checks.
+- [x] Preserve wire route point offsets after improved append planning.
+- [x] Add layout warnings when placement is uncertain.
+- [x] Add manual UI QA checklist.
+- [x] Resolve renewed bundle-size warning with manual chunks.
+
+### New TODOs
+
+- [ ] Build a reusable shared accessible modal component.
+- [ ] Add an in-app audit history viewer.
+- [ ] Add automated Playwright or equivalent browser smoke tests.
+- [ ] Add stable `data-testid` or semantic selectors for browser QA.
+- [ ] Add before/after project diff preview for append and replace.
+- [ ] Add a stronger room-aware append placement solver.
+- [ ] Add project/example/lesson-pack shared artifact envelope utilities.

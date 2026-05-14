@@ -225,6 +225,29 @@ export interface LessonHighlight {
 
 export type LessonSandboxApplyMode = 'replace' | 'append' | 'save-example';
 
+export type ApplyAuditAction =
+  | LessonSandboxApplyMode
+  | 'import-example'
+  | 'restore-example';
+
+export interface ApplyAuditEntry {
+  id: string;
+  action: ApplyAuditAction;
+  timestamp: string;
+  lessonId?: string;
+  lessonTitle?: string;
+  affectedCounts: {
+    circuits: number;
+    components: number;
+    wires: number;
+  };
+  diagnosticsCount: number;
+  userNotes?: string;
+  checksumStatus?: 'valid' | 'invalid' | 'not-provided';
+  sourceCompatibility?: 'current' | 'older' | 'newer' | 'unknown';
+  warningsFa?: string[];
+}
+
 export interface LessonExample {
   id: string;
   lessonId: string;
@@ -260,5 +283,6 @@ export interface ElectricalProject {
   wires?: ElectricalWire[];
   panelboard?: Panelboard;
   lessonProgress?: LessonProgress;
+  applyAuditLog?: ApplyAuditEntry[];
   useExplicitWiresOnly?: boolean;
 }

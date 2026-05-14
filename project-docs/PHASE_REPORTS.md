@@ -2199,3 +2199,141 @@ No runtime bugs were found during Phase 10 verification.
 ### Next Recommended Step
 
 Phase 11 should add focus/accessibility polish for modal workflows, browser visual tests, and a reusable artifact import/export framework for projects, examples, and future lesson packs.
+
+## 2026-05-14 21:43 Europe/Istanbul - Phase 11 Engineering Report: UI Hardening, Accessibility, Visual QA, And Apply Result Audit
+
+### Completed Work
+
+Phase 11 improved the safety and transparency of lesson sandbox apply flows. The custom Persian apply preview modal is now keyboard-accessible, apply operations produce a visible result summary, and project state can retain an audit trail of important sandbox/example actions. Append placement also became more robust through bounding-box collision planning, and a repeatable manual UI QA checklist was added for visual validation before the project adopts automated browser tests.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/features/lesson-mode/lessonSandbox.ts`
+- `src/features/lesson-mode/lessonSandbox.test.ts`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/store/useLabStore.ts`
+- `src/migrations/exportIntegrity.ts`
+- `src/App.tsx`
+- `vite.config.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+No package dependency was added.
+
+Playwright was not added in this phase. The decision was intentional: the project does not yet have stable browser selectors or a browser-test maintenance policy. A manual UI QA checklist was added first so the team has a documented visual test path without introducing a heavy dependency prematurely.
+
+### Architecture Changes
+
+New project data model:
+
+- `ApplyAuditAction`
+- `ApplyAuditEntry`
+- optional `ElectricalProject.applyAuditLog`
+
+New pure sandbox helpers:
+
+- `planAppendLayout`
+- `createApplyAuditEntry`
+- `appendApplyAudit`
+
+Updated import integrity output:
+
+- `checksumStatus`
+- `sourceCompatibility`
+
+Updated UI architecture:
+
+- Apply modal owns focus behavior locally in `LessonPanel`.
+- Apply result summary is rendered after apply/import.
+- Diagnostics panel has a stable DOM anchor so the result summary can scroll to it.
+
+Updated bundling architecture:
+
+- Vite manual chunks split React/Zustand, React Flow, and Lucide icons away from the main app chunk.
+
+### Engineering Decisions
+
+- Modal initial focus goes to cancel for safety because replace/append are high-impact actions.
+- Enter confirmation is allowed only when the confirm button has focus. This prevents accidental apply from text inputs or general modal focus.
+- Backdrop click closes the preview instead of applying. This is treated as a cancel action.
+- Audit history is append-only and capped to the latest 50 entries to avoid unbounded localStorage growth.
+- Audit entries are stored in project state rather than a UI-only store because they are part of project governance and handoff history.
+- Append layout warnings are returned from pure logic so UI can explain placement uncertainty without guessing.
+- Manual QA documentation was created before automated browser QA to avoid adding brittle selectors too early.
+
+### Electrical Logic Implemented
+
+No new electrical rules, formulas, or simulation algorithms were added.
+
+Electrical behavior intentionally preserved:
+
+- topology engine remains source of truth for explicit wires
+- current engine remains unchanged
+- safety engine remains unchanged
+- cost engine remains unchanged
+- diagnostics still runs after append/replace
+
+### Formulas Implemented
+
+No new electrical formulas.
+
+Integrity behavior refined:
+
+```text
+checksum = FNV1a32(canonical JSON without undefined object fields)
+```
+
+This fixes the Phase 10 edge case where exported examples with undefined optional fields could validate as changed after JSON serialization.
+
+### Bugs Fixed
+
+- Example checksum validation now matches serialized JSON behavior by ignoring undefined object fields during canonicalization.
+- Bundle-size warning returned after modal/audit code growth and was resolved with conservative manual chunking.
+- Saved examples import UI is now available while sandbox is active even if no examples have been saved yet.
+
+### Limitations
+
+- Modal accessibility is improved but not yet a reusable shared modal component.
+- Manual QA checklist is not equivalent to Playwright automation.
+- Append layout planner still uses a bounded search strategy rather than a true geometric packing solver.
+- Audit log currently stores summary metadata only, not full before/after diffs.
+
+### TODOs
+
+- Add automated Playwright smoke tests once selectors and test policy are stable.
+- Convert apply preview modal to a shared accessible modal primitive.
+- Add an audit history viewer in the UI.
+- Add before/after diff preview for append and replace.
+- Add stronger spatial packing and room-aware placement constraints.
+
+### Risks
+
+- Audit data increases persisted project size, though the 50-entry cap limits growth.
+- Manual QA can miss regressions that browser automation would catch.
+- A crowded floor plan can still force append placement far from the original lesson area.
+
+### Scalability Concerns
+
+- Audit history should eventually move to SQLite when the project migrates to Tauri.
+- Example/project/lesson-pack export should share one artifact integrity framework.
+- Browser test coverage should become mandatory before multiplayer or AI-assisted editing features are added.
+- Layout planning should become a reusable merge service if imported examples or shared lesson packs become common.
+
+### Verification
+
+- `npm test`: 12 test files passed, 59 tests passed.
+- `npm run build`: passed.
+- Production build has no Vite chunk-size warning.
+- Main app chunk reduced to about 330 kB after manual chunks.
+- Manual visual QA checklist created at `project-docs/UI_QA_CHECKLIST.md`.
+
+### Next Recommended Step
+
+Phase 12 should add an in-app audit history viewer, a shared modal component, and the first automated browser smoke tests if the team approves Playwright or an equivalent browser QA dependency.

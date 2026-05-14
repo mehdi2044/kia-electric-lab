@@ -1322,3 +1322,104 @@ Each panel has a Persian loading fallback through `Suspense`.
 - Add focus trap and keyboard dismissal.
 - Create shared artifact envelope utilities for project/example/lesson-pack exports.
 - Add route-level splitting if a navigation shell is introduced.
+
+## 2026-05-14 21:43 Europe/Istanbul - Phase 11 UI Hardening And Audit Architecture
+
+### Change Type
+
+Accessibility hardening, apply transparency, audit logging, layout planning, and visual QA readiness.
+
+### Modal Accessibility Architecture
+
+The sandbox apply modal remains rendered by `LessonPanel`, but now has explicit keyboard behavior:
+
+- focus starts on cancel
+- Tab and Shift+Tab cycle between cancel and confirm
+- Escape cancels
+- Enter only confirms when confirm is focused
+- backdrop click cancels
+- dialog uses `role="dialog"`, `aria-modal`, `aria-labelledby`, and `aria-describedby`
+
+This keeps destructive apply behavior conservative and understandable for a learner.
+
+### Apply Result Architecture
+
+After apply/import, `LessonPanel` renders a result summary with:
+
+- selected action type
+- affected circuit count
+- affected component count
+- affected wire count
+- diagnostics count
+- warnings
+- navigation button to diagnostics panel
+
+`App.tsx` exposes a stable `project-diagnostics-panel` anchor around `ProjectDiagnosticsPanel`.
+
+### Apply Audit Architecture
+
+`ElectricalProject.applyAuditLog` stores recent project action metadata. Entries are created by pure helpers:
+
+- `createApplyAuditEntry`
+- `appendApplyAudit`
+
+Current action types:
+
+- `replace`
+- `append`
+- `save-example`
+- `import-example`
+- `restore-example`
+
+Audit entries include:
+
+- timestamp
+- lesson id/title
+- affected counts
+- diagnostics count
+- user notes
+- checksum status
+- source compatibility
+- warnings shown
+
+The log is capped at 50 entries for localStorage safety.
+
+### Append Layout Planner Architecture
+
+`planAppendLayout` uses component bounding boxes instead of single-point distance checks. It:
+
+- computes occupied boxes from the main project
+- preserves relative sandbox group layout
+- tests multiple directions and step sizes
+- returns the selected offset
+- returns Persian layout warnings when no clean placement is found
+
+Append still remaps ids, terminal refs, panelboard breaker refs, and route points as before.
+
+### Export Integrity Architecture
+
+Canonical checksum generation now mirrors JSON serialization more closely by ignoring undefined object fields. This prevents official example exports from reporting false checksum mismatches after parse/stringify cycles.
+
+### Visual QA Architecture
+
+`project-docs/UI_QA_CHECKLIST.md` defines manual browser-level smoke checks for:
+
+- app load
+- lesson panel
+- apply modal
+- cancel safety
+- save example
+- diagnostics navigation
+- checksum warning behavior
+
+Automated browser tests remain a future step so the team can first define selectors and maintenance expectations.
+
+### Bundling Architecture
+
+`vite.config.ts` defines manual chunks for:
+
+- React/Zustand
+- React Flow
+- Lucide icons
+
+This keeps the main app chunk below Vite's warning threshold after Phase 11 UI growth.

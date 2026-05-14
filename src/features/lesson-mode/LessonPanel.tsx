@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from '../../components/Icon';
 import { useLabStore } from '../../store/useLabStore';
 import { calculateProgressPercent, getLessonAttempt } from './lessonProgress';
 import { getStepGuidance, lessons } from './lessonEngine';
 import { validateLesson } from './lessonValidation';
-import { createSandboxApplyPreview, generateLessonHighlight, importLessonExampleJson } from './lessonSandbox';
+import { createSandboxApplyPreview, generateLessonHighlight, importLessonExampleJson, type SandboxApplySummary } from './lessonSandbox';
 import { downloadTextFile } from '../../migrations/storageSafety';
 import { serializeLessonExampleExport } from '../../migrations/exportIntegrity';
 import type { LessonSandboxApplyMode } from '../../types/electrical';
@@ -47,8 +47,16 @@ export function LessonPanel() {
   const [applyMode, setApplyMode] = useState<LessonSandboxApplyMode>('append');
   const [exampleTitle, setExampleTitle] = useState('');
   const [applyMessageFa, setApplyMessageFa] = useState<string>();
+  const [applyResult, setApplyResult] = useState<{
+    mode: LessonSandboxApplyMode;
+    summary: SandboxApplySummary;
+    diagnosticsCount: number;
+    warningsFa: string[];
+  }>();
   const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
   const [exampleImportMessageFa, setExampleImportMessageFa] = useState<string>();
+  const cancelApplyButtonRef = useRef<HTMLButtonElement>(null);
+  const confirmApplyButtonRef = useRef<HTMLButtonElement>(null);
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
   const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
   const currentGuidance = getStepGuidance(activeLesson.id, currentStepIndex);
@@ -75,9 +83,47 @@ export function LessonPanel() {
 
   const applyPreview = lessonSandbox ? createSandboxApplyPreview({ ...lessonSandbox, sandboxProject: project }, applyMode) : undefined;
 
+  useEffect(() => {
+    if (!applyPreviewOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    cancelApplyButtonRef.current?.focus();
+    return () => previousFocus?.focus();
+  }, [applyPreviewOpen]);
+
+  const handleApplyModalKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setApplyPreviewOpen(false);
+      return;
+    }
+    if (event.key === 'Enter') {
+      if (document.activeElement === confirmApplyButtonRef.current) {
+        event.preventDefault();
+        applySandbox();
+      }
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = [cancelApplyButtonRef.current, confirmApplyButtonRef.current].filter((item): item is HTMLButtonElement => Boolean(item));
+    if (!focusable.length) return;
+    const currentIndex = focusable.indexOf(document.activeElement as HTMLButtonElement);
+    const nextIndex = event.shiftKey
+      ? currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1
+      : currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
+    event.preventDefault();
+    focusable[nextIndex]?.focus();
+  };
+
   const applySandbox = () => {
+    const preview = applyPreview;
     const result = applyLessonSandboxToMainProject(applyMode, exampleTitle || activeLesson.titleFa);
     setApplyPreviewOpen(false);
+    setApplyResult({
+      mode: applyMode,
+      summary: result?.summary ?? preview?.summary ?? { circuits: 0, components: 0, wires: 0 },
+      diagnosticsCount: result?.diagnostics.issueCount ?? preview?.diagnostics.issueCount ?? 0,
+      warningsFa: [...(result?.warningsFa ?? []), ...(result?.layoutWarningsFa ?? [])]
+    });
     if (applyMode === 'save-example') {
       setApplyMessageFa('نمونه درس ذخیره شد و پروژه اصلی تغییر نکرد.');
       return;
@@ -91,8 +137,22 @@ export function LessonPanel() {
     reader.onload = () => {
       const result = importLessonExampleJson(String(reader.result ?? ''));
       if (result.ok && result.example) {
-        importLessonExample(result.example);
+        importLessonExample(result.example, {
+          checksumStatus: result.checksumStatus,
+          sourceCompatibility: result.sourceCompatibility,
+          warningsFa: result.warningsFa
+        });
         setExampleImportMessageFa(result.warningsFa.length ? `نمونه وارد شد، اما: ${result.warningsFa.join(' ')}` : 'نمونه درس با checksum معتبر وارد شد.');
+        setApplyResult({
+          mode: 'save-example',
+          summary: {
+            circuits: result.example.projectSnapshot.circuits.length,
+            components: result.example.projectSnapshot.components.filter((component) => component.type !== 'main-panel').length,
+            wires: (result.example.projectSnapshot.wires ?? []).length
+          },
+          diagnosticsCount: 0,
+          warningsFa: result.warningsFa
+        });
       } else {
         setExampleImportMessageFa(result.errorFa ?? 'نمونه درس قابل ورود نیست.');
       }
@@ -219,6 +279,30 @@ export function LessonPanel() {
             </div>
           )}
 
+          {applyResult && (
+            <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-7 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+              <div className="flex items-center justify-between gap-2">
+                <strong>گزارش نتیجه اعمال</strong>
+                <span className="rounded-md bg-white/70 px-2 py-1 text-xs dark:bg-slate-900/70">
+                  {applyResult.mode === 'append' ? 'افزودن' : applyResult.mode === 'replace' ? 'جایگزینی' : 'نمونه'}
+                </span>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="rounded-md bg-white/70 p-2 dark:bg-slate-900/70"><strong>{applyResult.summary.circuits.toLocaleString('fa-IR')}</strong><div>مدار</div></div>
+                <div className="rounded-md bg-white/70 p-2 dark:bg-slate-900/70"><strong>{applyResult.summary.components.toLocaleString('fa-IR')}</strong><div>قطعه</div></div>
+                <div className="rounded-md bg-white/70 p-2 dark:bg-slate-900/70"><strong>{applyResult.summary.wires.toLocaleString('fa-IR')}</strong><div>سیم</div></div>
+              </div>
+              <p className="mt-2">عیب‌یابی بعد از اعمال: {applyResult.diagnosticsCount.toLocaleString('fa-IR')} مورد</p>
+              {applyResult.warningsFa.map((warning) => <p key={warning} className="text-amber-700 dark:text-amber-200">{warning}</p>)}
+              <button
+                onClick={() => document.getElementById('project-diagnostics-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="mt-2 rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 dark:border-emerald-800 dark:bg-slate-950 dark:text-emerald-100"
+              >
+                باز کردن پنل عیب‌یابی
+              </button>
+            </div>
+          )}
+
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
             {(['technical', 'safety', 'cost', 'learning'] as const).map((key) => (
               <div key={key} className="rounded-md bg-slate-50 px-2 py-2 dark:bg-slate-950">
@@ -285,10 +369,11 @@ export function LessonPanel() {
             </button>
           </div>
 
-          {lessonSandbox?.savedExamples?.length ? (
+          {lessonSandbox ? (
             <div className="mt-4 rounded-md border border-slate-200 p-3 dark:border-slate-800">
               <div className="font-bold">نمونه‌های ذخیره‌شده</div>
-              <div className="mt-2 max-h-56 space-y-2 overflow-auto">
+              {lessonSandbox.savedExamples?.length ? (
+                <div className="mt-2 max-h-56 space-y-2 overflow-auto">
                 {lessonSandbox.savedExamples.map((example) => (
                   <div key={example.id} className="rounded-md bg-slate-50 p-2 text-xs leading-6 dark:bg-slate-950">
                     <div className="font-bold">{example.title}</div>
@@ -336,7 +421,8 @@ export function LessonPanel() {
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
+              ) : <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">هنوز نمونه‌ای ذخیره نشده است.</p>}
               <label className="mt-3 block rounded-md border border-slate-300 px-3 py-2 text-center text-xs dark:border-slate-700">
                 ورود نمونه JSON
                 <input type="file" accept="application/json,.json" className="hidden" onChange={(event) => importExampleFile(event.target.files?.[0])} />
@@ -347,10 +433,23 @@ export function LessonPanel() {
         </div>
       </div>
       {applyPreviewOpen && applyPreview ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 text-right shadow-xl dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="text-lg font-extrabold">پیش‌نمایش اعمال sandbox</h3>
-            <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">{applyPreview.whatWillHappenFa}</p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setApplyPreviewOpen(false);
+          }}
+          onKeyDown={handleApplyModalKeyDown}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="apply-preview-title"
+            aria-describedby="apply-preview-description"
+            className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 text-right shadow-xl dark:border-slate-800 dark:bg-slate-900"
+          >
+            <h3 id="apply-preview-title" className="text-lg font-extrabold">پیش‌نمایش اعمال sandbox</h3>
+            <p id="apply-preview-description" className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">{applyPreview.whatWillHappenFa}</p>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
               <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.circuits.toLocaleString('fa-IR')}</strong><div>مدار</div></div>
               <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.components.toLocaleString('fa-IR')}</strong><div>قطعه</div></div>
@@ -365,8 +464,8 @@ export function LessonPanel() {
               {applyPreview.diagnostics.issueCount > 0 ? <p className="text-amber-700 dark:text-amber-300">بعد از اعمال، پنل عیب‌یابی را بررسی کن.</p> : <p className="text-emerald-700 dark:text-emerald-300">مشکل ساختاری مهمی دیده نشد.</p>}
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button onClick={() => setApplyPreviewOpen(false)} className="rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700">انصراف</button>
-              <button onClick={applySandbox} className="rounded-md bg-tealish px-3 py-2 font-bold text-white">تایید و اعمال</button>
+              <button ref={cancelApplyButtonRef} onClick={() => setApplyPreviewOpen(false)} className="rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700">انصراف</button>
+              <button ref={confirmApplyButtonRef} onClick={applySandbox} className="rounded-md bg-tealish px-3 py-2 font-bold text-white">تایید و اعمال</button>
             </div>
           </div>
         </div>
