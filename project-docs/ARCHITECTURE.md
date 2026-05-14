@@ -1187,3 +1187,77 @@ Sandbox actions:
 - Add lesson example library.
 - Move templates into versioned lesson-pack data.
 - Add explicit per-step terminal guidance instead of fallback guidance.
+
+## 2026-05-14 20:35 Europe/Istanbul - Phase 9 Sandbox Apply And Example Architecture
+
+### Change Type
+
+Sandbox output management, pure append/replace apply logic, saved example data model, and diagnostics-aware apply results.
+
+### Apply Modes
+
+```text
+replace      -> sandbox project becomes main project
+append       -> lesson circuit/components/wires are copied into main project
+save-example -> project remains unchanged; sandbox snapshot is saved as example
+```
+
+### Append Architecture
+
+`appendSandboxToMainProject`:
+
+- reads immutable main project snapshot
+- reads current sandbox project
+- generates collision-safe ids
+- remaps circuit ids
+- remaps component ids
+- remaps wire endpoint refs
+- remaps virtual breaker refs
+- remaps panelboard breaker assignments
+- runs diagnostics on the resulting project
+
+### Example Architecture
+
+`LessonExample` stores:
+
+- id
+- lessonId
+- title
+- projectSnapshot
+- score
+- createdAt
+- notes
+
+Example operations are pure:
+
+- create
+- add
+- delete
+- load into sandbox
+- export JSON through UI
+
+### UI Architecture
+
+`LessonPanel` now includes:
+
+- apply mode selector
+- affected counts
+- Persian confirmation with exact operation
+- example naming
+- saved example list
+- load/delete/export actions
+- post-apply diagnostic issue count message
+
+### Boundary Rules
+
+- The main project is never changed by save-example mode.
+- Replace/append require explicit user confirmation.
+- Append logic remains independent from React UI.
+- Diagnostics after apply are advisory and do not silently block recovery workflows.
+
+### Future Architecture Notes
+
+- Replace `window.confirm` with an in-app modal.
+- Add example import and checksum validation.
+- Add collision-aware component placement.
+- Move saved examples to durable database storage later.

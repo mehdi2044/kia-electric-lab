@@ -4,11 +4,15 @@ import type {
   Circuit,
   ElectricalComponent,
   ElectricalProject,
+  ElectricalTerminalRef,
   LessonHighlight,
+  LessonExample,
   LessonProgress,
   LessonSandboxState,
+  LessonScore,
   Panelboard
 } from '../../types/electrical';
+import { diagnoseProject, type DiagnosticReport } from '../../diagnostics/diagnosticsEngine';
 import { generateTopologyWarnings } from '../validation-engine/validationEngine';
 import { createEmptyLessonProgress } from './lessonProgress';
 import { getLessonById, getStepGuidance } from './lessonEngine';
@@ -198,6 +202,199 @@ export function applySandboxResult(sandbox: LessonSandboxState): ElectricalProje
     lessonProgress: sandbox.sandboxProgress,
     useExplicitWiresOnly: false,
     updatedAt: createProjectTimestamp()
+  };
+}
+
+export interface SandboxApplySummary {
+  circuits: number;
+  components: number;
+  wires: number;
+}
+
+export interface SandboxApplyResult {
+  project: ElectricalProject;
+  diagnostics: DiagnosticReport;
+  summary: SandboxApplySummary;
+  warningsFa: string[];
+}
+
+function uniqueId(base: string, existing: Set<string>): string {
+  if (!existing.has(base)) {
+    existing.add(base);
+    return base;
+  }
+  let index = 2;
+  while (existing.has(`${base}-${index}`)) index += 1;
+  const next = `${base}-${index}`;
+  existing.add(next);
+  return next;
+}
+
+function remapRef(ref: ElectricalTerminalRef, componentIdMap: Map<string, string>, circuitIdMap: Map<string, string>): ElectricalTerminalRef {
+  if (ref.componentId.startsWith('breaker:')) {
+    const oldCircuitId = ref.componentId.replace('breaker:', '');
+    return { ...ref, componentId: `breaker:${circuitIdMap.get(oldCircuitId) ?? oldCircuitId}` };
+  }
+  return { ...ref, componentId: componentIdMap.get(ref.componentId) ?? ref.componentId };
+}
+
+export function summarizeSandboxApply(sandbox: LessonSandboxState): SandboxApplySummary {
+  return {
+    circuits: sandbox.sandboxProject.circuits.length,
+    components: sandbox.sandboxProject.components.filter((component) => component.type !== 'main-panel').length,
+    wires: (sandbox.sandboxProject.wires ?? []).length
+  };
+}
+
+export function replaceMainProjectWithSandbox(sandbox: LessonSandboxState): SandboxApplyResult {
+  const project: ElectricalProject = {
+    ...sandbox.sandboxProject,
+    lessonProgress: sandbox.sandboxProgress,
+    useExplicitWiresOnly: false,
+    updatedAt: createProjectTimestamp()
+  };
+  const diagnostics = diagnoseProject(project);
+  return {
+    project,
+    diagnostics,
+    summary: summarizeSandboxApply(sandbox),
+    warningsFa: diagnostics.issueCount ? ['بعد از جایگزینی، چند مورد عیب‌یابی پیدا شد. قبل از ادامه آن‌ها را بررسی کن.'] : []
+  };
+}
+
+export function appendSandboxToMainProject(sandbox: LessonSandboxState): SandboxApplyResult {
+  const mainProject = sandbox.mainProject;
+  const sandboxProject = sandbox.sandboxProject;
+  const circuitIds = new Set(mainProject.circuits.map((circuit) => circuit.id));
+  const componentIds = new Set(mainProject.components.map((component) => component.id));
+  const wireIds = new Set((mainProject.wires ?? []).map((wire) => wire.id));
+  const breakerIds = new Set((mainProject.panelboard?.breakers ?? []).map((breaker) => breaker.id));
+  const circuitIdMap = new Map<string, string>();
+  const componentIdMap = new Map<string, string>();
+
+  const appendedCircuits = sandboxProject.circuits.map((circuit) => {
+    const nextId = uniqueId(`lesson-${sandbox.activeLessonId}-${circuit.id}`, circuitIds);
+    circuitIdMap.set(circuit.id, nextId);
+    return {
+      ...circuit,
+      id: nextId,
+      nameFa: `${circuit.nameFa} - نمونه درس`,
+      componentIds: [],
+      applianceIds: [...circuit.applianceIds],
+      roomIds: circuit.roomIds.filter((roomId) => mainProject.rooms.some((room) => room.id === roomId))
+    };
+  });
+
+  const appendedComponents = sandboxProject.components
+    .filter((component) => component.type !== 'main-panel')
+    .map((component) => {
+      const nextId = uniqueId(`lesson-${sandbox.activeLessonId}-${component.id}`, componentIds);
+      componentIdMap.set(component.id, nextId);
+      return {
+        ...component,
+        id: nextId,
+        circuitId: component.circuitId ? circuitIdMap.get(component.circuitId) : undefined,
+        roomId: mainProject.rooms.some((room) => room.id === component.roomId) ? component.roomId : 'living',
+        x: component.x + 18,
+        y: component.y + 18
+      };
+    });
+
+  const componentsByCircuit = new Map<string, ElectricalComponent[]>();
+  appendedComponents.forEach((component) => {
+    if (!component.circuitId) return;
+    componentsByCircuit.set(component.circuitId, [...(componentsByCircuit.get(component.circuitId) ?? []), component]);
+  });
+
+  const finalCircuits = appendedCircuits.map((circuit) => {
+    const components = componentsByCircuit.get(circuit.id) ?? [];
+    return {
+      ...circuit,
+      componentIds: components.map((component) => component.id),
+      applianceIds: Array.from(new Set([...circuit.applianceIds, ...components.map((component) => component.applianceId).filter((id): id is string => Boolean(id))]))
+    };
+  });
+
+  const appendedWires = (sandboxProject.wires ?? []).map((wire) => ({
+    ...wire,
+    id: uniqueId(`lesson-${sandbox.activeLessonId}-${wire.id}`, wireIds),
+    circuitId: circuitIdMap.get(wire.circuitId) ?? wire.circuitId,
+    from: remapRef(wire.from, componentIdMap, circuitIdMap),
+    to: remapRef(wire.to, componentIdMap, circuitIdMap)
+  }));
+
+  const appendedBreakers = (sandboxProject.panelboard?.breakers ?? []).map((breaker) => ({
+    ...breaker,
+    id: uniqueId(`lesson-${sandbox.activeLessonId}-${breaker.id}`, breakerIds),
+    labelFa: `${breaker.labelFa} - نمونه درس`,
+    circuitId: breaker.circuitId ? circuitIdMap.get(breaker.circuitId) : undefined
+  }));
+
+  const project: ElectricalProject = {
+    ...mainProject,
+    circuits: [...mainProject.circuits, ...finalCircuits],
+    components: [...mainProject.components, ...appendedComponents],
+    wires: [...(mainProject.wires ?? []), ...appendedWires],
+    panelboard: {
+      mainBreakerAmp: mainProject.panelboard?.mainBreakerAmp ?? mainProject.mainBreakerAmp,
+      breakers: [...(mainProject.panelboard?.breakers ?? []), ...appendedBreakers]
+    },
+    lessonProgress: sandbox.sandboxProgress,
+    useExplicitWiresOnly: false,
+    updatedAt: createProjectTimestamp()
+  };
+  const diagnostics = diagnoseProject(project);
+  return {
+    project,
+    diagnostics,
+    summary: {
+      circuits: finalCircuits.length,
+      components: appendedComponents.length,
+      wires: appendedWires.length
+    },
+    warningsFa: diagnostics.issueCount ? ['بعد از افزودن نمونه درس، چند هشدار عیب‌یابی وجود دارد. آن‌ها را بررسی کن.'] : []
+  };
+}
+
+export function createLessonExample(sandbox: LessonSandboxState, title: string, notes?: string, score?: LessonScore): LessonExample {
+  return {
+    id: `example-${crypto.randomUUID?.() ?? Date.now().toString(36)}`,
+    lessonId: sandbox.activeLessonId,
+    title: title.trim() || getLessonById(sandbox.activeLessonId)?.titleFa || 'نمونه درس',
+    projectSnapshot: {
+      ...sandbox.sandboxProject,
+      useExplicitWiresOnly: true,
+      updatedAt: createProjectTimestamp()
+    },
+    score,
+    createdAt: createProjectTimestamp(),
+    notes
+  };
+}
+
+export function addLessonExample(sandbox: LessonSandboxState, example: LessonExample): LessonSandboxState {
+  return {
+    ...sandbox,
+    savedExamples: [example, ...(sandbox.savedExamples ?? [])]
+  };
+}
+
+export function deleteLessonExample(sandbox: LessonSandboxState, exampleId: string): LessonSandboxState {
+  return {
+    ...sandbox,
+    savedExamples: (sandbox.savedExamples ?? []).filter((example) => example.id !== exampleId)
+  };
+}
+
+export function loadLessonExampleIntoSandbox(sandbox: LessonSandboxState, exampleId: string): LessonSandboxState {
+  const example = (sandbox.savedExamples ?? []).find((item) => item.id === exampleId);
+  if (!example) return sandbox;
+  return {
+    ...sandbox,
+    activeLessonId: example.lessonId,
+    sandboxProject: example.projectSnapshot,
+    sandboxProgress: example.projectSnapshot.lessonProgress ?? sandbox.sandboxProgress,
+    startedAt: createProjectTimestamp()
   };
 }
 

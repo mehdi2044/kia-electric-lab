@@ -709,3 +709,74 @@ Sandbox examples can be saved in state, but there is no list/export/delete UI ye
 Recommended fix:
 
 - Add saved examples panel under lesson mode.
+
+## 2026-05-14 20:35 Europe/Istanbul - Known Issues Update After Apply Modes
+
+### KI-032 Status Update - Apply Modes Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Replace, append, and save-example modes now exist.
+- Append mode preserves main project and copies lesson artifacts with remapped ids.
+
+Remaining limitation:
+
+- Append placement uses a simple coordinate offset and is not collision-aware.
+
+### KI-034 Status Update - Example Management Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Saved examples can be listed, loaded, deleted, and exported.
+
+Remaining limitation:
+
+- No example import or checksum envelope yet.
+
+### KI-035 - Apply Confirmation Uses Browser Confirm
+
+Severity: Low.
+
+Description:
+
+Apply confirmation currently uses `window.confirm`, which is safe but not as polished or detailed as a custom in-app Persian modal.
+
+Recommended fix:
+
+- Add a custom apply preview modal with affected objects and diagnostics summary.
+
+### KI-036 - Append Layout Can Become Crowded
+
+Severity: Medium.
+
+Description:
+
+Append mode offsets copied components slightly but does not calculate free space in the floor plan.
+
+Impact:
+
+- Appended lesson components may overlap existing components in dense rooms.
+
+Recommended fix:
+
+- Add collision-aware placement or append into a dedicated example area.
+
+### KI-037 - Bundle Size Increased Again
+
+Severity: Low.
+
+Description:
+
+Production JS chunk is now about 522 kB minified and Vite warns about chunk size.
+
+Recommended fix:
+
+- Add dynamic imports/code splitting for lesson mode, diagnostics, and report panels.

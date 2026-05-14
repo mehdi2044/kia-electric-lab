@@ -1979,3 +1979,112 @@ No new physics formulas.
 ### Next Recommended Step
 
 Phase 9 should add merge/apply choices for sandbox results, full saved-example management, and more precise per-step terminal guidance.
+
+## 2026-05-14 20:35 Europe/Istanbul - Phase 9 Engineering Report: Sandbox Apply Modes And Example Management
+
+### Completed Work
+
+Phase 9 added safe sandbox output management. The lesson sandbox can now be applied through explicit modes, appended to the main project with id remapping, or saved as a named example without changing the main apartment project.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/features/lesson-mode/lessonSandbox.ts`
+- `src/features/lesson-mode/lessonSandbox.test.ts`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/store/useLabStore.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Dependencies Added
+
+No package dependency was added.
+
+### Architecture Changes
+
+New domain types:
+
+- `LessonSandboxApplyMode`
+- `LessonExample`
+
+New pure sandbox functions:
+
+- `summarizeSandboxApply`
+- `replaceMainProjectWithSandbox`
+- `appendSandboxToMainProject`
+- `createLessonExample`
+- `addLessonExample`
+- `deleteLessonExample`
+- `loadLessonExampleIntoSandbox`
+
+### Engineering Decisions
+
+- Append logic is pure TypeScript and independent from React UI.
+- Append mode preserves main project arrays and creates a new project snapshot.
+- ids are regenerated with lesson-prefixed ids when collisions occur.
+- Virtual breaker refs such as `breaker:<circuitId>` are remapped with circuit ids.
+- Panelboard assignments are preserved where possible with remapped breaker slot ids.
+- Diagnostics run after replace and append; the UI reports issue count instead of hiding it.
+- Save-example mode stores structured examples and does not modify the main project.
+
+### Electrical Logic Implemented
+
+No new electrical formulas were added.
+
+Electrical integrity work:
+
+- copied wires preserve terminal refs through id remapping
+- copied panelboard slots preserve circuit assignments through id remapping
+- appended circuits preserve appliances, room ids, wire size, breaker amp, and kind
+- diagnostics checks appended project structure after apply
+
+### Formulas Implemented
+
+No new formulas.
+
+### Bugs
+
+No runtime bugs were found during Phase 9 verification.
+
+### Limitations
+
+- Append mode copies lesson components with a small coordinate offset, but it does not yet perform collision-aware layout.
+- Example export is raw JSON for the example object and does not yet use a signed/checksummed example envelope.
+- Example notes are supported in the data model but the UI currently provides a single title/notes text field style input.
+- Diagnostics issue count is shown, but detailed post-apply diagnostics are still in the diagnostics panel rather than inline in apply modal.
+- Bundle-size warning increased to about 522 kB minified JS.
+
+### TODOs
+
+- Add layout collision avoidance for appended lesson components.
+- Add example import.
+- Add example checksum envelope.
+- Add richer example notes field.
+- Add inline post-apply diagnostic details.
+- Add apply preview modal instead of `window.confirm`.
+- Add code splitting for lesson mode and diagnostics.
+
+### Risks
+
+- Replace mode is intentionally powerful; confirmation text must remain clear.
+- Append mode may create a dense floor-plan area until layout collision avoidance exists.
+- Many saved examples can increase localStorage size.
+
+### Scalability Concerns
+
+- Example management should eventually move to Tauri/SQLite storage.
+- Append remapping should become a reusable project merge service if multiplayer/shared examples are introduced.
+- Saved examples should use versioned lesson-example schema when examples become shareable.
+
+### Verification
+
+- `npm test`: 12 test files passed, 53 tests passed.
+- `npm run build`: passed with Vite chunk-size warning.
+- Local HTTP check: `http://localhost:5173/` returned 200.
+
+### Next Recommended Step
+
+Phase 10 should add a richer apply preview modal, collision-aware append layout, example import/checksum, and code splitting to address the growing bundle.

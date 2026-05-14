@@ -223,6 +223,18 @@ export interface LessonHighlight {
   messageFa: string;
 }
 
+export type LessonSandboxApplyMode = 'replace' | 'append' | 'save-example';
+
+export interface LessonExample {
+  id: string;
+  lessonId: string;
+  title: string;
+  projectSnapshot: ElectricalProject;
+  score?: LessonScore;
+  createdAt: string;
+  notes?: string;
+}
+
 export interface LessonSandboxState {
   activeLessonId: string;
   mainProject: ElectricalProject;
@@ -230,7 +242,7 @@ export interface LessonSandboxState {
   sandboxProgress: LessonProgress;
   attemptsCount: number;
   startedAt: string;
-  savedExamples?: ElectricalProject[];
+  savedExamples?: LessonExample[];
   pendingApplyConfirmation?: boolean;
 }
 
