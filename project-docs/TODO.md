@@ -262,3 +262,46 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add larger fixture snapshots from each accepted phase.
 - [ ] Add Tauri/SQLite storage adapter that reuses `projectMigration.ts`.
 - [ ] Add project file format documentation for external review.
+
+## 2026-05-14 15:45 Europe/Istanbul - Phase 6 TODO Update
+
+### Completed
+
+- [x] Add project diagnostics engine.
+- [x] Add `DiagnosticIssue` type.
+- [x] Detect orphan wires.
+- [x] Detect wires pointing to missing components.
+- [x] Detect wires pointing to missing terminals.
+- [x] Detect components without valid room.
+- [x] Detect circuits without components.
+- [x] Detect circuits without breaker assignment.
+- [x] Detect breaker assigned to missing circuit.
+- [x] Detect invalid route points.
+- [x] Detect invalid `pixelsPerMeter`.
+- [x] Detect duplicated ids.
+- [x] Detect invalid cost catalog settings.
+- [x] Detect missing schema metadata.
+- [x] Add conservative repair engine.
+- [x] Remove orphan/invalid wires as safe repair.
+- [x] Remove panelboard assignments to missing circuits.
+- [x] Normalize invalid `pixelsPerMeter`.
+- [x] Regenerate missing schema metadata.
+- [x] Add Persian diagnostics panel.
+- [x] Add diagnostic report JSON export.
+- [x] Add backup delete.
+- [x] Add backup export.
+- [x] Show backup schema version.
+- [x] Add export checksum envelope.
+- [x] Validate checksum on import.
+- [x] Add localStorage migration fixtures for Phase 1-4.
+
+### New TODOs
+
+- [ ] Add per-issue repair selection UI.
+- [ ] Add repair undo/history.
+- [ ] Add project repair log export.
+- [ ] Add topology graph inspector for engineering/debug mode.
+- [ ] Add user-confirmed repair for invalid component room assignment.
+- [ ] Add stronger checksum/hash if project sharing begins.
+- [ ] Add browser visual automation for diagnostics panel.
+- [ ] Add diagnostics for future editable cost profiles.

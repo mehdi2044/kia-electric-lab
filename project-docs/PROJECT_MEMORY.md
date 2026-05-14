@@ -428,3 +428,64 @@ Current values:
 ### Next Memory Note
 
 Future phases should treat schema migration as mandatory whenever adding new persistent fields, especially for grounding, advanced routing, panelboard slot models, multi-phase simulation, or AI tutor history.
+
+## 2026-05-14 15:45 Europe/Istanbul - Phase 6 Project Diagnostics, Repair Tools, And Export Integrity
+
+### Change Summary
+
+Phase 6 added a professional project health layer above the Phase 5 migration system. Kia Electric Lab can now diagnose project integrity problems, explain them in Persian, repair only safe issues, manage backups more completely, and export project JSON with an integrity checksum envelope.
+
+### New Completed Systems
+
+- Pure diagnostics engine under `src/diagnostics/diagnosticsEngine.ts`.
+- Pure conservative repair engine under `src/diagnostics/repairEngine.ts`.
+- Export integrity envelope under `src/migrations/exportIntegrity.ts`.
+- Persian Diagnostics panel under `src/features/project-diagnostics/ProjectDiagnosticsPanel.tsx`.
+- Enhanced Project Data panel backup management.
+- Browser-level localStorage migration fixture tests for Phase 1 through Phase 4 shapes.
+- Import checksum validation with Persian warning on mismatch.
+
+### Current Diagnostics Coverage
+
+Diagnostics now detect:
+
+- missing schema metadata
+- invalid `pixelsPerMeter`
+- duplicated ids
+- components without valid room
+- circuits without components
+- circuits without panelboard breaker assignment
+- circuits referencing missing components
+- orphan wires
+- wires referencing missing components
+- wires referencing missing terminals
+- invalid route geometry
+- breakers assigned to missing circuits
+- invalid cost catalog settings
+
+### Repair Philosophy
+
+Repairs are conservative:
+
+- Safe repairs can be applied automatically.
+- Non-safe issues remain visible and require human decision.
+- Invalid/orphan wires may be removed because they cannot represent a valid electrical connection.
+- Invalid panelboard assignments can be cleared without deleting the breaker slot.
+- Invalid scale can be normalized to the educational default.
+- Missing schema metadata can be regenerated.
+
+### Export Integrity
+
+Project export now uses a JSON envelope:
+
+- format marker
+- exported timestamp
+- checksum algorithm
+- checksum
+- project body
+
+The checksum is an educational/local integrity check, not a cryptographic trust or security system. It catches accidental edits or incomplete export/import changes.
+
+### Engineering Continuity Note
+
+Phase 6 establishes the basis for future project-repair workflows, AI tutor explanations, and Vi/Codex debug tools. Future schema changes should add both migration tests and diagnostics checks.

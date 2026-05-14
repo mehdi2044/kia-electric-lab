@@ -924,3 +924,94 @@ Migration validation confirms structural integrity, not professional electrical 
 - SQLite migration should call the same pure migration engine before opening/saving project rows.
 - Schema version should also be stored at database level when Tauri arrives.
 - Future project sharing/multiplayer will need merge/conflict semantics beyond this single-document migration model.
+
+## 2026-05-14 15:45 Europe/Istanbul - Phase 6 Diagnostics And Repair Architecture
+
+### Change Type
+
+Project integrity diagnostics, conservative repair engine, export checksum, backup management, and browser-level storage migration fixtures.
+
+### New Modules
+
+```text
+src/diagnostics/
+  diagnosticsEngine.ts
+  repairEngine.ts
+  diagnosticsEngine.test.ts
+
+src/migrations/
+  exportIntegrity.ts
+  storageSafety.test.ts
+
+src/features/project-diagnostics/
+  ProjectDiagnosticsPanel.tsx
+```
+
+### Diagnostics Engine Architecture
+
+`diagnosticsEngine.ts` owns:
+
+- `DiagnosticIssue`
+- `DiagnosticSeverity`
+- `DiagnosticCategory`
+- `diagnoseProject(project)`
+
+It scans the current project and returns immutable issue records with severity, category, Persian title, Persian explanation, recommended repair, safe auto-repair flag, and optional entity id.
+
+### Repair Engine Architecture
+
+`repairEngine.ts` owns:
+
+- `repairProject(project, selectedIssueIds?)`
+- repair logs
+- skipped issue reporting
+
+Repair receives a project snapshot, runs diagnostics, applies only safe repairs, and returns a new project snapshot. Zustand applies the result through `replaceProject`.
+
+### Export Integrity Architecture
+
+`exportIntegrity.ts` wraps project exports in an envelope:
+
+```text
+{
+  format,
+  exportedAt,
+  checksumAlgorithm,
+  checksum,
+  project
+}
+```
+
+Import accepts both new envelopes and legacy raw project JSON. Checksum mismatch produces a warning rather than an automatic hard failure so Mehdi/Vi can still recover data intentionally.
+
+### UI Architecture
+
+`ProjectDiagnosticsPanel`:
+
+- shows severity counts
+- filters issues by category
+- lists Persian issue explanations
+- offers repair of safe issues
+- exports diagnostic report JSON
+
+`ProjectDataPanel` now also:
+
+- shows backup schema version
+- restores backups
+- exports backups
+- deletes backups
+- exports corrupted data
+- supports reset after corrupted data is found
+
+### Boundary Rules
+
+- Diagnostics and repair are data-quality systems, not electrical approval systems.
+- Topology, current, safety, panelboard, and cost engines remain responsible for simulation calculations.
+- Repair must not hide unsafe electrical design; it only repairs invalid data references and storage shape problems.
+
+### Future Architecture Notes
+
+- Add per-issue repair commands.
+- Add undo history for repair operations.
+- Add diagnostics as an input channel for a future AI electrical tutor.
+- Add incremental diagnostics for large projects.

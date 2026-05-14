@@ -11,6 +11,7 @@ import { SafetyPanel } from './features/safety-engine/SafetyPanel';
 import { WireRoutingPanel } from './features/wire-routing/WireRoutingPanel';
 import { PanelboardPanel } from './features/panelboard/PanelboardPanel';
 import { ProjectDataPanel } from './features/project-data/ProjectDataPanel';
+import { ProjectDiagnosticsPanel } from './features/project-diagnostics/ProjectDiagnosticsPanel';
 import { useLabStore } from './store/useLabStore';
 import { formatNumber, formatToman } from './utils/format';
 
@@ -88,6 +89,7 @@ export function App() {
           </div>
           <div className="space-y-5">
             <ProjectDataPanel />
+            <ProjectDiagnosticsPanel />
             <SafetyPanel />
             <CostPanel />
           </div>
