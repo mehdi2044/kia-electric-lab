@@ -6,6 +6,9 @@ import {
   CircleGauge,
   Coffee,
   Cpu,
+  Database,
+  Download,
+  FileJson,
   Home,
   Lightbulb,
   Monitor,
@@ -19,6 +22,7 @@ import {
   Sun,
   Tv,
   Utensils,
+  Upload,
   Wind,
   Zap
 } from 'lucide-react';
@@ -32,6 +36,9 @@ const icons = {
   CircleGauge,
   Coffee,
   Cpu,
+  Database,
+  Download,
+  FileJson,
   Home,
   Lightbulb,
   Monitor,
@@ -45,6 +52,7 @@ const icons = {
   Sun,
   Tv,
   Utensils,
+  Upload,
   Wind,
   Zap
 };

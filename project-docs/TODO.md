@@ -224,3 +224,41 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add UI badge for calculated length vs manual override.
 - [ ] Add route segments with right-angle routing mode.
 - [ ] Add conduit/path grouping model.
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 TODO Update
+
+### Completed
+
+- [x] Add project schema version fields.
+- [x] Add app version marker.
+- [x] Add created/updated timestamps.
+- [x] Create pure TypeScript migration engine.
+- [x] Detect Phase 1 project shape.
+- [x] Detect Phase 2 project shape.
+- [x] Detect Phase 3 project shape.
+- [x] Detect Phase 4 project shape.
+- [x] Migrate legacy project shapes to latest schema.
+- [x] Validate migrated project structure.
+- [x] Preserve explicit `ElectricalWire[]`.
+- [x] Preserve route points and manual length overrides.
+- [x] Preserve panelboard assignments.
+- [x] Backup localStorage before migration.
+- [x] Quarantine corrupted persisted data.
+- [x] Prevent app crash on corrupted stored project.
+- [x] Add manual export JSON.
+- [x] Add manual import JSON.
+- [x] Add backup restore list.
+- [x] Add Persian Project Data panel.
+- [x] Add unit tests for schema detection, migration, preservation, corruption, and validation.
+
+### New TODOs
+
+- [ ] Add checksum or hash to exported project JSON.
+- [ ] Add delete/export controls for individual backups.
+- [ ] Add migration dry-run preview UI.
+- [ ] Add repair actions for orphan wire terminals.
+- [ ] Add repair actions for orphan panelboard breaker assignments.
+- [ ] Add browser/E2E localStorage migration fixtures.
+- [ ] Add larger fixture snapshots from each accepted phase.
+- [ ] Add Tauri/SQLite storage adapter that reuses `projectMigration.ts`.
+- [ ] Add project file format documentation for external review.

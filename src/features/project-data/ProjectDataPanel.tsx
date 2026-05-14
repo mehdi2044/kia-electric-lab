@@ -1,0 +1,161 @@
+import { useRef, useState } from 'react';
+import { Icon } from '../../components/Icon';
+import { useLabStore } from '../../store/useLabStore';
+import {
+  clearMigrationError,
+  downloadTextFile,
+  getMigrationErrorRaw,
+  importProjectFromJson,
+  readProjectBackups,
+  restoreProjectBackup,
+  serializeProjectForExport
+} from '../../migrations/storageSafety';
+import type { ProjectBackup } from '../../migrations/projectMigration';
+
+function formatDateFa(value?: string) {
+  if (!value) return 'نامشخص';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'نامعتبر';
+  return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+}
+
+export function ProjectDataPanel() {
+  const project = useLabStore((state) => state.project);
+  const replaceProject = useLabStore((state) => state.replaceProject);
+  const resetProject = useLabStore((state) => state.resetProject);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [messageFa, setMessageFa] = useState<string>();
+  const [backups, setBackups] = useState<ProjectBackup[]>(() => readProjectBackups());
+  const [corruptedRaw, setCorruptedRaw] = useState<string | undefined>(() => getMigrationErrorRaw());
+
+  const refreshBackups = () => {
+    setBackups(readProjectBackups());
+    setCorruptedRaw(getMigrationErrorRaw());
+  };
+
+  const exportProject = () => {
+    const filename = `kia-electric-lab-schema-${project.schemaVersion}-${new Date().toISOString().slice(0, 10)}.json`;
+    downloadTextFile(filename, serializeProjectForExport(project));
+    setMessageFa('خروجی JSON پروژه آماده شد.');
+  };
+
+  const importFile = (file?: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const raw = String(reader.result ?? '');
+      const result = importProjectFromJson(raw);
+      if (result.ok && result.project) {
+        replaceProject(result.project);
+        setMessageFa(result.messageFa);
+      } else {
+        setMessageFa(result.messageFa);
+      }
+      refreshBackups();
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const restoreBackup = (backupId: string) => {
+    const result = restoreProjectBackup(backupId);
+    if (result.ok && result.project) {
+      replaceProject(result.project);
+      setMessageFa('پشتیبان انتخاب‌شده با مهاجرت امن بازیابی شد.');
+    } else {
+      setMessageFa(result.messageFa);
+    }
+    refreshBackups();
+  };
+
+  const exportCorrupted = () => {
+    if (!corruptedRaw) return;
+    downloadTextFile(`kia-electric-lab-corrupted-${new Date().toISOString().slice(0, 10)}.json`, corruptedRaw);
+    clearMigrationError();
+    setCorruptedRaw(undefined);
+    setMessageFa('داده خراب برای بررسی مهندسی خروجی گرفته شد.');
+  };
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-extrabold">داده‌های پروژه</h2>
+          <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">نسخه ساختار، پشتیبان، ورود و خروج JSON</p>
+        </div>
+        <div className="rounded-md bg-slate-100 p-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          <Icon name="Database" className="h-5 w-5" />
+        </div>
+      </div>
+
+      <div className="grid gap-2 text-sm">
+        <div className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950">
+          <span className="text-slate-500 dark:text-slate-400">Schema</span>
+          <strong>{project.schemaVersion.toLocaleString('fa-IR')}</strong>
+        </div>
+        <div className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950">
+          <span className="text-slate-500 dark:text-slate-400">App</span>
+          <strong dir="ltr" className="text-xs">{project.appVersion}</strong>
+        </div>
+        <div className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950">
+          <span className="text-slate-500 dark:text-slate-400">آخرین ذخیره</span>
+          <strong className="text-xs">{formatDateFa(project.updatedAt)}</strong>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button onClick={exportProject} className="inline-flex items-center justify-center gap-2 rounded-md bg-tealish px-3 py-2 text-sm font-bold text-white">
+          <Icon name="Download" className="h-4 w-4" />
+          خروجی
+        </button>
+        <button onClick={() => fileInputRef.current?.click()} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
+          <Icon name="Upload" className="h-4 w-4" />
+          ورود
+        </button>
+        <button onClick={resetProject} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
+          <Icon name="RefreshCcw" className="h-4 w-4" />
+          بازنشانی پروژه آموزشی
+        </button>
+      </div>
+      <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden" onChange={(event) => importFile(event.target.files?.[0])} />
+
+      {messageFa && (
+        <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100">
+          {messageFa}
+        </div>
+      )}
+
+      {corruptedRaw && (
+        <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          داده ذخیره‌شده قبلی ناسازگار بوده و کنار گذاشته شده است.
+          <button onClick={exportCorrupted} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-amber-600 px-3 py-2 text-white">
+            <Icon name="FileJson" className="h-4 w-4" />
+            خروجی داده خراب
+          </button>
+        </div>
+      )}
+
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <strong>پشتیبان‌ها</strong>
+          <button onClick={refreshBackups} className="text-xs text-tealish">به‌روزرسانی</button>
+        </div>
+        <div className="max-h-44 space-y-2 overflow-auto">
+          {backups.length === 0 ? (
+            <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-950 dark:text-slate-400">هنوز پشتیبانی ثبت نشده است.</p>
+          ) : (
+            backups.map((backup) => (
+              <div key={backup.id} className="rounded-md border border-slate-200 p-2 text-xs dark:border-slate-800">
+                <div className="font-bold">{backup.reasonFa}</div>
+                <div className="mt-1 text-slate-500 dark:text-slate-400">{formatDateFa(backup.createdAt)}</div>
+                <button onClick={() => restoreBackup(backup.id)} className="mt-2 w-full rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">
+                  بازیابی
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

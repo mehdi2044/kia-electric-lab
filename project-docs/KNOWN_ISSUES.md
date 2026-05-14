@@ -453,3 +453,70 @@ The panelboard UI models breaker assignment and ratings, but not physical panel 
 Recommended fix:
 
 - Add a panelboard lesson/profile before deeper physical panel modeling.
+
+## 2026-05-14 15:25 Europe/Istanbul - Known Issues Update After Schema Migration System
+
+### KI-023 - Exported Project JSON Has No Checksum
+
+Severity: Low to Medium.
+
+Description:
+
+Project export/import now works, but exported JSON does not include an integrity checksum, signature, or hash.
+
+Impact:
+
+- Manual edits or partial downloads may only be detected through schema validation after import.
+- Future shared project files may need stronger integrity guarantees.
+
+Recommended fix:
+
+- Add a project-level hash/checksum for exported files and verify it before import.
+
+### KI-024 - Migration Repairs Are Warning-Only
+
+Severity: Medium.
+
+Description:
+
+Migration validation warns about dangling component, terminal, circuit, or panelboard references, but it does not yet offer automatic repair actions.
+
+Impact:
+
+- A migrated project may load safely but still require manual correction by the user or engineer.
+
+Recommended fix:
+
+- Add a Project Repair panel with actions to remove orphan wires, reassign breaker slots, and reconnect terminal refs.
+
+### KI-025 - Backup Storage Is Browser-Local
+
+Severity: Low.
+
+Description:
+
+Automatic backups are stored in the browser localStorage backup key and limited to recent records.
+
+Impact:
+
+- Backups are not durable across browser profile deletion, manual localStorage clearing, or device migration.
+
+Recommended fix:
+
+- When Tauri is introduced, store backups as project files or SQLite backup rows.
+
+### KI-026 - No Browser Fixture Regression Test Yet
+
+Severity: Low to Medium.
+
+Description:
+
+Unit tests cover migration functions, but no browser automation test currently seeds old localStorage shapes and confirms UI recovery.
+
+Impact:
+
+- Hydration behavior is covered by production build and code structure, but not by an automated browser fixture.
+
+Recommended fix:
+
+- Add Playwright or Browser-plugin fixture tests for Phase 1-4 stored projects and corrupted storage.

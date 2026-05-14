@@ -167,6 +167,10 @@ export interface ProjectReport {
 }
 
 export interface ElectricalProject {
+  schemaVersion: number;
+  appVersion: string;
+  createdAt: string;
+  updatedAt: string;
   voltage: number;
   mainBreakerAmp: number;
   pixelsPerMeter?: number;

@@ -826,3 +826,101 @@ Cost engine now uses geometric explicit wire length for circuits when `project.w
 - Wire route points are simple bend coordinates, not full conduit/routing objects.
 - Terminal coordinates are deterministic offsets from component positions, not DOM-measured handle coordinates.
 - Panelboard slots are educational and simple; no physical DIN rail/panel layout model yet.
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 Persistence And Migration Architecture
+
+### Change Type
+
+Project schema governance, local storage safety, migration, backup, restore, and data integrity validation.
+
+### New Modules
+
+```text
+src/migrations/
+  projectMigration.ts
+  storageSafety.ts
+  projectMigration.test.ts
+
+src/features/project-data/
+  ProjectDataPanel.tsx
+```
+
+### Schema Ownership
+
+`ElectricalProject` now owns persistent metadata:
+
+- `schemaVersion`
+- `appVersion`
+- `createdAt`
+- `updatedAt`
+
+This metadata travels with the project object rather than only the storage layer. That makes the schema portable to future Tauri + SQLite, JSON export/import, and possible shared project files.
+
+### Migration Engine Design
+
+`projectMigration.ts` is pure TypeScript:
+
+- `detectProjectVersion(project)`
+- `migrateProject(project)`
+- `validateMigratedProject(project)`
+- `parsePersistedProject(raw)`
+
+Detection supports:
+
+- Phase 1 shape: no wires/schema metadata
+- Phase 2 shape: `wires` exists
+- Phase 3 shape: explicit wires with `kind`
+- Phase 4 shape: `pixelsPerMeter` or `panelboard`
+- Phase 5 shape: explicit `schemaVersion`
+
+Migration is deterministic and upgrades all known old shapes to current schema version 5.
+
+### Storage Safety Flow
+
+```mermaid
+flowchart TD
+  A["App startup"] --> B["Read localStorage raw persisted project"]
+  B --> C{"Raw project exists?"}
+  C -- "No" --> D["Load default project"]
+  C -- "Yes" --> E["Detect and migrate"]
+  E --> F{"Migration valid?"}
+  F -- "Yes" --> G["Backup old raw if schema changed"]
+  G --> H["Write migrated persisted Zustand state"]
+  H --> I["Hydrate store"]
+  F -- "No" --> J["Backup corrupted raw"]
+  J --> K["Quarantine raw migration error"]
+  K --> L["Remove broken project key"]
+  L --> D
+```
+
+### State Flow
+
+- `storageSafety.preparePersistedProjectStorage()` runs before Zustand `persist` hydration.
+- Zustand hydrates only a valid latest-shape project or the safe default project.
+- Store actions update `updatedAt`, `schemaVersion`, and `appVersion` through `touchProject`.
+- `ProjectDataPanel` can replace the current project after import/restore using `replaceProject`.
+
+### UI Architecture
+
+`ProjectDataPanel` is an operational tool panel in the right-side column. It shows:
+
+- schema version
+- app version marker
+- last saved time
+- export JSON button
+- import JSON button
+- safe reset button
+- automatic backup list
+- corrupted data export when quarantine exists
+
+The panel does not calculate simulation results. It only manages project persistence state.
+
+### Validation Boundary
+
+Migration validation confirms structural integrity, not professional electrical approval. It checks arrays, schema version, route points, wire terminal references, breaker assignment references, breaker amps, and scale. Electrical safety remains owned by the topology, validation, safety, panelboard, and cost engines.
+
+### Future Architecture Notes
+
+- SQLite migration should call the same pure migration engine before opening/saving project rows.
+- Schema version should also be stored at database level when Tauri arrives.
+- Future project sharing/multiplayer will need merge/conflict semantics beyond this single-document migration model.
