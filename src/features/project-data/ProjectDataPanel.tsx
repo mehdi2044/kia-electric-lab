@@ -152,7 +152,7 @@ export function ProjectDataPanel() {
           <Icon name="Download" className="h-4 w-4" />
           خروجی
         </button>
-        <button onClick={() => fileInputRef.current?.click()} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
+        <button onClick={() => fileInputRef.current?.click()} data-testid="project-import-button" className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
           <Icon name="Upload" className="h-4 w-4" />
           ورود
         </button>
@@ -161,10 +161,10 @@ export function ProjectDataPanel() {
           بازنشانی پروژه آموزشی
         </button>
       </div>
-      <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden" onChange={(event) => importFile(event.target.files?.[0])} />
+      <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden" data-testid="project-import-input" onChange={(event) => importFile(event.target.files?.[0])} />
 
       {messageFa && (
-        <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100">
+        <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100" data-testid="project-data-message">
           {messageFa}
         </div>
       )}

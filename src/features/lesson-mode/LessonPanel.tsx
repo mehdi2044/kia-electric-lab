@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { AccessibleModal } from '../../components/AccessibleModal';
+import { EditTextModal } from '../../components/EditTextModal';
 import { useLabStore } from '../../store/useLabStore';
 import { calculateProgressPercent, getLessonAttempt } from './lessonProgress';
 import { getStepGuidance, lessons } from './lessonEngine';
@@ -20,6 +21,10 @@ type LessonConfirmation =
   | { type: 'reset-sandbox' }
   | { type: 'exit-sandbox' }
   | { type: 'delete-example'; exampleId: string };
+
+type ExampleEditState =
+  | { type: 'title'; exampleId: string; initialValue: string; notes?: string }
+  | { type: 'notes'; exampleId: string; title: string; initialValue: string };
 
 function scoreTone(score?: number) {
   if (score === undefined) return 'text-slate-500';
@@ -61,6 +66,7 @@ export function LessonPanel() {
   }>();
   const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<LessonConfirmation>();
+  const [exampleEdit, setExampleEdit] = useState<ExampleEditState>();
   const [exampleImportMessageFa, setExampleImportMessageFa] = useState<string>();
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
   const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
@@ -252,6 +258,7 @@ export function LessonPanel() {
             <select
               value={applyMode}
               onChange={(event) => setApplyMode(event.target.value as LessonSandboxApplyMode)}
+              data-testid="apply-mode-select"
               className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
             >
               <option value="append">افزودن به پروژه اصلی</option>
@@ -397,18 +404,18 @@ export function LessonPanel() {
                     <div className="mt-1 grid grid-cols-2 gap-1">
                       <button
                         onClick={() => {
-                          const title = window.prompt('نام جدید نمونه', example.title);
-                          if (title) renameLessonExample(example.id, title, example.notes);
+                          setExampleEdit({ type: 'title', exampleId: example.id, initialValue: example.title, notes: example.notes });
                         }}
+                        data-testid={`rename-example-${example.id}`}
                         className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
                       >
                         تغییر نام
                       </button>
                       <button
                         onClick={() => {
-                          const notes = window.prompt('یادداشت نمونه', example.notes ?? '');
-                          if (notes !== null) renameLessonExample(example.id, example.title, notes);
+                          setExampleEdit({ type: 'notes', exampleId: example.id, title: example.title, initialValue: example.notes ?? '' });
                         }}
+                        data-testid={`notes-example-${example.id}`}
                         className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
                       >
                         یادداشت
@@ -463,6 +470,24 @@ export function LessonPanel() {
       >
         <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">این تصمیم فقط بعد از تایید تو انجام می‌شود و با انصراف هیچ تغییری اعمال نمی‌شود.</p>
       </AccessibleModal>
+      <EditTextModal
+        open={Boolean(exampleEdit)}
+        title={exampleEdit?.type === 'title' ? 'تغییر نام نمونه' : 'ویرایش یادداشت نمونه'}
+        description={exampleEdit?.type === 'title' ? 'یک نام روشن برای نمونه تمرین انتخاب کن.' : 'یادداشتی کوتاه درباره نکته آموزشی این نمونه بنویس.'}
+        inputLabel={exampleEdit?.type === 'title' ? 'نام نمونه' : 'یادداشت'}
+        initialValue={exampleEdit?.initialValue ?? ''}
+        multiline={exampleEdit?.type === 'notes'}
+        required={exampleEdit?.type === 'title'}
+        confirmLabel="ثبت"
+        onCancel={() => setExampleEdit(undefined)}
+        onConfirm={(value) => {
+          if (!exampleEdit) return;
+          if (exampleEdit.type === 'title') renameLessonExample(exampleEdit.exampleId, value, exampleEdit.notes);
+          if (exampleEdit.type === 'notes') renameLessonExample(exampleEdit.exampleId, exampleEdit.title, value);
+          setExampleEdit(undefined);
+        }}
+        testId="example-edit-modal"
+      />
     </section>
   );
 }

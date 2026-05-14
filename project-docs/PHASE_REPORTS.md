@@ -2618,3 +2618,130 @@ The phase did expose a testing need: import warning assertions should not depend
 ### Next Recommended Step
 
 Phase 14 should add e2e fixture utilities and cover replace mode, backup restore, wire deletion, and modalized rename/notes flows.
+
+## 2026-05-15 00:57 Europe/Istanbul - Phase 14 Engineering Report: E2E Fixture Utilities, Remaining Flow Tests, And Prompt Modal Replacement
+
+### Completed Work
+
+Phase 14 made the browser test suite more deterministic and completed coverage for several remaining risky flows. It introduced reusable Playwright fixtures that seed localStorage directly, replaced saved-example prompt editing with an accessible modal, added test ids for remaining critical controls, and expanded the e2e suite from 6 to 14 tests.
+
+### Modified Files
+
+- `src/components/EditTextModal.tsx`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/features/audit-viewer/AuditViewerPanel.tsx`
+- `src/features/project-data/ProjectDataPanel.tsx`
+- `playwright.config.ts`
+- `tests/e2e/helpers/fixtures.ts`
+- `tests/e2e/phase13-advanced.spec.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+No dependency was added.
+
+### Architecture Changes
+
+New reusable UI component:
+
+- `EditTextModal`
+
+It supports:
+
+- title
+- description
+- text input
+- textarea mode
+- required validation
+- Persian RTL input direction
+- confirm/cancel actions
+- deterministic test ids
+
+New e2e helper module:
+
+- `tests/e2e/helpers/fixtures.ts`
+
+Fixtures can seed:
+
+- default project
+- active sandbox
+- saved example
+- backup
+- explicit wire with selected wire state
+- corrupted storage
+- project with diagnostics issues
+
+Playwright architecture update:
+
+- E2E tests now use `http://127.0.0.1:5174`.
+- `strictPort` is enabled.
+- `reuseExistingServer` is disabled to prevent testing stale dev-server code on `5173`.
+
+### Engineering Decisions
+
+- Direct localStorage seeding is preferred for browser fixtures because it avoids long and fragile UI setup.
+- Existing visible UI flows are still tested after seeding, so tests validate the real app surface.
+- Saved-example rename and notes were moved from `window.prompt` to modal editing because prompt dialogs are hard to test, inaccessible, and inconsistent with the shared modal system.
+- Corrupted project import is tested through the hidden file input using `setInputFiles`, not text selectors.
+
+### Electrical Logic Implemented
+
+No electrical logic was implemented or changed.
+
+Preserved:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- diagnostics engine
+
+### Formulas Implemented
+
+No new electrical formulas.
+
+### Bugs Found And Fixed
+
+- Playwright was previously allowed to reuse the user's already-running `5173` dev server. This could test stale chunks after code changes. Phase 14 moved tests to dedicated port `5174` with `strictPort` and no reuse.
+
+### Limitations
+
+- E2E helper project shapes are intentionally minimal and should be expanded if future tests need richer apartment fixtures.
+- Tests still run Chromium only.
+- Project import warning is tested by visibility of the message, not detailed Persian copy.
+- Audit export download behavior is not yet browser-verified.
+
+### TODOs
+
+- Add Firefox/WebKit coverage when CI runtime allows.
+- Add e2e coverage for audit JSON download.
+- Add fixture builder utilities with typed factories if test data grows.
+- Add visual screenshot checks after layout stabilizes.
+
+### Risks
+
+- Direct localStorage fixtures must be kept aligned with schema migrations.
+- Dedicated Playwright port reduces stale-server risk, but CI must keep the port free.
+- Minimal fixtures can miss interactions that only appear in full apartment data.
+
+### Scalability Concerns
+
+- E2E fixture factories should eventually live in a small typed test-data package.
+- If schema version changes frequently, fixtures should import generated schema constants or be generated from app factories.
+- Browser tests should be grouped by feature as the suite grows.
+
+### Verification
+
+- `npm test`: 12 test files passed, 60 tests passed.
+- `npm run build`: passed with no Vite chunk-size warning.
+- `npm run test:e2e`: 14 Playwright Chromium tests passed.
+
+### Next Recommended Step
+
+Phase 15 should introduce typed test-data builders and begin screenshot/visual regression checks for the highest-risk RTL modal and floor-plan flows.

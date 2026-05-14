@@ -1,4 +1,12 @@
 import { expect, test } from '@playwright/test';
+import {
+  corruptedProjectJson,
+  seedActiveSandbox,
+  seedBackup,
+  seedCorruptedStorage,
+  seedExplicitWire,
+  seedProject
+} from './helpers/fixtures';
 
 function canonicalize(value: unknown): string {
   if (value === undefined) return 'null';
@@ -47,9 +55,7 @@ function lessonExampleEnvelope(tampered = false) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => localStorage.clear());
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await seedProject(page);
 });
 
 test('app loads core panels', async ({ page }) => {
@@ -129,4 +135,93 @@ test('diagnostics, project data, audit viewer, and example list are reachable af
   await expect(page.getByTestId('project-data-panel')).toBeVisible();
   await expect(page.getByTestId('diagnostics-panel')).toBeVisible();
   await expect(page.getByTestId('audit-viewer')).toBeVisible();
+});
+
+test('replace mode apply shows result and creates replace audit', async ({ page }) => {
+  await page.getByTestId('start-lesson-button').click();
+  await page.getByTestId('apply-mode-select').selectOption('replace');
+  await page.getByTestId('open-apply-modal-button').click();
+  await page.getByTestId('apply-modal-confirm').click();
+
+  await expect(page.getByTestId('apply-result-summary')).toBeVisible();
+  await expect(page.locator('[data-testid="audit-entry"][data-action="replace"]')).toHaveCount(1);
+});
+
+test('restore backup modal confirms restore', async ({ page }) => {
+  await seedBackup(page);
+  await page.getByTestId('restore-backup-backup-e2e').click();
+  await expect(page.getByTestId('project-data-confirmation-modal')).toBeVisible();
+  await page.getByTestId('project-data-confirmation-modal-confirm').click();
+  await expect(page.getByTestId('project-data-confirmation-modal')).toBeHidden();
+  await expect(page.getByTestId('project-data-panel')).toBeVisible();
+});
+
+test('delete wire modal confirms selected wire deletion', async ({ page }) => {
+  await seedExplicitWire(page);
+  await page.getByTestId('delete-wire-button').click();
+  await expect(page.getByTestId('delete-wire-modal')).toBeVisible();
+  await page.getByTestId('delete-wire-modal-confirm').click();
+  await expect(page.getByTestId('delete-wire-button')).toBeHidden();
+});
+
+test('reset project modal cancels and confirms safely', async ({ page }) => {
+  await page.getByTestId('header-reset-project-button').click();
+  await expect(page.getByTestId('reset-project-modal')).toBeVisible();
+  await page.getByTestId('reset-project-modal-cancel').click();
+  await expect(page.getByTestId('reset-project-modal')).toBeHidden();
+
+  await page.getByTestId('header-reset-project-button').click();
+  await page.getByTestId('reset-project-modal-confirm').click();
+  await expect(page.getByTestId('lesson-panel')).toBeVisible();
+});
+
+test('reset and exit sandbox confirmations run through shared modal', async ({ page }) => {
+  await page.getByTestId('start-lesson-button').click();
+  await page.getByTestId('reset-sandbox-button').click();
+  await expect(page.getByTestId('lesson-confirmation-modal')).toBeVisible();
+  await page.getByTestId('lesson-confirmation-modal-confirm').click();
+  await expect(page.getByTestId('lesson-confirmation-modal')).toBeHidden();
+
+  await page.getByTestId('exit-sandbox-button').click();
+  await expect(page.getByTestId('lesson-confirmation-modal')).toBeVisible();
+  await page.getByTestId('lesson-confirmation-modal-confirm').click();
+  await expect(page.getByTestId('example-list')).toBeHidden();
+});
+
+test('saved example delete and edit modals work from seeded sandbox', async ({ page }) => {
+  await seedActiveSandbox(page);
+  await page.getByTestId('rename-example-example-e2e').click();
+  await expect(page.getByTestId('example-edit-modal')).toBeVisible();
+  await page.getByTestId('example-edit-modal-input').fill('نمونه ویرایش‌شده');
+  await page.getByTestId('example-edit-modal-confirm').click();
+  await expect(page.getByTestId('example-list')).toContainText('نمونه ویرایش‌شده');
+
+  await page.getByTestId('notes-example-example-e2e').click();
+  await expect(page.getByTestId('example-edit-modal')).toBeVisible();
+  await page.getByTestId('example-edit-modal-input').fill('یادداشت ویرایش‌شده');
+  await page.getByTestId('example-edit-modal-confirm').click();
+
+  await page.getByTestId('delete-example-example-e2e').click();
+  await expect(page.getByTestId('lesson-confirmation-modal')).toBeVisible();
+  await page.getByTestId('lesson-confirmation-modal-confirm').click();
+  await expect(page.getByTestId('example-list')).not.toContainText('نمونه ویرایش‌شده');
+});
+
+test('corrupted project import shows project data warning', async ({ page }) => {
+  await expect(page.getByTestId('project-data-panel')).toBeVisible();
+  await page.getByTestId('project-import-input').setInputFiles({
+    name: 'corrupted-project.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(corruptedProjectJson())
+  });
+  await expect(page.getByTestId('project-data-message')).toBeVisible();
+});
+
+test('corrupted storage state exposes safe recovery UI', async ({ page }) => {
+  await seedCorruptedStorage(page);
+  await expect(page.getByTestId('project-data-panel')).toBeVisible();
+  await page.locator('button').filter({ hasText: 'شروع امن' }).click();
+  await expect(page.getByTestId('project-data-confirmation-modal')).toBeVisible();
+  await page.getByTestId('project-data-confirmation-modal-cancel').click();
+  await expect(page.getByTestId('project-data-confirmation-modal')).toBeHidden();
 });

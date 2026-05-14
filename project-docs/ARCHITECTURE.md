@@ -1589,3 +1589,84 @@ New stable metadata:
 - confirmation modal test ids for lesson/project/wire flows
 
 The goal is to keep tests resistant to Persian copy improvements.
+
+## 2026-05-15 00:57 Europe/Istanbul - Phase 14 Fixture And Edit Modal Architecture
+
+### Change Type
+
+E2E fixture infrastructure, remaining browser flow coverage, and prompt replacement.
+
+### Edit Modal Architecture
+
+`src/components/EditTextModal.tsx` provides a reusable edit wrapper around `AccessibleModal`.
+
+Supported modes:
+
+- single-line input
+- textarea
+- required validation
+- Persian RTL text direction
+- deterministic test ids
+
+Current consumers:
+
+- saved example rename
+- saved example notes editing
+
+### E2E Fixture Architecture
+
+`tests/e2e/helpers/fixtures.ts` seeds browser localStorage directly.
+
+Supported fixtures:
+
+- `seedProject`
+- `seedActiveSandbox`
+- `seedBackup`
+- `seedExplicitWire`
+- `seedCorruptedStorage`
+- `defaultProject`
+- `projectWithExplicitWire`
+- `projectWithDiagnosticsIssues`
+
+The fixtures write the same persisted Zustand wrapper used by the app:
+
+```text
+{
+  state: {
+    project,
+    lessonSandbox?,
+    selectedCircuitId?,
+    selectedWireId?,
+    wireDraft,
+    darkMode
+  },
+  version: 7
+}
+```
+
+### Browser Server Architecture
+
+Playwright now uses a dedicated dev-server port:
+
+- `http://127.0.0.1:5174`
+- `--strictPort`
+- no existing server reuse
+
+This prevents e2e tests from accidentally running against the in-app browser's already-open `5173` server.
+
+### Expanded Test Architecture
+
+The e2e suite now covers 14 browser tests:
+
+- smoke panels
+- modal keyboard safety
+- append apply
+- replace apply
+- example imports
+- backup restore
+- delete wire
+- project reset
+- sandbox reset/exit
+- saved example edit/delete
+- corrupted project import
+- corrupted storage recovery

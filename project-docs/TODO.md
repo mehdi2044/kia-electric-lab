@@ -561,3 +561,35 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add e2e coverage for wire delete modal.
 - [ ] Replace example rename `window.prompt` with edit modal.
 - [ ] Replace example notes `window.prompt` with edit modal.
+
+## 2026-05-15 00:57 Europe/Istanbul - Phase 14 TODO Update
+
+### Completed
+
+- [x] Add e2e fixture helper for clean default project.
+- [x] Add e2e fixture helper for active sandbox lesson.
+- [x] Add e2e fixture helper for saved example.
+- [x] Add e2e fixture helper for backup record.
+- [x] Add e2e fixture helper for explicit wire.
+- [x] Add e2e fixture helper for corrupted storage state.
+- [x] Add e2e fixture helper for diagnostics issue project.
+- [x] Add e2e coverage for replace mode.
+- [x] Add e2e coverage for backup restore modal.
+- [x] Add e2e coverage for wire delete modal.
+- [x] Add e2e coverage for reset project cancel/confirm.
+- [x] Add e2e coverage for reset sandbox confirm.
+- [x] Add e2e coverage for exit sandbox confirm.
+- [x] Add e2e coverage for saved example delete modal.
+- [x] Add e2e coverage for corrupted project import warning.
+- [x] Replace example rename prompt with edit modal.
+- [x] Replace example notes prompt with edit modal.
+- [x] Improve audit viewer empty state.
+- [x] Add audit export button test id.
+
+### New TODOs
+
+- [ ] Add typed fixture builders instead of hand-authored object literals.
+- [ ] Add e2e coverage for audit JSON download.
+- [ ] Add screenshot/visual regression checks for modals.
+- [ ] Add Firefox/WebKit Playwright projects.
+- [ ] Add schema-aware fixture generation when schema version changes.
