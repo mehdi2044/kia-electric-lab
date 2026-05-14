@@ -834,3 +834,249 @@ git push origin v0.1-phase1-baseline
 ```
 
 After remote setup, enable branch protection for `main` and require tests/build before merge.
+
+## 2026-05-14 13:40 Europe/Istanbul - Phase 2 Real Electrical Topology Engine Report
+
+### Audience
+
+This report is for Mehdi, Project Owner and Product Architect, and Vi, Technical Project Manager and Lead System Architect.
+
+### Task Objective
+
+Transform Kia Electric Lab from a visual-only circuit representation into a true internal graph-based electrical topology simulator. React Flow must remain visualization only. Electrical terminals, wires, graph traversal, current propagation, and validation must live in pure TypeScript modules.
+
+### Completed Work
+
+- Added electrical terminal roles to the domain model.
+- Added real wire object support through `ElectricalWire`.
+- Added optional `ElectricalProject.wires` for explicit topology.
+- Created topology engine module.
+- Created terminal catalog for component electrical terminals.
+- Created deterministic graph builder.
+- Created adjacency-based traversal.
+- Created current-flow simulation module.
+- Created topology validation module.
+- Integrated topology validation warnings into the existing safety engine.
+- Added Persian educational warnings for topology errors.
+- Added tests for graph traversal, current calculation, overload detection, invalid breaker path, disconnected neutral/incomplete loop, and short-circuit detection.
+- Verified tests and production build.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/features/safety-engine/safetyEngine.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ELECTRICAL_RULES.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Added Files
+
+- `src/features/topology-engine/types.ts`
+- `src/features/topology-engine/terminalCatalog.ts`
+- `src/features/topology-engine/topologyEngine.ts`
+- `src/features/current-engine/currentEngine.ts`
+- `src/features/validation-engine/validationEngine.ts`
+- `src/features/topology-engine/topologyEngine.test.ts`
+
+### Architecture Changes
+
+Before Phase 2:
+
+- React Flow edges were visual only.
+- Circuit membership and appliance arrays drove most calculations.
+- No internal terminal graph existed.
+
+After Phase 2:
+
+- Electrical components expose typed terminals.
+- Circuits have virtual breaker nodes.
+- Wires are real graph edges.
+- The graph engine builds adjacency maps.
+- Traversal can answer connectivity questions.
+- Current engine calculates load and wire current from topology.
+- Validation engine produces topology warnings.
+- React Flow remains visualization and is not the electrical source of truth.
+
+### Engineering Decisions
+
+#### Decision 1 - Use Pure TypeScript Engines
+
+Reason:
+
+- The topology, current, and validation engines must remain testable and independent of React Flow.
+
+#### Decision 2 - Add Optional Explicit Wires
+
+Reason:
+
+- Future wire-routing UI must write real wire objects.
+- Current Phase 1 state must remain compatible.
+
+#### Decision 3 - Generate Deterministic Topology When Explicit Wires Are Missing
+
+Reason:
+
+- Existing projects do not have wire objects.
+- The simulator needs graph-based analysis immediately.
+- Generated topology is deterministic and test-covered.
+
+Important limitation:
+
+- Generated topology is not visual routing. It is a compatibility layer until real wire drawing exists.
+
+#### Decision 4 - Use Virtual Breaker Nodes Per Circuit
+
+Reason:
+
+- Existing Phase 1 circuits have breaker ratings but no physical breaker component instances.
+- Virtual breaker nodes let validation enforce breaker input/output path rules now.
+
+### Electrical Logic Implemented
+
+New topology concepts:
+
+- Main panel source terminals.
+- Breaker input/output terminals.
+- Switch line/load terminals.
+- Outlet/lamp/appliance phase and neutral terminals.
+- Wire edges connecting terminal references.
+- Circuit-scoped graph traversal.
+
+New validation:
+
+- Open phase detection.
+- Disconnected neutral detection.
+- Incomplete loop detection.
+- Invalid breaker placement/feed detection.
+- Invalid switch wiring detection for lighting circuits.
+- Direct short-circuit detection between phase and neutral terminals.
+- Topology-derived breaker overload.
+- Wire overload based on propagated wire current.
+
+### Current Propagation Implemented
+
+The current engine now:
+
+- Finds load components in each circuit.
+- Resolves appliance wattage.
+- Calculates each load current with `I = P / V`.
+- Confirms phase and neutral connectivity.
+- Aggregates connected load current per circuit/breaker.
+- Estimates current through each wire by graph separation and downstream reachable loads.
+- Calculates voltage drop per wire:
+
+```text
+VoltageDrop = WireCurrent x WireResistancePerMeter x WireLength
+```
+
+### Formulas Implemented Or Reused
+
+- Current: `I = P / V`
+- Total breaker current: sum of connected branch load currents.
+- Wire current: sum of connected downstream load currents through that wire.
+- Wire voltage drop: `Iwire x RwirePerMeter x lengthMeters`
+- Wire overload: `wireCurrent > wire.maxAmp`
+- Breaker overload: `circuitCurrent > breakerAmp`
+
+### Persian Educational Warnings Added
+
+Topology warnings explain:
+
+- Why fuses must be on the phase path before loads.
+- Why phase must reach a consumer.
+- Why neutral must return current.
+- Why incomplete loops do not work.
+- Why switch output should feed lamp phase.
+- Why phase-neutral short circuits are dangerous.
+- Why wire overload is unsafe.
+
+### Tests Added
+
+New test file:
+
+- `src/features/topology-engine/topologyEngine.test.ts`
+
+Test coverage:
+
+- Graph traversal from generated breaker topology.
+- Neutral traversal.
+- Parallel branch current calculation.
+- Breaker overload from topology load.
+- Invalid breaker placement.
+- Disconnected neutral.
+- Incomplete loop.
+- Direct phase-neutral short circuit.
+
+### Verification
+
+Commands run:
+
+```text
+npm test
+npm run build
+```
+
+Results:
+
+- 3 test files passed.
+- 13 tests passed.
+- Production build passed.
+
+### Bugs
+
+No known runtime bugs were introduced. A switch terminal generation detail was identified during implementation and corrected before verification.
+
+### Limitations
+
+- The UI does not yet draw or edit explicit wire paths.
+- Existing projects use generated topology unless `project.wires` exists.
+- Current propagation is a simplified educational radial/branch approximation, not a full SPICE-like circuit solver.
+- No grounding system exists yet.
+- No three-phase roles exist yet.
+- No switch open/closed state exists yet.
+- No protective device trip curve exists yet.
+- `main-panel` is still assumed as the canonical source ID in current validation helpers.
+
+### TODOs
+
+- Add real wire-routing UI that creates `ElectricalWire[]`.
+- Add wire editing and deletion.
+- Add visual distinction between generated topology and explicit topology.
+- Add switch state.
+- Add grounding terminal roles.
+- Add three-phase terminal roles.
+- Add protective device models.
+- Add tests for invalid switch wiring with explicit malformed wires.
+- Add tests for wire overload on shared feeder branches.
+
+### Risks
+
+- Users may assume generated topology is the same as drawn wire routing. UI should eventually label this clearly.
+- As electrical complexity grows, the current procedural validation engine should evolve into a rule registry.
+- Current engine can handle deterministic educational branch loads, but not arbitrary circuit solving.
+
+### Scalability Concerns
+
+The module boundaries are appropriate for future growth, but the engine will need profile abstractions for:
+
+- Single-phase vs three-phase.
+- Grounding systems.
+- Source systems such as solar, UPS, and generator.
+- Smart-home control logic.
+- Advanced voltage drop.
+- Protective device coordination.
+
+### Next Recommended Step
+
+Implement explicit wire-routing state and UI:
+
+1. Add wire creation actions to Zustand.
+2. Let users connect terminals visually.
+3. Store created wires in `ElectricalProject.wires`.
+4. Render wires from source-of-truth topology data.
+5. Keep React Flow as view only.
+
+This will complete the transition from generated educational topology to user-authored topology.

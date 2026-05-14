@@ -129,3 +129,34 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add branch protection for `main` after remote setup.
 - [ ] Add release checklist.
 - [ ] Decide whether to add formal ADR files for major architectural decisions.
+
+## 2026-05-14 13:40 Europe/Istanbul - Phase 2 Topology TODO Update
+
+### Completed
+
+- [x] Add real electrical terminal roles.
+- [x] Add real wire entity type.
+- [x] Add topology graph nodes and wire edges.
+- [x] Add graph traversal.
+- [x] Add circuit traversal validation.
+- [x] Add current propagation simulation.
+- [x] Add topology breaker overload detection.
+- [x] Add topology wire overload detection.
+- [x] Add short-circuit detection.
+- [x] Add disconnected phase/neutral detection.
+- [x] Add incomplete loop detection.
+- [x] Add invalid breaker feed detection.
+- [x] Add topology unit tests.
+
+### New TODOs
+
+- [ ] Implement real wire-routing UI.
+- [ ] Add Zustand actions for creating/updating/deleting `ElectricalWire` objects.
+- [ ] Render explicit wires from topology source of truth.
+- [ ] Add switch open/closed state.
+- [ ] Add explicit grounding/protective earth model.
+- [ ] Add three-phase topology profile.
+- [ ] Add topology graph inspector/debug panel for Vi/Codex.
+- [ ] Add tests for explicit invalid switch wiring.
+- [ ] Add tests for overloaded shared feeder wire.
+- [ ] Add migration for old local storage projects without `wires`.

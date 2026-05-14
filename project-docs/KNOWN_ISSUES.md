@@ -285,3 +285,59 @@ Resolution:
 Remaining risk:
 
 - If future tooling generates new local artifacts, `.gitignore` must be updated.
+
+## 2026-05-14 13:40 Europe/Istanbul - Known Issues Update After Topology Engine
+
+### KI-015 - Wire Routing UI Not Implemented
+
+Severity: High for Phase 2 completion.
+
+Description:
+
+The electrical graph engine supports explicit `ElectricalWire[]`, but the UI does not yet allow users to draw or edit those wires.
+
+Impact:
+
+- Existing user projects rely on generated topology from circuit membership.
+- Users cannot yet author malformed or custom topology from the visual interface.
+
+Recommended fix:
+
+- Add terminal-aware wire drawing UI.
+- Persist wires in Zustand state.
+- Render visual wires from the topology source of truth.
+
+### KI-016 - Generated Topology Is A Compatibility Bridge
+
+Severity: Medium.
+
+Description:
+
+When `project.wires` is empty, the topology engine generates deterministic educational wires from circuit/component membership.
+
+Impact:
+
+- This allows real graph validation now, but it is not the same as user-drawn route geometry.
+
+Recommended fix:
+
+- Add visible UI indicator for generated topology mode.
+- Prefer explicit wires once wire-routing UI exists.
+
+### KI-017 - Current Engine Is Educational, Not A Full Circuit Solver
+
+Severity: Medium.
+
+Description:
+
+The current engine propagates simplified branch load current through a graph. It does not solve arbitrary analog networks.
+
+Impact:
+
+- It is suitable for residential educational radial/branch examples.
+- It is not suitable for complex electrical network analysis.
+
+Recommended fix:
+
+- Keep educational scope explicit.
+- Add more advanced solver only if Vi approves the architecture and product need.

@@ -250,3 +250,65 @@ The project is expected to grow into a larger simulator and educational platform
 ### Continuity Rule
 
 Future tasks must update `project-docs/` before committing when they affect implementation, architecture, electrical logic, cost logic, known issues, or project direction.
+
+## 2026-05-14 13:40 Europe/Istanbul - Phase 2 Real Electrical Topology Engine
+
+### Change Summary
+
+Phase 2 introduced the first real internal electrical topology engine. React Flow remains a visualization layer; it is no longer the only representation of electrical connectivity. The new engine creates typed electrical terminals, real wire entities, a deterministic graph, traversal functions, current-flow simulation, and topology validation warnings.
+
+### New Engine Modules
+
+- `src/features/topology-engine/types.ts`
+- `src/features/topology-engine/terminalCatalog.ts`
+- `src/features/topology-engine/topologyEngine.ts`
+- `src/features/current-engine/currentEngine.ts`
+- `src/features/validation-engine/validationEngine.ts`
+- `src/features/topology-engine/topologyEngine.test.ts`
+
+### Data Model Additions
+
+The electrical domain model now supports:
+
+- `ElectricalTerminalRole`
+- `ElectricalTerminalRef`
+- `ElectricalWire`
+- Optional `ElectricalProject.wires`
+
+This means future UI work can create explicit wires and feed them directly into the simulation engine.
+
+### Engineering Decision
+
+The current Phase 1 project data did not contain explicit wire geometry. To preserve compatibility, the topology engine generates deterministic educational topology from existing circuit/component membership when `project.wires` is empty. If explicit wires exist, the engine uses those instead.
+
+Reason:
+
+- Avoids fake UI-only simulation.
+- Allows existing projects to run through a real graph engine immediately.
+- Provides a clean migration path toward real wire-routing UI.
+
+### Current Engine Capability
+
+The engine can now detect and/or calculate:
+
+- Graph traversal from terminals.
+- Breaker nodes per circuit.
+- Phase and neutral terminal reachability.
+- Open phase path.
+- Open neutral path.
+- Incomplete loops.
+- Invalid breaker feed placement.
+- Invalid switch wiring in lighting circuits.
+- Direct phase-neutral short circuits.
+- Topology-derived breaker overload.
+- Wire current overload.
+- Parallel branch load current.
+- Voltage drop per wire using current, wire resistance, and length.
+
+### Educational Persian Integration
+
+Topology warnings are integrated into `generateSafetyWarnings(project)`, so the existing safety panel and final report now receive graph-based explanations in Persian.
+
+### Current Limitation
+
+The engine is real and deterministic, but the UI still does not allow users to draw explicit wire paths. Until that UI exists, normal Phase 1 projects use generated topology based on circuit membership. Explicit malformed wire cases are already supported and tested at the engine level.
