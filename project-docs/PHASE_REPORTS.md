@@ -1735,3 +1735,130 @@ No runtime bugs were found during Phase 6 verification.
 ### Next Recommended Step
 
 Phase 7 should add a topology/debug inspector and per-issue repair selection, then begin preparing a Tauri/SQLite storage adapter that reuses the existing migration, diagnostics, and repair engines.
+
+## 2026-05-14 16:10 Europe/Istanbul - Phase 7 Engineering Report: Guided Lesson Mode For Kiarash
+
+### Completed Work
+
+Phase 7 introduced a guided Persian RTL lesson mode for Kiarash. The simulator now has structured missions, step-by-step educational instructions, hints, live validation, scoring, progress persistence, and completion tracking.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/data/apartment.ts`
+- `src/migrations/projectMigration.ts`
+- `src/store/useLabStore.ts`
+- `src/components/Icon.tsx`
+- `src/App.tsx`
+- `src/features/lesson-mode/lessonEngine.ts`
+- `src/features/lesson-mode/lessonValidation.ts`
+- `src/features/lesson-mode/lessonProgress.ts`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/features/lesson-mode/lessonValidation.test.ts`
+- `src/features/lesson-mode/lessonProgress.test.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Dependencies Added
+
+No package dependency was added.
+
+### Architecture Changes
+
+New lesson module:
+
+```text
+src/features/lesson-mode/
+  lessonEngine.ts
+  lessonValidation.ts
+  lessonProgress.ts
+  LessonPanel.tsx
+  lessonValidation.test.ts
+  lessonProgress.test.ts
+```
+
+Schema update:
+
+- `CURRENT_SCHEMA_VERSION` changed from `5` to `6`.
+- `CURRENT_APP_VERSION` changed to `0.7-phase7-lessons`.
+- `ElectricalProject.lessonProgress` was added.
+- Migration now normalizes old projects to include lesson progress.
+
+### Engineering Decisions
+
+- Lesson engine is independent from React UI.
+- Progress helpers are pure functions returning new project snapshots.
+- Store actions persist active lesson, hint usage, and validation attempts through project state.
+- Lesson validation uses existing engines: topology, safety, panelboard, cost, and current-related infrastructure.
+- Switch lessons validate educational switch paths by checking breaker-to-switch input, switch-output-to-lamp phase, and lamp neutral return. This avoids pretending that the current topology engine has a full internal switch state model.
+
+### Electrical Logic Implemented
+
+No new electrical formulas were introduced.
+
+Lesson validations use existing simulator logic to check:
+
+- controlled lamp wiring
+- two-gang switch outputs
+- outlet phase/neutral reachability
+- refrigerator dedicated/stable circuit
+- kitchen heavy-load distribution
+- wire-size comparison
+- breaker/wire compatibility
+- routing/cost quality
+
+### Formulas Implemented
+
+No new physics formulas.
+
+New lesson score aggregation:
+
+```text
+final = technical x 0.40 + safety x 0.30 + cost x 0.15 + learning x 0.15
+```
+
+### Bugs Found And Fixed
+
+- Migration strict typing initially treated normalized attempts as unknown. Fixed by narrowing entries in `normalizeLessonProgress`.
+- Lesson 1 originally depended on current flow through a switch internal connection. Because internal closed-switch state is not modeled yet, validation was corrected to check the educational switch path explicitly with topology traversal.
+
+### Limitations
+
+- Lesson reset clears explicit wires from the currently selected circuit, not a separate lesson sandbox.
+- Per-step validation maps to ordered lesson checks; more granular step dependency can be added later.
+- The topology engine still does not model switch open/closed state internally.
+- Vite reports a chunk-size warning above 500 kB after adding lesson UI; build still succeeds.
+
+### TODOs
+
+- Add lesson sandbox/reset templates.
+- Add internal switch state model.
+- Add per-step interactive highlighting on the floor plan.
+- Add lesson-specific auto-placement starter projects.
+- Add lesson report export for parent/teacher review.
+- Add dynamic code splitting if bundle growth continues.
+
+### Risks
+
+- Learners may confuse educational validation with real electrical approval; disclaimer must stay visible.
+- Some lessons depend on the current generated-topology fallback when explicit wires are absent.
+- Resetting selected circuit wiring may surprise users if they selected a different circuit than the lesson target.
+
+### Scalability Concerns
+
+- Lesson content is currently static TypeScript. Future platform mode may need JSON lesson packs or database-driven lessons.
+- Lesson validation should eventually support reusable rule primitives.
+- AI tutor features can consume lesson definitions, validation feedback, and progress state.
+
+### Verification
+
+- `npm test`: 11 test files passed, 46 tests passed.
+- `npm run build`: passed with a Vite chunk-size warning.
+- Local HTTP check should be run after final integration and commit.
+
+### Next Recommended Step
+
+Phase 8 should add lesson sandbox templates and floor-plan guidance/highlighting so Kiarash can start each mission from a clean guided setup without affecting the whole apartment project.

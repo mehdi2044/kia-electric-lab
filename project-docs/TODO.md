@@ -305,3 +305,42 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add stronger checksum/hash if project sharing begins.
 - [ ] Add browser visual automation for diagnostics panel.
 - [ ] Add diagnostics for future editable cost profiles.
+
+## 2026-05-14 16:10 Europe/Istanbul - Phase 7 TODO Update
+
+### Completed
+
+- [x] Add pure lesson engine.
+- [x] Add pure lesson progress helpers.
+- [x] Add lesson validation module.
+- [x] Implement Lesson 1: روشن کردن یک لامپ با کلید تک‌پل.
+- [x] Implement Lesson 2: روشن کردن دو لامپ با کلید دوپل.
+- [x] Implement Lesson 3: ساخت یک پریز استاندارد فاز و نول.
+- [x] Implement Lesson 4: مدار اختصاصی یخچال.
+- [x] Implement Lesson 5: مدار آشپزخانه با مصرف‌کننده‌های سنگین.
+- [x] Implement Lesson 6: مقایسه سیم ۱.۵، ۲.۵ و ۴ میلی‌متر.
+- [x] Implement Lesson 7: انتخاب فیوز مناسب برای مدار.
+- [x] Implement Lesson 8: کاهش هزینه با مسیر سیم‌کشی بهتر.
+- [x] Add Persian lesson panel.
+- [x] Add lesson list and current lesson view.
+- [x] Add step checklist.
+- [x] Add hint button and hint tracking.
+- [x] Add validate button and feedback.
+- [x] Add progress percentage.
+- [x] Add completion badge.
+- [x] Persist completed lessons, attempts, active lesson, scores, and hints.
+- [x] Add lesson scoring.
+- [x] Add current-circuit wiring reset for lesson practice.
+- [x] Add tests for lesson validation.
+- [x] Add tests for progress update, scoring, hints, and completion.
+
+### New TODOs
+
+- [ ] Add isolated lesson sandbox reset.
+- [ ] Add starter project templates per lesson.
+- [ ] Add floor-plan highlights for the next required step.
+- [ ] Add switch open/closed state to topology engine.
+- [ ] Add per-step validation result details instead of ordered check mapping.
+- [ ] Add lesson completion report export.
+- [ ] Add code splitting for lesson mode if bundle size continues growing.
+- [ ] Add teacher/parent progress summary.

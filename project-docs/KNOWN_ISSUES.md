@@ -598,3 +598,54 @@ Impact:
 Recommended fix:
 
 - Add memoized/incremental diagnostics once project size grows.
+
+## 2026-05-14 16:10 Europe/Istanbul - Known Issues Update After Guided Lessons
+
+### KI-029 - Switch Internal State Is Not Modeled
+
+Severity: Medium.
+
+Description:
+
+The topology engine has switch terminals, but it does not yet model a switch as an internal conductive state between input and output when closed.
+
+Impact:
+
+- Lesson validation for switch lessons must check breaker-to-switch and switch-output-to-lamp paths explicitly.
+- Current-flow simulation may still flag open phase in switch-controlled lamp circuits until switch state is modeled.
+
+Recommended fix:
+
+- Add switch state and internal connectivity rules to the topology engine.
+
+### KI-030 - Lesson Reset Is Circuit-Based, Not Sandbox-Based
+
+Severity: Low to Medium.
+
+Description:
+
+The lesson reset action clears explicit wires from the currently selected circuit. It does not restore a lesson-specific starter scene.
+
+Impact:
+
+- If the learner has selected a different circuit, the reset may not affect the intended lesson circuit.
+
+Recommended fix:
+
+- Add lesson-specific sandbox templates and reset only that lesson workspace.
+
+### KI-031 - Bundle Size Warning After Lesson Mode
+
+Severity: Low.
+
+Description:
+
+Vite reports a chunk-size warning above 500 kB after adding lesson UI and validation modules.
+
+Impact:
+
+- Build succeeds and local app works, but long-term app growth may need code splitting.
+
+Recommended fix:
+
+- Introduce route-level or feature-level dynamic imports for lesson, diagnostics, and report panels if bundle growth continues.

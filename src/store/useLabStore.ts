@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultProject } from '../data/apartment';
-import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, Point2D, PanelBreakerSlot } from '../types/electrical';
+import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
 import { createElectricalWire, validateTerminalConnection } from '../features/topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../features/validation-engine/validationEngine';
 import { terminalKey } from '../features/topology-engine/types';
@@ -9,6 +9,7 @@ import { insertBendPoint, removeBendPoint, resetWireRoute, updateBendPoint } fro
 import { getPanelBreakers } from '../features/panelboard-engine/panelboardEngine';
 import { CURRENT_APP_VERSION, CURRENT_SCHEMA_VERSION, createProjectTimestamp } from '../migrations/projectMigration';
 import { preparePersistedProjectStorage } from '../migrations/storageSafety';
+import { recordHintUsed, recordLessonAttempt, setActiveLesson } from '../features/lesson-mode/lessonProgress';
 
 type LabState = {
   project: ElectricalProject;
@@ -47,6 +48,10 @@ type LabState = {
   setPixelsPerMeter: (pixelsPerMeter: number) => void;
   assignCircuitToBreaker: (slotId: string, circuitId?: string) => void;
   updatePanelBreaker: (slotId: string, patch: Partial<PanelBreakerSlot>) => void;
+  setActiveLesson: (lessonId: string) => void;
+  useLessonHint: (lessonId: string) => void;
+  recordLessonValidation: (lessonId: string, passed: boolean, score: LessonScore, feedbackFa: string) => void;
+  resetCurrentLessonWiring: () => void;
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
@@ -300,7 +305,32 @@ export const useLabStore = create<LabState>()(
               breakers: getPanelBreakers(state.project).map((breaker) => (breaker.id === slotId ? { ...breaker, ...patch } : breaker))
             }
           })
-        }))
+        })),
+      setActiveLesson: (lessonId) =>
+        set((state) => ({
+          project: touchProject(setActiveLesson(state.project, lessonId))
+        })),
+      useLessonHint: (lessonId) =>
+        set((state) => ({
+          project: touchProject(recordHintUsed(state.project, lessonId))
+        })),
+      recordLessonValidation: (lessonId, passed, score, feedbackFa) =>
+        set((state) => ({
+          project: touchProject(recordLessonAttempt(state.project, lessonId, passed, score, feedbackFa))
+        })),
+      resetCurrentLessonWiring: () =>
+        set((state) => {
+          const selectedCircuit = state.project.circuits.find((circuit) => circuit.id === state.selectedCircuitId);
+          if (!selectedCircuit) return {};
+          return {
+            project: touchProject({
+              ...state.project,
+              wires: (state.project.wires ?? []).filter((wire) => wire.circuitId !== selectedCircuit.id)
+            }),
+            selectedWireId: undefined,
+            pendingTerminal: undefined
+          };
+        })
     }),
     {
       name: 'kia-electric-lab-project',

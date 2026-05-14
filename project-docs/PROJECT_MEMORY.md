@@ -489,3 +489,46 @@ The checksum is an educational/local integrity check, not a cryptographic trust 
 ### Engineering Continuity Note
 
 Phase 6 establishes the basis for future project-repair workflows, AI tutor explanations, and Vi/Codex debug tools. Future schema changes should add both migration tests and diagnostics checks.
+
+## 2026-05-14 16:10 Europe/Istanbul - Phase 7 Guided Lesson Mode For Kiarash
+
+### Change Summary
+
+Phase 7 turned Kia Electric Lab from only an engineering simulator into a guided Persian educational experience for Kiarash. The app now includes structured wiring missions, step-by-step lesson guidance, teenager-friendly feedback, scoring, hints, progress persistence, and schema-safe migration for lesson progress.
+
+### New Educational Systems
+
+- `lessonEngine.ts` defines lesson content and educational structure.
+- `lessonValidation.ts` validates lessons using existing topology, safety, panelboard, current, and cost engines.
+- `lessonProgress.ts` stores and updates progress immutably.
+- `LessonPanel.tsx` provides Persian RTL lesson list, current lesson, checklist, hints, validation, scoring, and completion badges.
+
+### Initial Lessons Implemented
+
+1. روشن کردن یک لامپ با کلید تک‌پل
+2. روشن کردن دو لامپ با کلید دوپل
+3. ساخت یک پریز استاندارد فاز و نول
+4. مدار اختصاصی یخچال
+5. مدار آشپزخانه با مصرف‌کننده‌های سنگین
+6. مقایسه سیم ۱.۵، ۲.۵ و ۴ میلی‌متر
+7. انتخاب فیوز مناسب برای مدار
+8. کاهش هزینه با مسیر سیم‌کشی بهتر
+
+### Progress Persistence
+
+Project schema advanced to version `6` and now stores:
+
+- completed lessons
+- attempts by lesson
+- last active lesson
+- score per lesson
+- hints used
+- last feedback
+
+### Engineering Decision
+
+Lesson validation does not duplicate electrical calculation formulas. It calls existing engines and adds only educational success criteria. For switch lessons, validation checks the educational switching path explicitly because the current topology model does not yet simulate internal closed-switch conduction as a physical component state.
+
+### Current Limitation
+
+Lesson reset currently clears explicit wires for the selected circuit, not a fully isolated lesson sandbox. This is safe for MVP but should become lesson-scoped workspace reset later.
