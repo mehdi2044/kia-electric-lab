@@ -384,3 +384,40 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add route-aware ghost wire suggestions.
 - [ ] Add lesson template import/export.
 - [ ] Add localStorage size diagnostics for saved examples.
+
+## 2026-05-14 20:35 Europe/Istanbul - Phase 9 TODO Update
+
+### Completed
+
+- [x] Add replace main project apply mode.
+- [x] Add append lesson circuit/components/wires apply mode.
+- [x] Add save as named example only mode.
+- [x] Add Persian confirmation before apply.
+- [x] Show affected circuit/component/wire counts.
+- [x] Preserve main project in append mode.
+- [x] Regenerate ids safely during append.
+- [x] Remap wire endpoint refs during append.
+- [x] Remap virtual breaker refs during append.
+- [x] Preserve panelboard assignments where possible.
+- [x] Run diagnostics after replace and append.
+- [x] Add `LessonExample` data model.
+- [x] List saved examples.
+- [x] Load example into sandbox.
+- [x] Delete example.
+- [x] Export example JSON.
+- [x] Add tests for replace mode.
+- [x] Add tests for append mode.
+- [x] Add tests for id regeneration.
+- [x] Add tests for main project preservation.
+- [x] Add tests for saved example create/delete/load/export.
+- [x] Add tests for diagnostics after apply.
+
+### New TODOs
+
+- [ ] Add in-app apply preview modal.
+- [ ] Add collision-aware append layout.
+- [ ] Add example import.
+- [ ] Add example checksum envelope.
+- [ ] Add localStorage size warning for many examples.
+- [ ] Add inline post-apply diagnostic details.
+- [ ] Add code splitting for lesson/diagnostics panels.

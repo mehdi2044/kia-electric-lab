@@ -571,3 +571,25 @@ New persisted capability:
 ### Important Decision
 
 `useExplicitWiresOnly` was added to prevent sandbox templates from passing through generated topology fallback. This preserves educational honesty: Kiarash must draw the required wires to complete wiring lessons.
+
+## 2026-05-14 20:35 Europe/Istanbul - Phase 9 Sandbox Apply Modes And Example Management
+
+### Change Summary
+
+Phase 9 improved sandbox output management. Kiarash can now choose exactly what happens to completed sandbox work: replace the main project, append the lesson circuit/components/wires into the main project, or save the sandbox as a named example without changing the main project.
+
+### New Capabilities
+
+- Explicit sandbox apply modes:
+  - replace main project
+  - append lesson work
+  - save example only
+- Persian confirmation explains the selected operation and affected circuit/component/wire counts.
+- Append mode remaps circuit, component, wire, breaker, and virtual breaker references to avoid duplicated ids.
+- Diagnostics runs after replace and append.
+- Saved examples now have structured metadata: id, lesson id, title, project snapshot, score, createdAt, and notes.
+- Examples can be listed, loaded back into sandbox, deleted, and exported as JSON.
+
+### Safety Decision
+
+The main project is never overwritten silently. Replace and append require explicit UI choice and browser confirmation. Save-example mode does not modify the main project.

@@ -5,6 +5,8 @@ import { calculateProgressPercent, getLessonAttempt } from './lessonProgress';
 import { getStepGuidance, lessons } from './lessonEngine';
 import { validateLesson } from './lessonValidation';
 import { generateLessonHighlight } from './lessonSandbox';
+import { downloadTextFile } from '../../migrations/storageSafety';
+import type { LessonSandboxApplyMode } from '../../types/electrical';
 
 const difficultyLabels = {
   beginner: 'شروع',
@@ -31,12 +33,17 @@ export function LessonPanel() {
   const exitLessonSandbox = useLabStore((state) => state.exitLessonSandbox);
   const applyLessonSandboxToMainProject = useLabStore((state) => state.applyLessonSandboxToMainProject);
   const saveSandboxAsExample = useLabStore((state) => state.saveSandboxAsExample);
+  const deleteLessonExample = useLabStore((state) => state.deleteLessonExample);
+  const loadLessonExample = useLabStore((state) => state.loadLessonExample);
   const activeLessonId = project.lessonProgress?.lastActiveLessonId ?? lessons[0].id;
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
   const attempt = getLessonAttempt(project, activeLesson.id);
   const progressPercent = calculateProgressPercent(project.lessonProgress);
   const [hintIndex, setHintIndex] = useState(0);
   const [feedback, setFeedback] = useState<string[]>([]);
+  const [applyMode, setApplyMode] = useState<LessonSandboxApplyMode>('append');
+  const [exampleTitle, setExampleTitle] = useState('');
+  const [applyMessageFa, setApplyMessageFa] = useState<string>();
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
   const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
   const currentGuidance = getStepGuidance(activeLesson.id, currentStepIndex);
@@ -53,9 +60,31 @@ export function LessonPanel() {
     setFeedback(result.feedbackFa);
   };
 
+  const sandboxCounts = lessonSandbox
+    ? {
+        circuits: project.circuits.length,
+        components: project.components.filter((component) => component.type !== 'main-panel').length,
+        wires: (project.wires ?? []).length
+      }
+    : { circuits: 0, components: 0, wires: 0 };
+
   const applySandbox = () => {
-    const ok = window.confirm('آیا مطمئنی می‌خواهی نتیجه تمرین را روی پروژه اصلی اعمال کنی؟ این کار فقط با تایید تو انجام می‌شود.');
-    if (ok) applyLessonSandboxToMainProject();
+    const modeText =
+      applyMode === 'replace'
+        ? 'جایگزینی کل پروژه اصلی با sandbox'
+        : applyMode === 'append'
+          ? 'افزودن مدار، قطعه‌ها و سیم‌های درس به پروژه اصلی'
+          : 'ذخیره به عنوان نمونه، بدون تغییر پروژه اصلی';
+    const ok = window.confirm(
+      `${modeText}\n\nتعداد مدار: ${sandboxCounts.circuits}\nتعداد قطعه: ${sandboxCounts.components}\nتعداد سیم: ${sandboxCounts.wires}\n\nآیا مطمئنی؟`
+    );
+    if (!ok) return;
+    const result = applyLessonSandboxToMainProject(applyMode, exampleTitle || activeLesson.titleFa);
+    if (applyMode === 'save-example') {
+      setApplyMessageFa('نمونه درس ذخیره شد و پروژه اصلی تغییر نکرد.');
+      return;
+    }
+    setApplyMessageFa(result?.diagnostics.issueCount ? `اعمال انجام شد، اما ${result.diagnostics.issueCount.toLocaleString('fa-IR')} مورد عیب‌یابی برای بررسی وجود دارد.` : 'اعمال با موفقیت انجام شد و عیب ساختاری مهمی پیدا نشد.');
   };
 
   return (
@@ -145,9 +174,37 @@ export function LessonPanel() {
               خروج بدون اعمال
             </button>
             <button onClick={applySandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-              اعمال روی پروژه اصلی
+              اجرای انتخاب
             </button>
           </div>
+
+          <div className="mt-3 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
+            <div className="font-bold">خروجی sandbox</div>
+            <select
+              value={applyMode}
+              onChange={(event) => setApplyMode(event.target.value as LessonSandboxApplyMode)}
+              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+            >
+              <option value="append">افزودن به پروژه اصلی</option>
+              <option value="replace">جایگزینی کل پروژه اصلی</option>
+              <option value="save-example">فقط ذخیره به عنوان نمونه</option>
+            </select>
+            <input
+              value={exampleTitle}
+              onChange={(event) => setExampleTitle(event.target.value)}
+              placeholder="نام نمونه یا توضیح کوتاه"
+              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+            />
+            <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+              اثر انتخاب: {sandboxCounts.circuits.toLocaleString('fa-IR')} مدار، {sandboxCounts.components.toLocaleString('fa-IR')} قطعه، {sandboxCounts.wires.toLocaleString('fa-IR')} سیم.
+            </p>
+          </div>
+
+          {applyMessageFa && (
+            <div className="mt-3 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm leading-7 text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100">
+              {applyMessageFa}
+            </div>
+          )}
 
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
             {(['technical', 'safety', 'cost', 'learning'] as const).map((key) => (
@@ -210,10 +267,38 @@ export function LessonPanel() {
               <Icon name="RefreshCcw" className="h-4 w-4" />
               پاک کردن سیم‌های مدار انتخاب‌شده برای تمرین
             </button>
-            <button onClick={saveSandboxAsExample} disabled={!lessonSandbox} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950">
+            <button onClick={() => saveSandboxAsExample(exampleTitle || activeLesson.titleFa)} disabled={!lessonSandbox} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950">
               ذخیره sandbox به عنوان مثال
             </button>
           </div>
+
+          {lessonSandbox?.savedExamples?.length ? (
+            <div className="mt-4 rounded-md border border-slate-200 p-3 dark:border-slate-800">
+              <div className="font-bold">نمونه‌های ذخیره‌شده</div>
+              <div className="mt-2 max-h-56 space-y-2 overflow-auto">
+                {lessonSandbox.savedExamples.map((example) => (
+                  <div key={example.id} className="rounded-md bg-slate-50 p-2 text-xs leading-6 dark:bg-slate-950">
+                    <div className="font-bold">{example.title}</div>
+                    <div>{lessons.find((lesson) => lesson.id === example.lessonId)?.titleFa ?? example.lessonId}</div>
+                    <div>{new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(example.createdAt))}</div>
+                    <div>
+                      امتیاز: {example.score?.final?.toLocaleString('fa-IR') ?? 'ثبت نشده'} | مدار: {example.projectSnapshot.circuits.length.toLocaleString('fa-IR')} | سیم: {(example.projectSnapshot.wires ?? []).length.toLocaleString('fa-IR')}
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-1">
+                      <button onClick={() => loadLessonExample(example.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">باز کردن</button>
+                      <button
+                        onClick={() => downloadTextFile(`kia-electric-lab-example-${example.id}.json`, JSON.stringify(example, null, 2))}
+                        className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
+                      >
+                        خروجی
+                      </button>
+                      <button onClick={() => deleteLessonExample(example.id)} className="rounded-md border border-rose-200 px-2 py-1 text-rose-700 dark:border-rose-900 dark:text-rose-200">حذف</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

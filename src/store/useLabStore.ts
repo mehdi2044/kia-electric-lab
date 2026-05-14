@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultProject } from '../data/apartment';
-import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
+import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonSandboxApplyMode, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
 import { createElectricalWire, validateTerminalConnection } from '../features/topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../features/validation-engine/validationEngine';
 import { terminalKey } from '../features/topology-engine/types';
@@ -10,7 +10,17 @@ import { getPanelBreakers } from '../features/panelboard-engine/panelboardEngine
 import { CURRENT_APP_VERSION, CURRENT_SCHEMA_VERSION, createProjectTimestamp } from '../migrations/projectMigration';
 import { preparePersistedProjectStorage } from '../migrations/storageSafety';
 import { recordHintUsed, recordLessonAttempt, setActiveLesson } from '../features/lesson-mode/lessonProgress';
-import { applySandboxResult, resetLessonSandbox, startLessonSandbox } from '../features/lesson-mode/lessonSandbox';
+import {
+  addLessonExample,
+  appendSandboxToMainProject,
+  createLessonExample,
+  deleteLessonExample,
+  loadLessonExampleIntoSandbox,
+  replaceMainProjectWithSandbox,
+  resetLessonSandbox,
+  startLessonSandbox,
+  type SandboxApplyResult
+} from '../features/lesson-mode/lessonSandbox';
 
 type LabState = {
   project: ElectricalProject;
@@ -57,8 +67,10 @@ type LabState = {
   startLessonSandbox: (lessonId: string) => void;
   resetLessonSandbox: () => void;
   exitLessonSandbox: () => void;
-  applyLessonSandboxToMainProject: () => void;
-  saveSandboxAsExample: () => void;
+  applyLessonSandboxToMainProject: (mode: LessonSandboxApplyMode, exampleTitle?: string, notes?: string) => SandboxApplyResult | undefined;
+  saveSandboxAsExample: (title?: string, notes?: string) => void;
+  deleteLessonExample: (exampleId: string) => void;
+  loadLessonExample: (exampleId: string) => void;
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
@@ -401,10 +413,20 @@ export const useLabStore = create<LabState>()(
             wireDrawingMode: false
           };
         }),
-      applyLessonSandboxToMainProject: () =>
+      applyLessonSandboxToMainProject: (mode, exampleTitle, notes) => {
+        let result: SandboxApplyResult | undefined;
         set((state) => {
           if (!state.lessonSandbox) return {};
-          const applied = applySandboxResult({ ...state.lessonSandbox, sandboxProject: state.project });
+          const sandbox = { ...state.lessonSandbox, sandboxProject: state.project };
+          const score = state.project.lessonProgress?.attemptsByLesson[sandbox.activeLessonId]?.score;
+          if (mode === 'save-example') {
+            const example = createLessonExample(sandbox, exampleTitle ?? 'نمونه درس', notes, score);
+            return {
+              lessonSandbox: addLessonExample(sandbox, example)
+            };
+          }
+          result = mode === 'append' ? appendSandboxToMainProject(sandbox) : replaceMainProjectWithSandbox(sandbox);
+          const applied = result.project;
           return {
             project: touchProject(applied),
             lessonSandbox: undefined,
@@ -413,16 +435,34 @@ export const useLabStore = create<LabState>()(
             pendingTerminal: undefined,
             wireDrawingMode: false
           };
-        }),
-      saveSandboxAsExample: () =>
+        });
+        return result;
+      },
+      saveSandboxAsExample: (title, notes) =>
         set((state) => {
           if (!state.lessonSandbox) return {};
+          const sandbox = { ...state.lessonSandbox, sandboxProject: state.project };
+          const score = state.project.lessonProgress?.attemptsByLesson[sandbox.activeLessonId]?.score;
+          const example = createLessonExample(sandbox, title ?? 'نمونه درس', notes, score);
           return {
-            lessonSandbox: {
-              ...state.lessonSandbox,
-              sandboxProject: state.project,
-              savedExamples: [...(state.lessonSandbox.savedExamples ?? []), state.project]
-            }
+            lessonSandbox: addLessonExample(sandbox, example)
+          };
+        }),
+      deleteLessonExample: (exampleId) =>
+        set((state) => ({
+          lessonSandbox: state.lessonSandbox ? deleteLessonExample(state.lessonSandbox, exampleId) : state.lessonSandbox
+        })),
+      loadLessonExample: (exampleId) =>
+        set((state) => {
+          if (!state.lessonSandbox) return {};
+          const sandbox = loadLessonExampleIntoSandbox(state.lessonSandbox, exampleId);
+          return {
+            lessonSandbox: sandbox,
+            project: sandbox.sandboxProject,
+            selectedCircuitId: sandbox.sandboxProject.circuits[0]?.id ?? '',
+            selectedWireId: undefined,
+            pendingTerminal: undefined,
+            wireDrawingMode: true
           };
         })
     }),
