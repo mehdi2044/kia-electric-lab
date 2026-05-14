@@ -160,3 +160,35 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add tests for explicit invalid switch wiring.
 - [ ] Add tests for overloaded shared feeder wire.
 - [ ] Add migration for old local storage projects without `wires`.
+
+## 2026-05-14 14:20 Europe/Istanbul - Phase 3 TODO Update
+
+### Completed
+
+- [x] Add terminal-aware wire drawing mode.
+- [x] Add clickable terminals on visible components.
+- [x] Add visible virtual breaker nodes with input/output terminals.
+- [x] Store explicit `ElectricalWire[]` in Zustand.
+- [x] Render explicit wires on the floor plan.
+- [x] Highlight selected wire.
+- [x] Mark invalid wires visually.
+- [x] Add wire inspector.
+- [x] Add delete wire action.
+- [x] Add edit wire size action.
+- [x] Add edit wire length action.
+- [x] Add wire kind/type support.
+- [x] Add clear invalid wires action.
+- [x] Add reset wiring for circuit action.
+- [x] Add reset wiring for room action.
+- [x] Add guided mini-exercises.
+- [x] Add unit tests for wire creation and explicit topology validation.
+
+### New TODOs
+
+- [ ] Add route points to wires.
+- [ ] Calculate wire length from route geometry.
+- [ ] Render wires at terminal-level coordinates instead of node centers.
+- [ ] Add panelboard/breaker arrangement UI.
+- [ ] Add explanatory labels for generated fallback vs explicit topology.
+- [ ] Add earth/grounding lesson before enabling deeper earth simulation.
+- [ ] Add browser visual smoke test once automation runtime is stable.

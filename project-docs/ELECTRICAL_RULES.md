@@ -585,3 +585,115 @@ WireVoltageDrop = WireCurrent x WireResistancePerMeter x WireLengthMeters
 ### Important Limitation
 
 The current propagation is deterministic and graph-based, but still educational. It assumes simplified radial/branch behavior and does not solve arbitrary analog electrical networks.
+
+## 2026-05-14 14:20 Europe/Istanbul - Phase 3 Terminal Wire Rules
+
+### New Wire Types
+
+Implemented educational wire kinds:
+
+- `phase`: فاز
+- `neutral`: نول
+- `earth`: ارت آموزشی
+- `switched-phase`: فاز برگشتی
+
+### Earth Placeholder
+
+Phase 3 introduces earth/PE terminals as placeholders:
+
+- Panel has `earth-source`.
+- Outlet has `earth`.
+
+Important:
+
+- This is not a full grounding simulation.
+- It is a teaching placeholder for future protective earth lessons.
+
+### Terminal Connection Rules
+
+#### ER-021 - Unknown Terminal Ref
+
+Trigger:
+
+- Wire endpoint references a terminal not present in the terminal catalog/graph.
+
+Result:
+
+- Wire creation rejected.
+
+#### ER-022 - Same Terminal Wire
+
+Trigger:
+
+- Wire `from` and `to` are the same terminal.
+
+Result:
+
+- Wire creation rejected.
+
+#### ER-023 - Direct Phase-Neutral UI Rejection
+
+Trigger:
+
+- User attempts to connect phase-class terminal directly to neutral-class terminal.
+
+Result:
+
+- Wire creation rejected.
+
+Persian explanation:
+
+```text
+این اتصال کوتاه است. فاز و نول نباید مستقیم با یک سیم به هم وصل شوند.
+```
+
+#### ER-024 - Phase-Earth UI Rejection
+
+Trigger:
+
+- User attempts to connect phase-class terminal directly to earth-class terminal.
+
+Result:
+
+- Wire creation rejected.
+
+#### ER-025 - Neutral-Earth Educational Separation
+
+Trigger:
+
+- User attempts to connect neutral-class terminal to earth-class terminal.
+
+Result:
+
+- Rejected/warned in the simplified model.
+
+Reason:
+
+- The simulator keeps neutral and earth separate for beginner clarity until a real grounding model exists.
+
+### Wire Inspection Rules
+
+The wire inspector displays:
+
+- from component/terminal
+- to component/terminal
+- wire kind
+- size
+- length
+- approximate resistance
+- voltage drop
+- current
+- safety status
+- cost
+
+### Explicit Wires As Source Of Truth
+
+When `ElectricalProject.wires` has entries:
+
+- Topology graph uses explicit wires.
+- Generated topology is bypassed.
+- Partial wiring can produce open-circuit warnings.
+
+When `ElectricalProject.wires` is empty:
+
+- Generated topology fallback remains for backward compatibility.

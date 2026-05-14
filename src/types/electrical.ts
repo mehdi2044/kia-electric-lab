@@ -23,13 +23,17 @@ export type WarningSeverity = 'info' | 'warning' | 'danger';
 export type ElectricalTerminalRole =
   | 'phase-source'
   | 'neutral-source'
+  | 'earth-source'
   | 'breaker-line'
   | 'breaker-load'
   | 'switch-line'
   | 'switch-load'
   | 'phase'
   | 'neutral'
+  | 'earth'
   | 'junction';
+
+export type ElectricalWireKind = 'phase' | 'neutral' | 'earth' | 'switched-phase';
 
 export interface Appliance {
   id: string;
@@ -101,6 +105,7 @@ export interface ElectricalWire {
   to: ElectricalTerminalRef;
   lengthMeters: number;
   wireSizeMm2: number;
+  kind?: ElectricalWireKind;
   labelFa?: string;
 }
 

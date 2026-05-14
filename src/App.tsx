@@ -8,6 +8,7 @@ import { FloorPlan } from './features/floor-plan/FloorPlan';
 import { ReportPanel } from './features/report-engine/ReportPanel';
 import { generateProjectReport } from './features/report-engine/reportEngine';
 import { SafetyPanel } from './features/safety-engine/SafetyPanel';
+import { WireRoutingPanel } from './features/wire-routing/WireRoutingPanel';
 import { useLabStore } from './store/useLabStore';
 import { formatNumber, formatToman } from './utils/format';
 
@@ -78,6 +79,7 @@ export function App() {
           <ApplianceLibrary />
           <div className="space-y-5">
             <FloorPlan />
+            <WireRoutingPanel />
             <CircuitBuilder />
             <ReportPanel />
           </div>

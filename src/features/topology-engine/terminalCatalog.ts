@@ -18,7 +18,8 @@ export function createMainPanelNode(componentId = 'main-panel'): TopologyNode {
     source: true,
     terminals: [
       terminal(componentId, 'phase-source', 'phase-source', 'فاز ورودی', 'phase'),
-      terminal(componentId, 'neutral-source', 'neutral-source', 'نول ورودی', 'neutral')
+      terminal(componentId, 'neutral-source', 'neutral-source', 'نول ورودی', 'neutral'),
+      terminal(componentId, 'earth-source', 'earth-source', 'ارت آموزشی', 'earth')
     ]
   };
 }
@@ -76,6 +77,11 @@ export function createTerminalsForComponent(component: ElectricalComponent): Ele
         terminal(component.id, 'neutral', 'junction', 'اتصال نول', 'junction')
       ];
     case 'outlet':
+      return [
+        terminal(component.id, 'phase', 'phase', 'ترمینال فاز', 'phase'),
+        terminal(component.id, 'neutral', 'neutral', 'ترمینال نول', 'neutral'),
+        terminal(component.id, 'earth', 'earth', 'ارت آموزشی', 'earth')
+      ];
     case 'lamp':
     case 'appliance':
       return [

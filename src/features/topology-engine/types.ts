@@ -13,7 +13,7 @@ export interface ElectricalTerminal {
   componentId: string;
   role: ElectricalTerminalRole;
   labelFa: string;
-  energizedRole: 'phase' | 'neutral' | 'control' | 'junction';
+  energizedRole: 'phase' | 'neutral' | 'earth' | 'control' | 'junction';
 }
 
 export interface TopologyNode {

@@ -1080,3 +1080,234 @@ Implement explicit wire-routing state and UI:
 5. Keep React Flow as view only.
 
 This will complete the transition from generated educational topology to user-authored topology.
+
+## 2026-05-14 14:20 Europe/Istanbul - Phase 3 Terminal-Aware Wire Routing UI Report
+
+### Audience
+
+This report is for Mehdi, Project Owner and Product Architect, and Vi, Technical Project Manager and Lead System Architect.
+
+### Task Objective
+
+Implement a terminal-aware wire routing UI so the learner can author explicit `ElectricalWire[]` topology through the visual simulator. The UI must edit the graph, while the topology engine remains the source of truth.
+
+### Completed Work
+
+- Added `ElectricalWireKind` to the domain model.
+- Added earth placeholder terminal roles.
+- Added optional wire kind to `ElectricalWire`.
+- Updated terminal catalog with panel earth source and outlet earth placeholder.
+- Added pure wire factory logic:
+  - terminal validation
+  - wire kind inference
+  - explicit wire creation
+- Added Zustand wire state and actions:
+  - wire drawing mode
+  - pending terminal
+  - wire draft settings
+  - selected wire
+  - add wire
+  - update wire
+  - delete wire
+  - clear invalid wires
+  - reset wiring for circuit
+  - reset wiring for room
+- Updated floor plan:
+  - clickable terminals on visible components
+  - visible virtual breaker nodes
+  - explicit wire rendering from `project.wires`
+  - selected wire highlighting
+  - invalid wire dashed red styling
+  - wire drawing mode control
+- Added wire inspector:
+  - endpoints
+  - terminal labels
+  - wire kind
+  - size
+  - length
+  - resistance
+  - voltage drop
+  - current through wire
+  - safety status
+  - cost estimate
+  - delete action
+- Added guided exercises:
+  - lamp with one switch
+  - two lamps with two-gang switch
+  - one outlet
+  - kitchen outlet circuit
+  - refrigerator dedicated circuit
+- Added tests for:
+  - terminal ref wire creation
+  - wire kind inference
+  - invalid terminal connection rejection
+  - explicit-wire short-circuit detection
+  - explicit-wire incomplete loop detection
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/features/topology-engine/types.ts`
+- `src/features/topology-engine/terminalCatalog.ts`
+- `src/features/floor-plan/FloorPlan.tsx`
+- `src/store/useLabStore.ts`
+- `src/App.tsx`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ELECTRICAL_RULES.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Added Files
+
+- `src/features/topology-engine/wireFactory.ts`
+- `src/features/topology-engine/wireFactory.test.ts`
+- `src/features/wire-routing/WireRoutingPanel.tsx`
+
+### Architecture Changes
+
+Before Phase 3:
+
+- Explicit wires were supported by the engine but not authored by users.
+- UI still worked mostly from components and circuit membership.
+
+After Phase 3:
+
+- Users can create explicit `ElectricalWire[]`.
+- The floor plan renders explicit wires from project state.
+- Topology validation works from user-authored wires when present.
+- Wire inspector displays engine-derived current/voltage/safety data.
+- Generated topology remains backward compatibility only when no explicit wires exist.
+
+### Engineering Decisions
+
+#### Decision 1 - Use Terminal Catalog For UI Terminals
+
+Reason:
+
+- Prevents the UI from inventing terminal names that do not exist in the topology engine.
+
+#### Decision 2 - Wire Factory Owns Wire Creation
+
+Reason:
+
+- Keeps terminal validation and wire kind inference pure and testable.
+
+#### Decision 3 - Render React Flow Edges From Wires
+
+Reason:
+
+- React Flow can visually render connections, but those edges are derived from `ElectricalWire[]`.
+- The graph engine remains the source of truth.
+
+#### Decision 4 - Keep Earth As Placeholder
+
+Reason:
+
+- Educational UI should introduce earth/PE concept, but no full grounding simulation exists yet.
+
+### Electrical Logic Implemented
+
+New explicit wire types:
+
+- phase
+- neutral
+- earth
+- switched phase
+
+New terminal validation:
+
+- Reject same-terminal wires.
+- Reject unknown terminal refs.
+- Reject direct phase-neutral connection.
+- Reject phase-earth connection.
+- Warn/reject neutral-earth connection in the simplified educational model.
+
+New inspection calculations:
+
+- Wire resistance:
+
+```text
+Rwire = resistanceOhmPerMeter x lengthMeters
+```
+
+- Wire voltage drop:
+
+```text
+VoltageDrop = wireCurrent x resistanceOhmPerMeter x lengthMeters
+```
+
+- Wire cost:
+
+```text
+wire material = lengthMeters x wire.pricePerMeter
+wire labor = lengthMeters x laborPerMeter
+```
+
+### Validation UX
+
+Persian warnings are shown through the existing safety system and wire inspector:
+
+- فاز به نول مستقیم وصل شده است
+- نول این وسیله وصل نیست
+- مسیر فاز کامل نیست
+- سیم انتخاب‌شده برای این جریان ضعیف است
+- فیوز از سیم محافظت کافی نمی‌کند
+- مدار ناقص است
+
+### Bugs
+
+No known runtime bugs were introduced.
+
+### Limitations
+
+- Wire visuals connect component nodes, not exact terminal coordinates.
+- Wires do not yet have route points or measured geometry.
+- Wire length is manually edited.
+- Earth is a placeholder, not a real grounding simulation.
+- Virtual breaker nodes are visible, but no full panelboard UI exists yet.
+- In-app browser automation timed out during visual verification.
+
+### Tests
+
+Verification:
+
+```text
+npm test
+npm run build
+```
+
+Results:
+
+- 4 test files passed.
+- 18 tests passed.
+- Production build passed.
+- Local server responded HTTP 200.
+
+### Risks
+
+- Users may expect wire lines to reflect real cable paths; current visuals are logical connections.
+- Once one explicit wire exists, generated fallback is bypassed, so partial user wiring intentionally produces incomplete-circuit warnings.
+- Earth placeholder could be misunderstood unless future UI explains grounding limitations clearly.
+
+### Scalability Concerns
+
+Future real routing should extend `ElectricalWire` with:
+
+- route points
+- measured length
+- conduit/group metadata
+- installation method
+- color standard profile
+- protective earth relationships
+
+### Next Recommended Step
+
+Implement geometric wire routing:
+
+1. Add route points to `ElectricalWire`.
+2. Let users drag wire bends.
+3. Calculate length from geometry.
+4. Render wire path geometry instead of node-to-node edges.
+5. Add explicit panelboard/breaker UI.
