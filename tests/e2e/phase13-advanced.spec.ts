@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
+  buildAuditEntryFixture,
+  buildProjectFixture,
   corruptedProjectJson,
   seedActiveSandbox,
   seedBackup,
@@ -224,4 +226,75 @@ test('corrupted storage state exposes safe recovery UI', async ({ page }) => {
   await expect(page.getByTestId('project-data-confirmation-modal')).toBeVisible();
   await page.getByTestId('project-data-confirmation-modal-cancel').click();
   await expect(page.getByTestId('project-data-confirmation-modal')).toBeHidden();
+});
+
+test('audit JSON export downloads valid audit array', async ({ page }) => {
+  await page.getByTestId('start-lesson-button').click();
+  await page.getByTestId('open-apply-modal-button').click();
+  await page.getByTestId('apply-modal-confirm').click();
+  await expect(page.locator('[data-testid="audit-entry"][data-action="append"]')).toHaveCount(1);
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByTestId('audit-export-button').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^kia-electric-lab-audit-\d{4}-\d{2}-\d{2}\.json$/);
+  const json = JSON.parse(await download.createReadStream().then(async (stream) => {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks).toString('utf-8');
+  }));
+  expect(Array.isArray(json)).toBe(true);
+  expect(json[0]).toMatchObject({ action: 'append' });
+});
+
+test('saved example export downloads checksum envelope', async ({ page }) => {
+  await seedActiveSandbox(page);
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByTestId('export-example-example-e2e').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toContain('kia-electric-lab-example-example-e2e');
+  const json = JSON.parse(await download.createReadStream().then(async (stream) => {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks).toString('utf-8');
+  }));
+  expect(json).toMatchObject({
+    format: 'kia-electric-lab-lesson-example',
+    checksumAlgorithm: 'fnv1a32-canonical-json'
+  });
+  expect(typeof json.checksum).toBe('string');
+  expect(json.example.id).toBe('example-e2e');
+});
+
+test.describe('visual regression baseline', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1200 });
+  });
+
+  test('apply preview modal RTL layout', async ({ page }) => {
+    await page.getByTestId('start-lesson-button').click();
+    await page.getByTestId('open-apply-modal-button').click();
+    await expect(page.getByTestId('apply-modal')).toHaveScreenshot('apply-preview-modal-rtl.png', { maxDiffPixels: 50 });
+  });
+
+  test('diagnostics panel baseline', async ({ page }) => {
+    await seedProject(page, buildProjectFixture({
+      circuits: [{ ...buildProjectFixture().circuits[0], componentIds: ['missing-component'] }]
+    }));
+    await expect(page.getByTestId('diagnostics-panel')).toHaveScreenshot('diagnostics-panel-rtl.png', { maxDiffPixels: 50 });
+  });
+
+  test('lesson panel baseline', async ({ page }) => {
+    await expect(page.getByTestId('lesson-panel')).toHaveScreenshot('lesson-panel-rtl.png', { maxDiffPixels: 50 });
+  });
+
+  test('audit viewer baseline', async ({ page }) => {
+    await seedProject(page, buildProjectFixture({ applyAuditLog: [buildAuditEntryFixture()] }));
+    await expect(page.getByTestId('audit-viewer')).toHaveScreenshot('audit-viewer-rtl.png', { maxDiffPixels: 50 });
+  });
+
+  test('floor plan with routed wire baseline', async ({ page }) => {
+    await seedExplicitWire(page);
+    await expect(page.getByTestId('floor-plan')).toHaveScreenshot('floor-plan-routed-wire.png', { maxDiffPixels: 50 });
+  });
 });

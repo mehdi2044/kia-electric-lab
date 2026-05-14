@@ -774,3 +774,39 @@ Phase 14 created reusable Playwright fixture utilities, expanded browser coverag
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed in Phase 14.
+
+## 2026-05-15 01:13 Europe/Istanbul - Phase 15 Typed E2E Fixture Builders, Audit Download Testing, And Visual Regression Baseline
+
+### Change Summary
+
+Phase 15 made browser testing more maintainable and introduced the first visual regression baseline. Raw e2e fixture object literals were replaced with typed fixture builders, audit and example download/export flows are now verified, and RTL screenshots were baselined for modal, diagnostics, lesson panel, audit viewer, and floor-plan routed wire rendering.
+
+### New Completed Systems
+
+- Typed e2e fixture builders:
+  - `buildProjectFixture`
+  - `buildComponentFixture`
+  - `buildCircuitFixture`
+  - `buildWireFixture`
+  - `buildSandboxFixture`
+  - `buildBackupFixture`
+  - `buildExampleFixture`
+  - `buildDiagnosticsFixture`
+- Audit JSON download e2e test.
+- Saved example export/download e2e test.
+- Visual regression baselines for:
+  - apply preview modal RTL layout
+  - diagnostics panel
+  - lesson panel
+  - audit viewer
+  - floor plan with routed wire
+- Stable `floor-plan` test id.
+- Screenshot stability strategy:
+  - fixed viewport
+  - deterministic seeded data
+  - dedicated Playwright port
+  - small pixel tolerance for font anti-aliasing
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed in Phase 15.

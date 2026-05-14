@@ -389,6 +389,7 @@ export function LessonPanel() {
                       <button onClick={() => loadLessonExample(example.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">باز کردن</button>
                       <button
                         onClick={() => downloadTextFile(`kia-electric-lab-example-${example.id}.json`, serializeLessonExampleExport(example))}
+                        data-testid={`export-example-${example.id}`}
                         className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
                       >
                         خروجی

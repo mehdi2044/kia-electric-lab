@@ -300,6 +300,7 @@ export function FloorPlan() {
       <div
         ref={wrapperRef}
         className="floor-grid relative h-[510px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
+        data-testid="floor-plan"
         onPointerMove={(event) => {
           if (!draggingBend) return;
           updateWireBendPoint(draggingBend.wireId, draggingBend.index, eventToPlanPoint(event), true);

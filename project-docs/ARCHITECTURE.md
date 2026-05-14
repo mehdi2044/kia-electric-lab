@@ -1670,3 +1670,93 @@ The e2e suite now covers 14 browser tests:
 - saved example edit/delete
 - corrupted project import
 - corrupted storage recovery
+
+## 2026-05-15 01:13 Europe/Istanbul - Phase 15 Typed Fixtures And Visual Regression Architecture
+
+### Change Type
+
+Typed e2e fixture builders, export/download verification, and visual regression baseline.
+
+### Typed Fixture Builder Architecture
+
+E2E fixtures now use builder functions in `tests/e2e/helpers/fixtures.ts`.
+
+Core builders:
+
+- `buildProjectFixture`
+- `buildComponentFixture`
+- `buildCircuitFixture`
+- `buildWireFixture`
+- `buildSandboxFixture`
+- `buildBackupFixture`
+- `buildExampleFixture`
+- `buildDiagnosticsFixture`
+- `buildAuditEntryFixture`
+
+Builders use app types where practical and support overrides so tests can remain short and deterministic.
+
+### Download Test Architecture
+
+Playwright now verifies:
+
+- audit JSON export
+- lesson example export
+
+Assertions include:
+
+- filename shape
+- JSON parseability
+- envelope fields
+- checksum field presence
+- audit record shape
+
+### Visual Regression Architecture
+
+Initial visual baselines are committed under:
+
+```text
+tests/e2e/phase13-advanced.spec.ts-snapshots/
+```
+
+Baselined surfaces:
+
+- apply preview modal
+- diagnostics panel
+- lesson panel
+- audit viewer
+- floor plan with routed wire
+
+Stability rules:
+
+- fixed viewport
+- deterministic fixture data
+- seeded audit timestamp
+- small pixel tolerance for anti-aliasing
+- dedicated Playwright server port
+
+### Snapshot Update Process
+
+Only update screenshots intentionally:
+
+```text
+npm run test:e2e -- --update-snapshots
+```
+
+After updating, run:
+
+```text
+npm run test:e2e
+```
+
+Commit snapshot changes only with a phase report explaining why the UI changed.
+
+### Cross-Browser Planning
+
+Firefox/WebKit/mobile are not enabled yet.
+
+Before enabling:
+
+- add CI browser caching
+- define per-browser snapshot paths
+- decide acceptable pixel thresholds
+- add mobile viewport baselines separately from desktop

@@ -282,3 +282,62 @@ npm run test:e2e
 - Check backup restore wording.
 - Check corrupted storage recovery copy.
 - Check visual contrast of warning/danger modal variants.
+
+## 2026-05-15 01:13 Europe/Istanbul - Phase 15 Visual Regression Baseline
+
+### Automated Coverage Added
+
+The browser test suite now includes download/export and screenshot coverage.
+
+Download tests:
+
+- Audit JSON export
+- Saved example JSON envelope export
+
+Visual baselines:
+
+- Apply preview modal RTL layout
+- Diagnostics panel
+- Lesson panel
+- Audit viewer
+- Floor plan with routed wire
+
+### Snapshot Command
+
+Update snapshots only when an intentional UI change is made:
+
+```text
+npm run test:e2e -- --update-snapshots
+```
+
+Then verify normally:
+
+```text
+npm run test:e2e
+```
+
+### Screenshot Stability Rules
+
+- Use fixed viewport.
+- Use deterministic fixture data.
+- Avoid dynamic timestamps in the captured region.
+- Prefer seeded localStorage over long UI setup.
+- Keep screenshot assertions on high-value UI surfaces only.
+- Use small pixel tolerance for font anti-aliasing.
+
+### Current Expected Result
+
+```text
+npm run test:e2e
+21 passed
+```
+
+### Cross-Browser Plan
+
+Before enabling Firefox/WebKit/mobile:
+
+- configure CI browser caching
+- decide per-browser snapshot storage policy
+- define mobile viewport sizes
+- run trial snapshots locally and inspect noise
+- avoid making all browsers required until stability is proven
