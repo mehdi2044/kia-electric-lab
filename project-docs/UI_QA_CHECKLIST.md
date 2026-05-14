@@ -341,3 +341,109 @@ Before enabling Firefox/WebKit/mobile:
 - define mobile viewport sizes
 - run trial snapshots locally and inspect noise
 - avoid making all browsers required until stability is proven
+
+## 2026-05-15 01:37 Europe/Istanbul - Phase 16 Mobile Visual Baselines And Snapshot Governance
+
+### Automated Coverage Added
+
+The Playwright suite now includes a dedicated mobile visual project.
+
+Mobile visual baselines:
+
+- Lesson panel
+- Apply preview modal
+- Diagnostics panel
+- Audit viewer
+- Floor plan with routed wire
+
+Mobile project:
+
+```text
+chromium-mobile
+```
+
+Viewport:
+
+```text
+390x844
+```
+
+Snapshot folder:
+
+```text
+tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/
+```
+
+### Current Expected Result
+
+```text
+npm run test:e2e
+26 passed
+```
+
+### Snapshot Review Checklist
+
+Before accepting updated screenshots:
+
+- confirm the UI change was intentional
+- compare the changed snapshot against the previous baseline
+- check both desktop and mobile affected surfaces
+- verify Persian RTL direction and alignment
+- verify warning colors remain clear but not alarming
+- verify text is not clipped on mobile
+- verify routed wires remain visible on the floor plan
+- run `npm run test:e2e` after any snapshot update
+
+### Snapshot Commands
+
+Normal verification:
+
+```text
+npm run test:e2e
+```
+
+Update approved snapshots:
+
+```text
+npm run test:e2e:update
+```
+
+Debug visually in a real browser:
+
+```text
+npm run test:e2e:headed
+```
+
+Run full local confidence suite:
+
+```text
+npm run test:all
+```
+
+### CI Readiness Checklist
+
+Future CI should run:
+
+- `npm ci`
+- `npm test`
+- `npm run build`
+- `npx playwright install --with-deps chromium`
+- `npm run test:e2e`
+
+CI should upload:
+
+- `test-results/`
+- `playwright-report/`
+
+CI should cache:
+
+- npm cache
+- Playwright browser cache
+
+### Manual QA Still Recommended
+
+- Open the app on a real narrow browser viewport and check scroll ergonomics.
+- Verify the apply modal cancel button receives initial focus.
+- Verify mobile floor-plan scrolling still feels understandable for a teenager.
+- Check dark mode mobile contrast for diagnostics and audit panels.
+- Review whether mobile screenshots should become release-blocking after CI is selected.

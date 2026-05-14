@@ -230,6 +230,85 @@ Cost model changes must update `project-docs/COST_ENGINE_RULES.md`.
 
 Known issues must be added to `project-docs/KNOWN_ISSUES.md`.
 
+## Snapshot Review Policy
+
+Visual snapshots are project evidence, not disposable test output.
+
+Snapshots may be updated only when:
+
+- the UI change is intentional
+- the affected surface was manually inspected
+- the phase report explains why the visual baseline changed
+- Mehdi or Vi accepts the changed behavior or layout
+
+Do not update snapshots only to make a failing test pass. First inspect the visual diff and decide whether the changed pixels represent an intended product change or a regression.
+
+Normal visual verification:
+
+```bash
+npm run test:e2e
+```
+
+Intentional snapshot update:
+
+```bash
+npm run test:e2e:update
+```
+
+Headed debugging when visual behavior is unclear:
+
+```bash
+npm run test:e2e:headed
+```
+
+After updating snapshots:
+
+1. Inspect changed images in the relevant `*-snapshots/` folder.
+2. Inspect Playwright failure artifacts if the update came after a failed run.
+3. Run `npm run test:e2e` again without update mode.
+4. Mention the changed visual surfaces in `project-docs/PHASE_REPORTS.md`.
+
+Avoid accidental snapshot churn:
+
+- keep deterministic seeded fixtures
+- avoid dynamic timestamps in screenshots
+- do not rename Playwright projects unless snapshot file churn is intentional
+- keep desktop and mobile snapshots in separate projects
+- keep visual coverage targeted to high-risk UI surfaces
+
+## CI Readiness Plan
+
+Recommended CI command sequence:
+
+```bash
+npm ci
+npm test
+npm run build
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+Recommended CI cache strategy:
+
+- cache the npm package cache
+- cache Playwright browser binaries when supported by the CI provider
+- keep `node_modules` out of version control and prefer `npm ci` for clean installs
+
+Recommended CI artifacts:
+
+- `test-results/`
+- `playwright-report/`
+
+Playwright CI behavior:
+
+- retry count is `2` only under `CI`
+- trace is captured on first retry
+- screenshots are captured only on failure
+- video is retained only on failure
+- tests run against the dedicated strict server on `127.0.0.1:5174`
+
+Desktop and mobile projects are currently Chromium-only. Firefox, WebKit, and additional mobile viewports should be enabled after CI runtime stability and artifact review are proven.
+
 ## Future Scaling Strategy
 
 As the project grows, the workflow should evolve toward:
@@ -242,4 +321,3 @@ As the project grows, the workflow should evolve toward:
 - Automated report generation for releases.
 - Protected `main` branch.
 - Separate packages if simulator engines need reuse by Tauri, tests, or AI tutor services.
-
