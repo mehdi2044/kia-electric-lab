@@ -1051,3 +1051,53 @@ Saved example rename and notes editing still use `window.prompt`.
 Recommended fix:
 
 - Replace with shared accessible edit modal.
+
+## 2026-05-15 00:57 Europe/Istanbul - Known Issues Update After Phase 14
+
+### KI-044 Status Update - E2E Fixture Utilities Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Playwright helper fixtures now seed project, sandbox, saved example, backup, explicit wire, corrupted storage, and diagnostics issue states.
+
+Remaining limitation:
+
+- Fixtures are minimal hand-authored object literals and should become typed builders as the project schema evolves.
+
+### KI-045 Status Update - Prompt-Based Example Editing Removed
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- Saved example rename and notes editing now use `EditTextModal`.
+
+### KI-046 - E2E Fixtures Must Track Schema Version
+
+Severity: Medium.
+
+Description:
+
+Direct localStorage seeding is stable for browser tests, but fixture objects must remain compatible with the current project schema.
+
+Recommended fix:
+
+- Add typed fixture builders or generate fixtures from app factories during future schema changes.
+
+### KI-047 - E2E Runs Only Chromium
+
+Severity: Low.
+
+Description:
+
+The browser suite still runs only Chromium.
+
+Recommended fix:
+
+- Add Firefox and WebKit projects after CI caching/runtime is prepared.

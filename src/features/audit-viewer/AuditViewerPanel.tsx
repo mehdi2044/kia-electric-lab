@@ -48,12 +48,13 @@ export function AuditViewerPanel() {
           onChange={(event) => setAction(event.target.value as ApplyAuditAction | 'all')}
           className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
           aria-label="فیلتر نوع اقدام"
+          data-testid="audit-action-filter"
         >
           {Object.entries(actionLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
-        <button onClick={exportAudit} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
+        <button onClick={exportAudit} data-testid="audit-export-button" className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
           <Icon name="Download" className="h-4 w-4" />
           JSON
         </button>
@@ -61,8 +62,8 @@ export function AuditViewerPanel() {
 
       <div className="mt-4 max-h-80 space-y-2 overflow-auto">
         {filtered.length === 0 ? (
-          <div className="rounded-md bg-slate-50 p-3 text-sm leading-6 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
-            هنوز رویدادی برای این فیلتر ثبت نشده است.
+          <div className="rounded-md bg-slate-50 p-3 text-sm leading-6 text-slate-500 dark:bg-slate-950 dark:text-slate-400" data-testid="audit-empty-state">
+            هنوز رویدادی برای این فیلتر ثبت نشده است. بعد از اعمال sandbox، ورود نمونه یا بازیابی نمونه، اینجا تاریخچه را می‌بینی.
           </div>
         ) : (
           filtered.slice(0, 50).map((entry) => (

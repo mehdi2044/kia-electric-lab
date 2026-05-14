@@ -221,3 +221,64 @@ Manually verify:
 - Explicit wire fixture and delete-wire confirmation test.
 - Replace-mode confirmation and audit test.
 - Example rename/notes modal tests after prompts are removed.
+
+## 2026-05-15 00:57 Europe/Istanbul - Phase 14 Automated QA Expansion
+
+### Automated Coverage Added
+
+The Playwright suite now uses direct fixture seeding and covers:
+
+- replace mode apply
+- restore backup modal confirm
+- delete wire modal confirm
+- reset project modal cancel/confirm
+- reset sandbox modal confirm
+- exit sandbox modal confirm
+- saved example delete modal
+- saved example rename modal
+- saved example notes modal
+- corrupted project import warning
+- corrupted storage recovery UI
+
+### Fixture Utilities
+
+Fixture helpers live in:
+
+```text
+tests/e2e/helpers/fixtures.ts
+```
+
+Available fixture setup:
+
+- clean default project
+- active sandbox
+- saved example
+- backup record
+- explicit wire
+- corrupted storage
+- diagnostics issue project
+
+### Playwright Server Policy
+
+E2E tests now run against:
+
+```text
+http://127.0.0.1:5174
+```
+
+The server uses `--strictPort` and does not reuse an existing server. This prevents stale app chunks from the user-facing `5173` server from affecting test results.
+
+### Current Expected Result
+
+```text
+npm run test:e2e
+14 passed
+```
+
+### Manual QA Still Recommended
+
+- Check edit modal copy in Persian.
+- Check textarea height on mobile.
+- Check backup restore wording.
+- Check corrupted storage recovery copy.
+- Check visual contrast of warning/danger modal variants.

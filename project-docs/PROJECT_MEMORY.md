@@ -739,3 +739,38 @@ Phase 13 deepened browser-level coverage and expanded shared confirmation safety
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed. This phase only strengthened UI safety, confirmation consistency, and test coverage.
+
+## 2026-05-15 00:57 Europe/Istanbul - Phase 14 E2E Fixture Utilities, Remaining Flow Tests, And Prompt Modal Replacement
+
+### Change Summary
+
+Phase 14 created reusable Playwright fixture utilities, expanded browser coverage for remaining risky flows, and removed the remaining `window.prompt` usage from saved example editing. Browser tests now seed localStorage directly for stable setup of sandbox, examples, backups, explicit wires, corrupted storage, and diagnostic issue scenarios.
+
+### New Completed Systems
+
+- Playwright fixture utilities for:
+  - clean default project
+  - active sandbox lesson
+  - saved example
+  - backup record
+  - explicit wire
+  - corrupted storage state
+  - project with diagnostics issues
+- Additional browser coverage for:
+  - replace mode apply
+  - restore backup modal confirm
+  - delete wire modal confirm
+  - reset project modal cancel/confirm
+  - reset sandbox modal confirm
+  - exit sandbox modal confirm
+  - saved example delete modal
+  - corrupted project import warning
+  - corrupted storage recovery UI
+- `EditTextModal` reusable Persian RTL edit modal.
+- Saved example rename and notes editing now use `EditTextModal` instead of `window.prompt`.
+- Audit viewer got clearer empty state text, action filter test id, and export button test id.
+- Playwright now runs on dedicated port `5174` with `strictPort` to avoid accidentally testing an old dev server.
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed in Phase 14.
