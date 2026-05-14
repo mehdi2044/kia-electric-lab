@@ -1604,3 +1604,134 @@ No new electrical formulas were introduced. Phase 5 indirectly protects fields u
 ### Next Recommended Step
 
 Phase 6 should focus on repair/diagnostic tooling for migrated projects: topology graph inspector, orphan-reference repair actions, backup deletion/export management, and browser-level regression tests with old localStorage fixtures.
+
+## 2026-05-14 15:45 Europe/Istanbul - Phase 6 Engineering Report: Project Diagnostics, Repair Tools, And Export Integrity
+
+### Completed Work
+
+Phase 6 implemented the first professional diagnostics and repair layer for Kia Electric Lab. The app can now inspect project data health, explain detected issues in Persian, apply conservative safe repairs, manage backups more fully, and export projects with checksum integrity metadata.
+
+### Modified Files
+
+- `src/diagnostics/diagnosticsEngine.ts`
+- `src/diagnostics/repairEngine.ts`
+- `src/diagnostics/diagnosticsEngine.test.ts`
+- `src/migrations/exportIntegrity.ts`
+- `src/migrations/storageSafety.ts`
+- `src/migrations/storageSafety.test.ts`
+- `src/migrations/projectMigration.ts`
+- `src/features/project-diagnostics/ProjectDiagnosticsPanel.tsx`
+- `src/features/project-data/ProjectDataPanel.tsx`
+- `src/App.tsx`
+- `src/components/Icon.tsx`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Dependencies Added
+
+No new dependency was added.
+
+### Architecture Changes
+
+New pure engines:
+
+```text
+src/diagnostics/
+  diagnosticsEngine.ts
+  repairEngine.ts
+  diagnosticsEngine.test.ts
+
+src/migrations/
+  exportIntegrity.ts
+  storageSafety.test.ts
+```
+
+New UI:
+
+```text
+src/features/project-diagnostics/
+  ProjectDiagnosticsPanel.tsx
+```
+
+Diagnostics and repairs are independent from React and Zustand. React only displays reports and applies returned repaired project snapshots through `replaceProject`.
+
+### Engineering Decisions
+
+- Diagnostics are advisory and do not mutate project state.
+- Repair engine only performs conservative safe repairs.
+- Unsafe issues remain visible with Persian explanation and recommended action.
+- Orphan wires can be removed safely because they cannot participate in a valid topology graph.
+- Panelboard breaker slots are preserved when assigned circuit ids are invalid; only the invalid assignment is cleared.
+- Export checksum is implemented as deterministic canonical JSON FNV-1a 32-bit. It is suitable for local accidental-change detection, not for security trust.
+- Import remains backward compatible with raw project JSON and Zustand persisted JSON while also supporting the new export envelope.
+
+### Electrical Logic Implemented
+
+No new electrical simulation formulas were added. The electrical simulation remains unchanged.
+
+Phase 6 adds data-health checks around electrical topology:
+
+- wire endpoint component validity
+- terminal existence using component terminal catalog
+- circuit-to-component reference validity
+- circuit-to-breaker assignment existence
+- breaker-to-circuit reference validity
+- route geometry validity
+- scale validity for geometric length and cost/voltage calculations
+
+### Formulas Implemented
+
+No new electrical formula was added.
+
+New integrity formula:
+
+```text
+checksum = FNV1a32(canonicalJson(project))
+```
+
+### Bugs
+
+No runtime bugs were found during Phase 6 verification.
+
+### Limitations
+
+- Repair does not yet provide per-issue checkbox selection in the UI; it repairs all safe issues.
+- The checksum is not cryptographic and should not be treated as a security signature.
+- Diagnostics catch structural terminal validity, but do not replace topology-engine electrical validation.
+- Duplicate id repair is intentionally simple and should be expanded with stronger reference remapping if large imported projects appear.
+- Backup storage is still browser localStorage.
+
+### TODOs
+
+- Add per-issue repair selection.
+- Add project repair log export.
+- Add topology graph inspector for Vi/Codex.
+- Add stronger project file hash or signed export if projects become shared.
+- Add browser visual automation for diagnostics and backup workflows.
+- Add repair support for invalid component room assignment with user confirmation.
+
+### Risks
+
+- Users may overtrust automatic repair. The UI labels repairs as safe, but education should clarify that repair fixes data structure, not professional electrical design.
+- Imported files with many duplicate ids can still need human review.
+- Future cost profiles must be added to diagnostics once costs become editable.
+- Backup JSON can still be manually edited; checksum warning helps but does not block import.
+
+### Scalability Concerns
+
+- Diagnostics are currently full-project scans. This is acceptable for the MVP, but larger multiplayer projects may need incremental diagnostics.
+- Repair actions should become individually addressable commands with reversible history.
+- Future AI tutor features can consume `DiagnosticIssue` records directly for explanations.
+
+### Verification
+
+- `npm test`: 9 test files passed, 40 tests passed.
+- `npm run build`: passed.
+- Local HTTP check should be run after final integration and commit.
+
+### Next Recommended Step
+
+Phase 7 should add a topology/debug inspector and per-issue repair selection, then begin preparing a Tauri/SQLite storage adapter that reuses the existing migration, diagnostics, and repair engines.

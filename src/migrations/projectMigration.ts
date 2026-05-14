@@ -13,6 +13,7 @@ export interface ProjectBackup {
   createdAt: string;
   reasonFa: string;
   raw: string;
+  schemaVersion?: number;
 }
 
 export interface MigrationResult {

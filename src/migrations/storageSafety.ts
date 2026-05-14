@@ -8,6 +8,7 @@ import {
   migrateProject,
   parsePersistedProject
 } from './projectMigration';
+import { isProjectExportEnvelope, serializeProjectExport, validateProjectExportEnvelope } from './exportIntegrity';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -21,6 +22,7 @@ export interface ImportProjectResult {
   ok: boolean;
   project?: ElectricalProject;
   messageFa: string;
+  warningsFa?: string[];
 }
 
 function isBrowserStorageAvailable(): boolean {
@@ -65,11 +67,19 @@ export function writeProjectBackups(backups: ProjectBackup[]): void {
 
 export function createProjectBackup(raw: string, reasonFa: string): ProjectBackup | undefined {
   if (!isBrowserStorageAvailable()) return undefined;
+  let schemaVersion: number | undefined;
+  try {
+    const projectLike = parsePersistedProject(raw);
+    schemaVersion = isRecord(projectLike) && typeof projectLike.schemaVersion === 'number' ? projectLike.schemaVersion : undefined;
+  } catch {
+    schemaVersion = undefined;
+  }
   const backup: ProjectBackup = {
     id: createBackupId(),
     createdAt: new Date().toISOString(),
     reasonFa,
-    raw
+    raw,
+    schemaVersion
   };
   writeProjectBackups([backup, ...readProjectBackups()]);
   return backup;
@@ -86,7 +96,7 @@ export function clearMigrationError(): void {
 }
 
 export function serializeProjectForExport(project: ElectricalProject): string {
-  return JSON.stringify(project, null, 2);
+  return serializeProjectExport(project);
 }
 
 export function downloadTextFile(filename: string, content: string): void {
@@ -101,14 +111,27 @@ export function downloadTextFile(filename: string, content: string): void {
 
 export function importProjectFromJson(raw: string): ImportProjectResult {
   try {
-    const projectLike = parsePersistedProject(raw);
+    const parsed = JSON.parse(raw);
+    const warningsFa: string[] = [];
+    let projectLike: unknown = parsePersistedProject(raw);
+    if (isProjectExportEnvelope(parsed)) {
+      const checksum = validateProjectExportEnvelope(parsed);
+      projectLike = parsed.project;
+      if (!checksum.valid) {
+        warningsFa.push('هشدار: checksum فایل با محتوای پروژه هماهنگ نیست. ممکن است فایل دستی تغییر کرده یا ناقص باشد.');
+      }
+    }
     const result = migrateProject(projectLike);
     return {
       ok: true,
       project: result.project,
-      messageFa: result.changed
-        ? `پروژه از نسخه ${result.fromVersion} به نسخه ${result.toVersion} مهاجرت داده شد.`
-        : 'پروژه معتبر است و بدون تغییر ساختاری وارد شد.'
+      messageFa: [
+        result.changed
+          ? `پروژه از نسخه ${result.fromVersion} به نسخه ${result.toVersion} مهاجرت داده شد.`
+          : 'پروژه معتبر است و بدون تغییر ساختاری وارد شد.',
+        ...warningsFa
+      ].join(' '),
+      warningsFa
     };
   } catch (error) {
     return {
@@ -122,6 +145,14 @@ export function restoreProjectBackup(backupId: string): ImportProjectResult {
   const backup = readProjectBackups().find((item) => item.id === backupId);
   if (!backup) return { ok: false, messageFa: 'این پشتیبان پیدا نشد.' };
   return importProjectFromJson(backup.raw);
+}
+
+export function deleteProjectBackup(backupId: string): void {
+  writeProjectBackups(readProjectBackups().filter((backup) => backup.id !== backupId));
+}
+
+export function exportBackupJson(backupId: string): string | undefined {
+  return readProjectBackups().find((backup) => backup.id === backupId)?.raw;
 }
 
 export function preparePersistedProjectStorage(): StoragePreparationResult {

@@ -520,3 +520,81 @@ Impact:
 Recommended fix:
 
 - Add Playwright or Browser-plugin fixture tests for Phase 1-4 stored projects and corrupted storage.
+
+## 2026-05-14 15:45 Europe/Istanbul - Known Issues Update After Diagnostics And Repair
+
+### KI-023 Status Update - Export Checksum Implemented
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Project exports now include a deterministic checksum envelope.
+- Import warns in Persian when checksum mismatch is detected.
+
+Remaining limitation:
+
+- The checksum is not cryptographic and should not be treated as a security signature.
+
+### KI-024 Status Update - Safe Repairs Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Safe repairs now handle orphan wires, missing circuit assignments in panelboard, invalid scale, missing schema metadata, and some duplicate id cases.
+
+Remaining limitation:
+
+- No per-issue repair selection UI yet.
+- No undo history yet.
+
+### KI-026 Status Update - Storage Migration Fixtures Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Unit-level browser-storage fixtures now seed Phase 1-4 localStorage shapes and verify preflight migration.
+
+Remaining limitation:
+
+- No visual browser automation flow yet.
+
+### KI-027 - Repair UI Repairs All Safe Issues At Once
+
+Severity: Low to Medium.
+
+Description:
+
+The diagnostics UI has a single "repair safe issues" button. It does not yet allow selecting individual safe issues.
+
+Impact:
+
+- Users cannot apply only one safe repair when several are present.
+
+Recommended fix:
+
+- Add per-issue selection and a repair preview.
+
+### KI-028 - Diagnostic Scan Is Full-Project Only
+
+Severity: Low.
+
+Description:
+
+Diagnostics currently scan the full project on every relevant render.
+
+Impact:
+
+- Fine for MVP scale, but very large future projects may need incremental diagnostics.
+
+Recommended fix:
+
+- Add memoized/incremental diagnostics once project size grows.

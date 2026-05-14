@@ -3,7 +3,9 @@ import { Icon } from '../../components/Icon';
 import { useLabStore } from '../../store/useLabStore';
 import {
   clearMigrationError,
+  deleteProjectBackup,
   downloadTextFile,
+  exportBackupJson,
   getMigrationErrorRaw,
   importProjectFromJson,
   readProjectBackups,
@@ -68,6 +70,22 @@ export function ProjectDataPanel() {
     refreshBackups();
   };
 
+  const deleteBackup = (backupId: string) => {
+    deleteProjectBackup(backupId);
+    setMessageFa('پشتیبان انتخاب‌شده حذف شد.');
+    refreshBackups();
+  };
+
+  const exportBackup = (backupId: string) => {
+    const raw = exportBackupJson(backupId);
+    if (!raw) {
+      setMessageFa('این پشتیبان پیدا نشد.');
+      return;
+    }
+    downloadTextFile(`kia-electric-lab-backup-${new Date().toISOString().slice(0, 10)}.json`, raw);
+    setMessageFa('فایل JSON پشتیبان آماده شد.');
+  };
+
   const exportCorrupted = () => {
     if (!corruptedRaw) return;
     downloadTextFile(`kia-electric-lab-corrupted-${new Date().toISOString().slice(0, 10)}.json`, corruptedRaw);
@@ -128,10 +146,16 @@ export function ProjectDataPanel() {
       {corruptedRaw && (
         <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
           داده ذخیره‌شده قبلی ناسازگار بوده و کنار گذاشته شده است.
-          <button onClick={exportCorrupted} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-amber-600 px-3 py-2 text-white">
+          <div className="mt-2 grid grid-cols-2 gap-2">
+          <button onClick={exportCorrupted} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-amber-600 px-3 py-2 text-white">
             <Icon name="FileJson" className="h-4 w-4" />
             خروجی داده خراب
           </button>
+          <button onClick={resetProject} className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-amber-700 px-3 py-2">
+            <Icon name="RefreshCcw" className="h-4 w-4" />
+            شروع امن
+          </button>
+          </div>
         </div>
       )}
 
@@ -148,9 +172,12 @@ export function ProjectDataPanel() {
               <div key={backup.id} className="rounded-md border border-slate-200 p-2 text-xs dark:border-slate-800">
                 <div className="font-bold">{backup.reasonFa}</div>
                 <div className="mt-1 text-slate-500 dark:text-slate-400">{formatDateFa(backup.createdAt)}</div>
-                <button onClick={() => restoreBackup(backup.id)} className="mt-2 w-full rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">
-                  بازیابی
-                </button>
+                <div className="mt-1 text-slate-500 dark:text-slate-400">Schema: {backup.schemaVersion?.toLocaleString('fa-IR') ?? 'نامشخص'}</div>
+                <div className="mt-2 grid grid-cols-3 gap-1">
+                  <button onClick={() => restoreBackup(backup.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">بازیابی</button>
+                  <button onClick={() => exportBackup(backup.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">خروجی</button>
+                  <button onClick={() => deleteBackup(backup.id)} className="rounded-md border border-rose-200 px-2 py-1 text-rose-700 dark:border-rose-900 dark:text-rose-200">حذف</button>
+                </div>
               </div>
             ))
           )}
