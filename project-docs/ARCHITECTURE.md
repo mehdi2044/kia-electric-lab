@@ -1516,3 +1516,76 @@ Vitest explicitly excludes `tests/e2e/**` to keep unit and browser runners separ
 It compares before/after project snapshots by ids and uses diagnostics to report project health movement.
 
 This can later power a richer apply preview/diff screen without embedding comparison logic in React.
+
+## 2026-05-14 22:11 Europe/Istanbul - Phase 13 Confirmation And Advanced E2E Architecture
+
+### Change Type
+
+Confirmation modal unification and browser behavior coverage.
+
+### AccessibleModal Expansion
+
+`AccessibleModal` now supports:
+
+- `variant`: danger, warning, info, success
+- optional `details`
+- optional `diagnosticsSummary`
+- deterministic `data-testid` suffixes:
+  - `-cancel`
+  - `-confirm`
+  - `-details`
+  - `-diagnostics`
+
+The component remains intentionally simple: one dialog, one cancel action, one confirm action, and explicit safe keyboard behavior.
+
+### Confirmation Flow Architecture
+
+Current modalized flows:
+
+- apply preview
+- delete saved example
+- reset sandbox
+- exit sandbox
+- reset project from app header
+- reset project from project data panel
+- restore backup
+- start safe after corrupted local data
+- delete selected wire
+
+Remaining prompt-based low-risk edit flows:
+
+- saved example rename
+- saved example notes
+
+These should become edit modals later.
+
+### Browser QA Architecture
+
+`tests/e2e/phase13-advanced.spec.ts` expands Playwright from smoke tests to behavior tests.
+
+Covered browser behaviors:
+
+- modal initial focus
+- modal Tab cycle
+- Escape close
+- backdrop cancel
+- Enter safety
+- append confirm
+- append audit creation
+- apply result visibility
+- valid example import
+- corrupted checksum import warning
+- import audit creation
+
+### Test Metadata Architecture
+
+New stable metadata:
+
+- `apply-result-summary`
+- `example-import-input`
+- `example-import-message`
+- `data-warning` on example import message
+- `data-action` on audit entries
+- confirmation modal test ids for lesson/project/wire flows
+
+The goal is to keep tests resistant to Persian copy improvements.

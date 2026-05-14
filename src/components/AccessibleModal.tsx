@@ -5,25 +5,41 @@ interface AccessibleModalProps {
   title: string;
   description?: string;
   children: ReactNode;
+  details?: ReactNode;
+  diagnosticsSummary?: {
+    issueCount: number;
+    messageFa?: string;
+  };
   cancelLabel?: string;
   confirmLabel?: string;
   onCancel: () => void;
   onConfirm?: () => void;
   initialFocus?: 'cancel' | 'confirm';
+  variant?: 'danger' | 'warning' | 'info' | 'success';
   confirmTone?: 'primary' | 'danger';
   testId?: string;
 }
+
+const variantClasses = {
+  danger: 'border-rose-300 bg-rose-50 text-rose-950 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100',
+  warning: 'border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100',
+  info: 'border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100'
+};
 
 export function AccessibleModal({
   open,
   title,
   description,
   children,
+  details,
+  diagnosticsSummary,
   cancelLabel = 'انصراف',
   confirmLabel = 'تایید',
   onCancel,
   onConfirm,
   initialFocus = 'cancel',
+  variant = 'info',
   confirmTone = 'primary',
   testId
 }: AccessibleModalProps) {
@@ -89,6 +105,17 @@ export function AccessibleModal({
         <h3 id={titleId} className="text-lg font-extrabold">{title}</h3>
         {description && <p id={descriptionId} className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">{description}</p>}
         <div className="mt-4">{children}</div>
+        {details && (
+          <div className={`mt-4 rounded-md border p-3 text-sm leading-7 ${variantClasses[variant]}`} data-testid={`${testId ?? 'modal'}-details`}>
+            {details}
+          </div>
+        )}
+        {diagnosticsSummary && (
+          <div className="mt-3 rounded-md border border-slate-200 p-3 text-sm leading-7 dark:border-slate-800" data-testid={`${testId ?? 'modal'}-diagnostics`}>
+            <strong>عیب‌یابی:</strong> {diagnosticsSummary.issueCount.toLocaleString('fa-IR')} مورد
+            {diagnosticsSummary.messageFa && <p>{diagnosticsSummary.messageFa}</p>}
+          </div>
+        )}
         <div className="mt-5 grid grid-cols-2 gap-2">
           <button
             ref={cancelButtonRef}

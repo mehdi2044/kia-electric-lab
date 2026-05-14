@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { AccessibleModal } from '../../components/AccessibleModal';
 import { unitCosts, wires } from '../../data/electricalTables';
 import { useLabStore } from '../../store/useLabStore';
 import { formatNumber, formatToman } from '../../utils/format';
@@ -42,6 +44,7 @@ export function WireRoutingPanel() {
   const removeWireBendPoint = useLabStore((state) => state.removeWireBendPoint);
   const resetWireRoute = useLabStore((state) => state.resetWireRoute);
   const setPixelsPerMeter = useLabStore((state) => state.setPixelsPerMeter);
+  const [deleteWireId, setDeleteWireId] = useState<string>();
 
   const flow = simulateCurrentFlow(project);
   const terminalLookup = createTerminalLookup(flow.graph);
@@ -237,7 +240,8 @@ export function WireRoutingPanel() {
                 </div>
               ))}
               <button
-                onClick={() => deleteWire(selectedWire.id)}
+                onClick={() => setDeleteWireId(selectedWire.id)}
+                data-testid="delete-wire-button"
                 className="rounded-md bg-rose-600 px-3 py-2 text-sm font-bold text-white hover:bg-rose-700"
               >
                 حذف سیم
@@ -279,6 +283,22 @@ export function WireRoutingPanel() {
           </div>
         </div>
       </div>
+      <AccessibleModal
+        open={Boolean(deleteWireId)}
+        title="حذف سیم"
+        description="این سیم از گراف الکتریکی پروژه حذف می‌شود."
+        variant="danger"
+        confirmTone="danger"
+        confirmLabel="حذف سیم"
+        onCancel={() => setDeleteWireId(undefined)}
+        onConfirm={() => {
+          if (deleteWireId) deleteWire(deleteWireId);
+          setDeleteWireId(undefined);
+        }}
+        testId="delete-wire-modal"
+      >
+        <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">حذف سیم ممکن است مسیر فاز یا نول را ناقص کند و باعث هشدار آموزشی شود.</p>
+      </AccessibleModal>
     </section>
   );
 }

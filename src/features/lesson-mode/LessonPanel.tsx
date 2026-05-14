@@ -16,6 +16,11 @@ const difficultyLabels = {
   advanced: 'چالشی'
 };
 
+type LessonConfirmation =
+  | { type: 'reset-sandbox' }
+  | { type: 'exit-sandbox' }
+  | { type: 'delete-example'; exampleId: string };
+
 function scoreTone(score?: number) {
   if (score === undefined) return 'text-slate-500';
   if (score >= 85) return 'text-emerald-600 dark:text-emerald-300';
@@ -55,6 +60,7 @@ export function LessonPanel() {
     warningsFa: string[];
   }>();
   const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<LessonConfirmation>();
   const [exampleImportMessageFa, setExampleImportMessageFa] = useState<string>();
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
   const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
@@ -127,6 +133,28 @@ export function LessonPanel() {
     };
     reader.readAsText(file);
   };
+
+  const runConfirmation = () => {
+    if (!confirmation) return;
+    if (confirmation.type === 'reset-sandbox') resetLessonSandbox();
+    if (confirmation.type === 'exit-sandbox') exitLessonSandbox();
+    if (confirmation.type === 'delete-example') deleteLessonExample(confirmation.exampleId);
+    setConfirmation(undefined);
+  };
+
+  const confirmationTitle =
+    confirmation?.type === 'reset-sandbox'
+      ? 'ریست sandbox'
+      : confirmation?.type === 'exit-sandbox'
+        ? 'خروج از sandbox'
+        : 'حذف نمونه ذخیره‌شده';
+
+  const confirmationDescription =
+    confirmation?.type === 'reset-sandbox'
+      ? 'سیم‌کشی و تغییرهای تمرین فعلی از قالب درس دوباره ساخته می‌شود.'
+      : confirmation?.type === 'exit-sandbox'
+        ? 'بدون اعمال نتیجه، به پروژه اصلی برمی‌گردی.'
+        : 'این نمونه از فهرست نمونه‌های ذخیره‌شده حذف می‌شود.';
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="lesson-panel">
@@ -207,11 +235,11 @@ export function LessonPanel() {
               <Icon name="BookOpen" className="h-4 w-4" />
               {lessonSandbox ? 'شروع دوباره درس' : 'شروع درس'}
             </button>
-            <button onClick={resetLessonSandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950">
+            <button onClick={() => setConfirmation({ type: 'reset-sandbox' })} disabled={!lessonSandbox} data-testid="reset-sandbox-button" className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950">
               <Icon name="RefreshCcw" className="h-4 w-4" />
               ریست sandbox
             </button>
-            <button onClick={exitLessonSandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+            <button onClick={() => setConfirmation({ type: 'exit-sandbox' })} disabled={!lessonSandbox} data-testid="exit-sandbox-button" className="inline-flex items-center justify-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
               خروج بدون اعمال
             </button>
             <button onClick={() => setApplyPreviewOpen(true)} disabled={!lessonSandbox} data-testid="open-apply-modal-button" className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
@@ -248,7 +276,7 @@ export function LessonPanel() {
           )}
 
           {applyResult && (
-            <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-7 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+            <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm leading-7 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100" data-testid="apply-result-summary">
               <div className="flex items-center justify-between gap-2">
                 <strong>گزارش نتیجه اعمال</strong>
                 <span className="rounded-md bg-white/70 px-2 py-1 text-xs dark:bg-slate-900/70">
@@ -359,9 +387,8 @@ export function LessonPanel() {
                         خروجی
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm('این نمونه حذف شود؟')) deleteLessonExample(example.id);
-                        }}
+                        onClick={() => setConfirmation({ type: 'delete-example', exampleId: example.id })}
+                        data-testid={`delete-example-${example.id}`}
                         className="rounded-md border border-rose-200 px-2 py-1 text-rose-700 dark:border-rose-900 dark:text-rose-200"
                       >
                         حذف
@@ -393,9 +420,9 @@ export function LessonPanel() {
               ) : <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">هنوز نمونه‌ای ذخیره نشده است.</p>}
               <label className="mt-3 block rounded-md border border-slate-300 px-3 py-2 text-center text-xs dark:border-slate-700">
                 ورود نمونه JSON
-                <input type="file" accept="application/json,.json" className="hidden" onChange={(event) => importExampleFile(event.target.files?.[0])} />
+                <input type="file" accept="application/json,.json" className="hidden" data-testid="example-import-input" onChange={(event) => importExampleFile(event.target.files?.[0])} />
               </label>
-              {exampleImportMessageFa && <div className="mt-2 text-xs leading-6 text-sky-700 dark:text-sky-300">{exampleImportMessageFa}</div>}
+              {exampleImportMessageFa && <div className="mt-2 text-xs leading-6 text-sky-700 dark:text-sky-300" data-testid="example-import-message" data-warning={exampleImportMessageFa.includes('checksum') || exampleImportMessageFa.includes('احتیاط')}>{exampleImportMessageFa}</div>}
             </div>
           ) : null}
         </div>
@@ -409,6 +436,7 @@ export function LessonPanel() {
           onConfirm={applySandbox}
           confirmLabel="تایید و اعمال"
           initialFocus="cancel"
+          diagnosticsSummary={{ issueCount: applyPreview.diagnostics.issueCount, messageFa: applyPreview.diagnostics.issueCount > 0 ? 'بعد از اعمال، پنل عیب‌یابی را بررسی کن.' : 'مشکل ساختاری مهمی دیده نشد.' }}
           testId="apply-modal"
         >
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -420,12 +448,21 @@ export function LessonPanel() {
               <strong>ریسک‌ها</strong>
               {applyPreview.risksFa.map((risk) => <p key={risk}>{risk}</p>)}
             </div>
-            <div className="mt-3 rounded-md border border-slate-200 p-3 text-sm leading-7 dark:border-slate-800">
-              عیب‌یابی پس از اعمال: {applyPreview.diagnostics.issueCount.toLocaleString('fa-IR')} مورد
-              {applyPreview.diagnostics.issueCount > 0 ? <p className="text-amber-700 dark:text-amber-300">بعد از اعمال، پنل عیب‌یابی را بررسی کن.</p> : <p className="text-emerald-700 dark:text-emerald-300">مشکل ساختاری مهمی دیده نشد.</p>}
-            </div>
         </AccessibleModal>
       ) : null}
+      <AccessibleModal
+        open={Boolean(confirmation)}
+        title={confirmationTitle}
+        description={confirmationDescription}
+        variant={confirmation?.type === 'delete-example' ? 'danger' : 'warning'}
+        confirmTone={confirmation?.type === 'delete-example' ? 'danger' : 'primary'}
+        confirmLabel={confirmation?.type === 'delete-example' ? 'حذف' : 'تایید'}
+        onCancel={() => setConfirmation(undefined)}
+        onConfirm={runConfirmation}
+        testId="lesson-confirmation-modal"
+      >
+        <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">این تصمیم فقط بعد از تایید تو انجام می‌شود و با انصراف هیچ تغییری اعمال نمی‌شود.</p>
+      </AccessibleModal>
     </section>
   );
 }

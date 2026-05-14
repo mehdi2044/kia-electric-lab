@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { AccessibleModal } from './components/AccessibleModal';
 import { Icon } from './components/Icon';
 import { StatCard } from './components/StatCard';
 import { ApplianceLibrary } from './features/appliance-library/ApplianceLibrary';
@@ -31,6 +32,7 @@ export function App() {
   const darkMode = useLabStore((state) => state.darkMode);
   const setDarkMode = useLabStore((state) => state.setDarkMode);
   const resetProject = useLabStore((state) => state.resetProject);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
   const report = useMemo(() => generateProjectReport(project), [project]);
 
   useEffect(() => {
@@ -66,9 +68,10 @@ export function App() {
               {darkMode ? 'روشن' : 'تاریک'}
             </button>
             <button
-              onClick={resetProject}
+              onClick={() => setResetModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               title="بازنشانی پروژه نمونه"
+              data-testid="header-reset-project-button"
             >
               <Icon name="RefreshCcw" className="h-4 w-4" />
               بازنشانی
@@ -118,6 +121,22 @@ export function App() {
           </div>
         </div>
       </div>
+      <AccessibleModal
+        open={resetModalOpen}
+        title="بازنشانی پروژه آموزشی"
+        description="این کار پروژه فعلی را به نمونه اولیه برمی‌گرداند."
+        variant="danger"
+        confirmTone="danger"
+        confirmLabel="بازنشانی"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={() => {
+          resetProject();
+          setResetModalOpen(false);
+        }}
+        testId="reset-project-modal"
+      >
+        <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">اگر در sandbox یا پروژه اصلی تغییر ذخیره‌نشده داری، قبل از تایید مطمئن شو که لازم نیست نگهش داری.</p>
+      </AccessibleModal>
     </main>
   );
 }

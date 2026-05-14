@@ -997,3 +997,57 @@ Critical UI elements now expose `data-testid` values used by Playwright. Removin
 Recommended fix:
 
 - Treat test ids as part of UI engineering contract and document selector changes in phase reports.
+
+## 2026-05-14 22:11 Europe/Istanbul - Known Issues Update After Phase 13
+
+### KI-035 Status Update - Confirmation Modal Unification Expanded
+
+Status:
+
+- Mostly resolved.
+
+Resolution:
+
+- Shared modal now covers apply, saved example delete, sandbox reset/exit, project reset, backup restore, corrupted-data safe start, and wire delete.
+
+Remaining limitation:
+
+- Rename and notes still use `window.prompt`; they should become accessible edit modals.
+
+### KI-040 Status Update - Browser QA Deepened
+
+Status:
+
+- Improved, still open.
+
+Resolution:
+
+- Playwright now covers modal keyboard behavior, append confirmation, audit creation, result summary, valid example import, corrupted checksum warning, and import audit creation.
+
+Remaining limitation:
+
+- Browser coverage is still Chromium-only and does not yet cover backup/wire fixture flows.
+
+### KI-044 - E2E Fixture Utilities Missing
+
+Severity: Medium.
+
+Description:
+
+Advanced browser tests now need stable ways to create project states such as saved backups, explicit wires, and saved examples without long UI setup.
+
+Recommended fix:
+
+- Add e2e fixture utilities that seed localStorage with migrated project shapes or import prepared project JSON.
+
+### KI-045 - Prompt-Based Example Editing Remains
+
+Severity: Low.
+
+Description:
+
+Saved example rename and notes editing still use `window.prompt`.
+
+Recommended fix:
+
+- Replace with shared accessible edit modal.

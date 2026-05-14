@@ -2488,3 +2488,133 @@ diagnosticsAfter = diagnoseProject(afterProject).issueCount
 ### Next Recommended Step
 
 Phase 13 should deepen browser coverage around keyboard accessibility, confirmed append/replace flows, example import warnings, and audit entry creation.
+
+## 2026-05-14 22:11 Europe/Istanbul - Phase 13 Engineering Report: Advanced E2E Coverage And Confirmation Modal Unification
+
+### Completed Work
+
+Phase 13 expanded Kia Electric Lab's browser QA from smoke coverage into behavior coverage for modal accessibility, sandbox apply, audit creation, and example import integrity. It also migrated remaining risky confirmation flows away from ad hoc confirmation behavior and toward the shared `AccessibleModal` system.
+
+### Modified Files
+
+- `src/components/AccessibleModal.tsx`
+- `src/App.tsx`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/features/project-data/ProjectDataPanel.tsx`
+- `src/features/wire-routing/WireRoutingPanel.tsx`
+- `src/features/audit-viewer/AuditViewerPanel.tsx`
+- `tests/e2e/phase13-advanced.spec.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+No new dependency was added in Phase 13.
+
+Playwright was already introduced in Phase 12 and reused here.
+
+### Architecture Changes
+
+`AccessibleModal` was expanded with:
+
+- `variant`: danger, warning, info, success
+- `details`
+- `diagnosticsSummary`
+- deterministic test ids for:
+  - cancel
+  - confirm
+  - details
+  - diagnostics
+
+Confirmation modal unification:
+
+- Header reset project now uses `AccessibleModal`.
+- Project Data reset/restore/start-safe flows use `AccessibleModal`.
+- Lesson sandbox reset/exit/delete-example flows use `AccessibleModal`.
+- Wire deletion uses `AccessibleModal`.
+
+Browser test architecture:
+
+- Advanced tests live in `tests/e2e/phase13-advanced.spec.ts`.
+- Tests continue to use `data-testid` and stable attributes instead of Persian text selectors.
+- Example import fixtures are generated inside tests with deterministic FNV1a-compatible checksum logic.
+
+### Engineering Decisions
+
+- Confirmation behavior remains conservative: cancel is still the initial focus for risky actions.
+- Backdrop click is treated as cancel, never as confirm.
+- `Enter` is only used for apply when confirm has focus; tests verify cancel-focused Enter does not create an append audit entry.
+- Audit entries now expose `data-action` so tests can verify behavior without reading Persian text.
+- Corrupted checksum import is allowed, as before, but now browser-tested to ensure the warning path and audit path are visible.
+
+### Electrical Logic Implemented
+
+No electrical logic was implemented or changed.
+
+Preserved:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- diagnostics engine behavior
+
+### Formulas Implemented
+
+No new electrical formulas.
+
+The e2e test fixture duplicates the existing canonical checksum behavior only for constructing browser import test files:
+
+```text
+checksum = FNV1a32(canonical JSON without undefined object fields)
+```
+
+### Bugs Found And Fixed
+
+No new production bug was found during Phase 13 verification.
+
+The phase did expose a testing need: import warning assertions should not depend on Persian copy. This was handled by adding `data-warning` metadata to the example import message.
+
+### Limitations
+
+- Playwright coverage still runs only on Chromium.
+- Replace mode confirmation is not yet browser-tested.
+- Restore backup modal is migrated but not browser-tested because backup fixture setup is not yet part of e2e utilities.
+- Wire delete modal is migrated but not browser-tested because explicit wire creation in browser tests needs a stable fixture helper.
+- Rename/notes still use `window.prompt`; they are less risky than destructive confirmations but should eventually use a shared editing modal.
+
+### TODOs
+
+- Add browser fixture utilities for creating wires, backups, and saved examples.
+- Add e2e coverage for replace mode.
+- Add e2e coverage for backup restore confirmation.
+- Add e2e coverage for wire deletion confirmation.
+- Replace `window.prompt` for example rename/notes with an accessible edit modal.
+- Add Firefox/WebKit Playwright projects when CI runtime is ready.
+
+### Risks
+
+- E2E suite runtime will grow as coverage expands.
+- Stable test ids are now a compatibility contract and must be maintained.
+- Confirmation modals are safer but can add UX friction if overused on low-risk actions.
+
+### Scalability Concerns
+
+- E2E helpers should be extracted before adding many more browser tests.
+- Modal variants should eventually be tied to a design-system token map.
+- Browser fixture setup should move toward project import helpers rather than UI-only setup.
+
+### Verification
+
+- `npm test`: 12 test files passed, 60 tests passed.
+- `npm run build`: passed with no Vite chunk-size warning.
+- `npm run test:e2e`: 6 Playwright Chromium tests passed.
+
+### Next Recommended Step
+
+Phase 14 should add e2e fixture utilities and cover replace mode, backup restore, wire deletion, and modalized rename/notes flows.

@@ -66,7 +66,7 @@ export function AuditViewerPanel() {
           </div>
         ) : (
           filtered.slice(0, 50).map((entry) => (
-            <article key={entry.id} className="rounded-md border border-slate-200 p-3 text-xs leading-6 dark:border-slate-800">
+            <article key={entry.id} className="rounded-md border border-slate-200 p-3 text-xs leading-6 dark:border-slate-800" data-testid="audit-entry" data-action={entry.action}>
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <strong className="text-sm">{actionLabels[entry.action]}</strong>
