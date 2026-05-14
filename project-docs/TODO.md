@@ -421,3 +421,42 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add localStorage size warning for many examples.
 - [ ] Add inline post-apply diagnostic details.
 - [ ] Add code splitting for lesson/diagnostics panels.
+
+## 2026-05-14 21:30 Europe/Istanbul - Phase 10 TODO Update
+
+### Completed
+
+- [x] Replace `window.confirm` with Persian apply preview modal.
+- [x] Show selected apply mode in modal.
+- [x] Show affected circuits/components/wires counts.
+- [x] Explain what will happen.
+- [x] Explain possible risks.
+- [x] Show diagnostics summary.
+- [x] Add cancel/confirm buttons.
+- [x] Detect occupied component positions during append.
+- [x] Choose safer append offset.
+- [x] Preserve relative lesson layout.
+- [x] Offset route points with appended components.
+- [x] Export lesson examples with checksum envelope.
+- [x] Import lesson example JSON.
+- [x] Warn on checksum mismatch.
+- [x] Warn on raw/non-envelope example import.
+- [x] Add example rename.
+- [x] Add example notes editing.
+- [x] Lazy-load lesson panel.
+- [x] Lazy-load diagnostics panel.
+- [x] Lazy-load project data panel.
+- [x] Add tests for apply preview summary.
+- [x] Add tests for collision-aware append offset.
+- [x] Add tests for route point offset.
+- [x] Add tests for example checksum import/export.
+- [x] Add tests for corrupted example import.
+
+### New TODOs
+
+- [ ] Add modal focus trap.
+- [ ] Add Escape key modal close.
+- [ ] Add in-app delete confirmation modal for examples.
+- [ ] Add stronger append packing algorithm.
+- [ ] Add shared artifact envelope utilities.
+- [ ] Add browser visual tests for modal/lazy-loaded panels.

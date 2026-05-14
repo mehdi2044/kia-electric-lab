@@ -7,6 +7,7 @@ import type {
   ElectricalTerminalRef,
   LessonHighlight,
   LessonExample,
+  LessonSandboxApplyMode,
   LessonProgress,
   LessonSandboxState,
   LessonScore,
@@ -16,6 +17,7 @@ import { diagnoseProject, type DiagnosticReport } from '../../diagnostics/diagno
 import { generateTopologyWarnings } from '../validation-engine/validationEngine';
 import { createEmptyLessonProgress } from './lessonProgress';
 import { getLessonById, getStepGuidance } from './lessonEngine';
+import { isLessonExampleExportEnvelope, validateLessonExampleExportEnvelope } from '../../migrations/exportIntegrity';
 
 interface LessonTemplate {
   lessonId: string;
@@ -211,6 +213,21 @@ export interface SandboxApplySummary {
   wires: number;
 }
 
+export interface SandboxApplyPreview {
+  mode: LessonSandboxApplyMode;
+  summary: SandboxApplySummary;
+  diagnostics: DiagnosticReport;
+  whatWillHappenFa: string;
+  risksFa: string[];
+}
+
+export interface LessonExampleImportResult {
+  ok: boolean;
+  example?: LessonExample;
+  warningsFa: string[];
+  errorFa?: string;
+}
+
 export interface SandboxApplyResult {
   project: ElectricalProject;
   diagnostics: DiagnosticReport;
@@ -238,12 +255,66 @@ function remapRef(ref: ElectricalTerminalRef, componentIdMap: Map<string, string
   return { ...ref, componentId: componentIdMap.get(ref.componentId) ?? ref.componentId };
 }
 
+function componentOverlaps(a: Pick<ElectricalComponent, 'x' | 'y'>, b: Pick<ElectricalComponent, 'x' | 'y'>): boolean {
+  return Math.abs(a.x - b.x) < 124 && Math.abs(a.y - b.y) < 76;
+}
+
+function findCollisionFreeOffset(mainProject: ElectricalProject, components: ElectricalComponent[]): { x: number; y: number } {
+  const occupied = mainProject.components.filter((component) => component.type !== 'main-panel');
+  const candidates = [
+    { x: 24, y: 24 },
+    { x: 150, y: 0 },
+    { x: 0, y: 110 },
+    { x: 150, y: 110 },
+    { x: -80, y: 110 },
+    { x: 220, y: 170 },
+    { x: 0, y: 220 },
+    { x: -120, y: 220 }
+  ];
+  return (
+    candidates.find((offset) =>
+      components.every((component) => !occupied.some((existing) => componentOverlaps({ x: component.x + offset.x, y: component.y + offset.y }, existing)))
+    ) ?? { x: 260, y: 220 }
+  );
+}
+
+function offsetRoutePoints(wires: ElectricalProject['wires'], offset: { x: number; y: number }) {
+  return (wires ?? []).map((wire) => ({
+    ...wire,
+    routePoints: (wire.routePoints ?? []).map((point) => ({ x: point.x + offset.x, y: point.y + offset.y }))
+  }));
+}
+
 export function summarizeSandboxApply(sandbox: LessonSandboxState): SandboxApplySummary {
   return {
     circuits: sandbox.sandboxProject.circuits.length,
     components: sandbox.sandboxProject.components.filter((component) => component.type !== 'main-panel').length,
     wires: (sandbox.sandboxProject.wires ?? []).length
   };
+}
+
+export function createSandboxApplyPreview(sandbox: LessonSandboxState, mode: LessonSandboxApplyMode): SandboxApplyPreview {
+  const simulated =
+    mode === 'append'
+      ? appendSandboxToMainProject(sandbox)
+      : mode === 'replace'
+        ? replaceMainProjectWithSandbox(sandbox)
+        : undefined;
+  const summary = summarizeSandboxApply(sandbox);
+  const diagnostics = simulated?.diagnostics ?? diagnoseProject(sandbox.sandboxProject);
+  const whatWillHappenFa =
+    mode === 'replace'
+      ? 'کل پروژه اصلی با پروژه تمرینی جایگزین می‌شود.'
+      : mode === 'append'
+        ? 'مدار، قطعه‌ها و سیم‌های تمرین به پروژه اصلی اضافه می‌شوند و شناسه‌ها امن بازسازی می‌شوند.'
+        : 'نمونه تمرین ذخیره می‌شود و پروژه اصلی هیچ تغییری نمی‌کند.';
+  const risksFa =
+    mode === 'replace'
+      ? ['اگر تایید کنی، پروژه اصلی فعلی دیگر جای خود را به sandbox می‌دهد.']
+      : mode === 'append'
+        ? ['ممکن است قطعه‌های اضافه‌شده در نقشه نزدیک قطعه‌های موجود قرار بگیرند.', 'بعد از افزودن، هشدارهای عیب‌یابی را بررسی کن.']
+        : ['اگر نمونه‌ها زیاد شوند، فضای ذخیره‌سازی مرورگر بیشتر مصرف می‌شود.'];
+  return { mode, summary, diagnostics, whatWillHappenFa, risksFa };
 }
 
 export function replaceMainProjectWithSandbox(sandbox: LessonSandboxState): SandboxApplyResult {
@@ -285,8 +356,9 @@ export function appendSandboxToMainProject(sandbox: LessonSandboxState): Sandbox
     };
   });
 
-  const appendedComponents = sandboxProject.components
-    .filter((component) => component.type !== 'main-panel')
+  const sandboxComponents = sandboxProject.components.filter((component) => component.type !== 'main-panel');
+  const layoutOffset = findCollisionFreeOffset(mainProject, sandboxComponents);
+  const appendedComponents = sandboxComponents
     .map((component) => {
       const nextId = uniqueId(`lesson-${sandbox.activeLessonId}-${component.id}`, componentIds);
       componentIdMap.set(component.id, nextId);
@@ -295,8 +367,8 @@ export function appendSandboxToMainProject(sandbox: LessonSandboxState): Sandbox
         id: nextId,
         circuitId: component.circuitId ? circuitIdMap.get(component.circuitId) : undefined,
         roomId: mainProject.rooms.some((room) => room.id === component.roomId) ? component.roomId : 'living',
-        x: component.x + 18,
-        y: component.y + 18
+        x: component.x + layoutOffset.x,
+        y: component.y + layoutOffset.y
       };
     });
 
@@ -315,7 +387,8 @@ export function appendSandboxToMainProject(sandbox: LessonSandboxState): Sandbox
     };
   });
 
-  const appendedWires = (sandboxProject.wires ?? []).map((wire) => ({
+  const offsetWires = offsetRoutePoints(sandboxProject.wires, layoutOffset);
+  const appendedWires = (offsetWires ?? []).map((wire) => ({
     ...wire,
     id: uniqueId(`lesson-${sandbox.activeLessonId}-${wire.id}`, wireIds),
     circuitId: circuitIdMap.get(wire.circuitId) ?? wire.circuitId,
@@ -386,6 +459,21 @@ export function deleteLessonExample(sandbox: LessonSandboxState, exampleId: stri
   };
 }
 
+export function renameLessonExample(sandbox: LessonSandboxState, exampleId: string, title: string, notes?: string): LessonSandboxState {
+  return {
+    ...sandbox,
+    savedExamples: (sandbox.savedExamples ?? []).map((example) =>
+      example.id === exampleId
+        ? {
+            ...example,
+            title: title.trim() || example.title,
+            notes: notes ?? example.notes
+          }
+        : example
+    )
+  };
+}
+
 export function loadLessonExampleIntoSandbox(sandbox: LessonSandboxState, exampleId: string): LessonSandboxState {
   const example = (sandbox.savedExamples ?? []).find((item) => item.id === exampleId);
   if (!example) return sandbox;
@@ -396,6 +484,42 @@ export function loadLessonExampleIntoSandbox(sandbox: LessonSandboxState, exampl
     sandboxProgress: example.projectSnapshot.lessonProgress ?? sandbox.sandboxProgress,
     startedAt: createProjectTimestamp()
   };
+}
+
+function isLessonExample(value: unknown): value is LessonExample {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      typeof (value as LessonExample).id === 'string' &&
+      typeof (value as LessonExample).lessonId === 'string' &&
+      typeof (value as LessonExample).title === 'string' &&
+      typeof (value as LessonExample).createdAt === 'string' &&
+      typeof (value as LessonExample).projectSnapshot === 'object'
+  );
+}
+
+export function importLessonExampleJson(raw: string): LessonExampleImportResult {
+  try {
+    const parsed = JSON.parse(raw);
+    const warningsFa: string[] = [];
+    const example = isLessonExampleExportEnvelope(parsed) ? parsed.example : parsed;
+    if (isLessonExampleExportEnvelope(parsed)) {
+      const validation = validateLessonExampleExportEnvelope(parsed);
+      if (!validation.valid) warningsFa.push('checksum نمونه با محتوای فایل هماهنگ نیست. ممکن است فایل تغییر کرده یا ناقص باشد.');
+    } else {
+      warningsFa.push('این فایل envelope رسمی نمونه درس ندارد؛ با احتیاط وارد شد.');
+    }
+    if (!isLessonExample(example)) {
+      return { ok: false, warningsFa, errorFa: 'ساختار فایل نمونه درس معتبر نیست.' };
+    }
+    if (example.projectSnapshot.schemaVersion > CURRENT_SCHEMA_VERSION) {
+      return { ok: false, warningsFa, errorFa: 'نسخه این نمونه از نسخه فعلی برنامه جدیدتر است.' };
+    }
+    return { ok: true, example, warningsFa };
+  } catch {
+    return { ok: false, warningsFa: [], errorFa: 'فایل نمونه خراب است یا JSON معتبر نیست.' };
+  }
 }
 
 export function generateLessonHighlight(project: ElectricalProject, lessonId: string, stepIndex: number): LessonHighlight {

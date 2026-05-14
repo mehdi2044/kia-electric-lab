@@ -4,8 +4,9 @@ import { useLabStore } from '../../store/useLabStore';
 import { calculateProgressPercent, getLessonAttempt } from './lessonProgress';
 import { getStepGuidance, lessons } from './lessonEngine';
 import { validateLesson } from './lessonValidation';
-import { generateLessonHighlight } from './lessonSandbox';
+import { createSandboxApplyPreview, generateLessonHighlight, importLessonExampleJson } from './lessonSandbox';
 import { downloadTextFile } from '../../migrations/storageSafety';
+import { serializeLessonExampleExport } from '../../migrations/exportIntegrity';
 import type { LessonSandboxApplyMode } from '../../types/electrical';
 
 const difficultyLabels = {
@@ -35,6 +36,8 @@ export function LessonPanel() {
   const saveSandboxAsExample = useLabStore((state) => state.saveSandboxAsExample);
   const deleteLessonExample = useLabStore((state) => state.deleteLessonExample);
   const loadLessonExample = useLabStore((state) => state.loadLessonExample);
+  const renameLessonExample = useLabStore((state) => state.renameLessonExample);
+  const importLessonExample = useLabStore((state) => state.importLessonExample);
   const activeLessonId = project.lessonProgress?.lastActiveLessonId ?? lessons[0].id;
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
   const attempt = getLessonAttempt(project, activeLesson.id);
@@ -44,6 +47,8 @@ export function LessonPanel() {
   const [applyMode, setApplyMode] = useState<LessonSandboxApplyMode>('append');
   const [exampleTitle, setExampleTitle] = useState('');
   const [applyMessageFa, setApplyMessageFa] = useState<string>();
+  const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
+  const [exampleImportMessageFa, setExampleImportMessageFa] = useState<string>();
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
   const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
   const currentGuidance = getStepGuidance(activeLesson.id, currentStepIndex);
@@ -68,23 +73,31 @@ export function LessonPanel() {
       }
     : { circuits: 0, components: 0, wires: 0 };
 
+  const applyPreview = lessonSandbox ? createSandboxApplyPreview({ ...lessonSandbox, sandboxProject: project }, applyMode) : undefined;
+
   const applySandbox = () => {
-    const modeText =
-      applyMode === 'replace'
-        ? 'جایگزینی کل پروژه اصلی با sandbox'
-        : applyMode === 'append'
-          ? 'افزودن مدار، قطعه‌ها و سیم‌های درس به پروژه اصلی'
-          : 'ذخیره به عنوان نمونه، بدون تغییر پروژه اصلی';
-    const ok = window.confirm(
-      `${modeText}\n\nتعداد مدار: ${sandboxCounts.circuits}\nتعداد قطعه: ${sandboxCounts.components}\nتعداد سیم: ${sandboxCounts.wires}\n\nآیا مطمئنی؟`
-    );
-    if (!ok) return;
     const result = applyLessonSandboxToMainProject(applyMode, exampleTitle || activeLesson.titleFa);
+    setApplyPreviewOpen(false);
     if (applyMode === 'save-example') {
       setApplyMessageFa('نمونه درس ذخیره شد و پروژه اصلی تغییر نکرد.');
       return;
     }
     setApplyMessageFa(result?.diagnostics.issueCount ? `اعمال انجام شد، اما ${result.diagnostics.issueCount.toLocaleString('fa-IR')} مورد عیب‌یابی برای بررسی وجود دارد.` : 'اعمال با موفقیت انجام شد و عیب ساختاری مهمی پیدا نشد.');
+  };
+
+  const importExampleFile = (file?: File) => {
+    if (!file || !lessonSandbox) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = importLessonExampleJson(String(reader.result ?? ''));
+      if (result.ok && result.example) {
+        importLessonExample(result.example);
+        setExampleImportMessageFa(result.warningsFa.length ? `نمونه وارد شد، اما: ${result.warningsFa.join(' ')}` : 'نمونه درس با checksum معتبر وارد شد.');
+      } else {
+        setExampleImportMessageFa(result.errorFa ?? 'نمونه درس قابل ورود نیست.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -173,8 +186,8 @@ export function LessonPanel() {
             <button onClick={exitLessonSandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
               خروج بدون اعمال
             </button>
-            <button onClick={applySandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-              اجرای انتخاب
+            <button onClick={() => setApplyPreviewOpen(true)} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+              پیش‌نمایش اعمال
             </button>
           </div>
 
@@ -287,20 +300,77 @@ export function LessonPanel() {
                     <div className="mt-2 grid grid-cols-3 gap-1">
                       <button onClick={() => loadLessonExample(example.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">باز کردن</button>
                       <button
-                        onClick={() => downloadTextFile(`kia-electric-lab-example-${example.id}.json`, JSON.stringify(example, null, 2))}
+                        onClick={() => downloadTextFile(`kia-electric-lab-example-${example.id}.json`, serializeLessonExampleExport(example))}
                         className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
                       >
                         خروجی
                       </button>
-                      <button onClick={() => deleteLessonExample(example.id)} className="rounded-md border border-rose-200 px-2 py-1 text-rose-700 dark:border-rose-900 dark:text-rose-200">حذف</button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('این نمونه حذف شود؟')) deleteLessonExample(example.id);
+                        }}
+                        className="rounded-md border border-rose-200 px-2 py-1 text-rose-700 dark:border-rose-900 dark:text-rose-200"
+                      >
+                        حذف
+                      </button>
+                    </div>
+                    <div className="mt-1 grid grid-cols-2 gap-1">
+                      <button
+                        onClick={() => {
+                          const title = window.prompt('نام جدید نمونه', example.title);
+                          if (title) renameLessonExample(example.id, title, example.notes);
+                        }}
+                        className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
+                      >
+                        تغییر نام
+                      </button>
+                      <button
+                        onClick={() => {
+                          const notes = window.prompt('یادداشت نمونه', example.notes ?? '');
+                          if (notes !== null) renameLessonExample(example.id, example.title, notes);
+                        }}
+                        className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700"
+                      >
+                        یادداشت
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
+              <label className="mt-3 block rounded-md border border-slate-300 px-3 py-2 text-center text-xs dark:border-slate-700">
+                ورود نمونه JSON
+                <input type="file" accept="application/json,.json" className="hidden" onChange={(event) => importExampleFile(event.target.files?.[0])} />
+              </label>
+              {exampleImportMessageFa && <div className="mt-2 text-xs leading-6 text-sky-700 dark:text-sky-300">{exampleImportMessageFa}</div>}
             </div>
           ) : null}
         </div>
       </div>
+      {applyPreviewOpen && applyPreview ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+          <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 text-right shadow-xl dark:border-slate-800 dark:bg-slate-900">
+            <h3 className="text-lg font-extrabold">پیش‌نمایش اعمال sandbox</h3>
+            <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">{applyPreview.whatWillHappenFa}</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+              <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.circuits.toLocaleString('fa-IR')}</strong><div>مدار</div></div>
+              <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.components.toLocaleString('fa-IR')}</strong><div>قطعه</div></div>
+              <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.wires.toLocaleString('fa-IR')}</strong><div>سیم</div></div>
+            </div>
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-7 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+              <strong>ریسک‌ها</strong>
+              {applyPreview.risksFa.map((risk) => <p key={risk}>{risk}</p>)}
+            </div>
+            <div className="mt-3 rounded-md border border-slate-200 p-3 text-sm leading-7 dark:border-slate-800">
+              عیب‌یابی پس از اعمال: {applyPreview.diagnostics.issueCount.toLocaleString('fa-IR')} مورد
+              {applyPreview.diagnostics.issueCount > 0 ? <p className="text-amber-700 dark:text-amber-300">بعد از اعمال، پنل عیب‌یابی را بررسی کن.</p> : <p className="text-emerald-700 dark:text-emerald-300">مشکل ساختاری مهمی دیده نشد.</p>}
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button onClick={() => setApplyPreviewOpen(false)} className="rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700">انصراف</button>
+              <button onClick={applySandbox} className="rounded-md bg-tealish px-3 py-2 font-bold text-white">تایید و اعمال</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

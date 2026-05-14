@@ -593,3 +593,23 @@ Phase 9 improved sandbox output management. Kiarash can now choose exactly what 
 ### Safety Decision
 
 The main project is never overwritten silently. Replace and append require explicit UI choice and browser confirmation. Save-example mode does not modify the main project.
+
+## 2026-05-14 21:30 Europe/Istanbul - Phase 10 Apply Preview, Example Integrity, Collision-Aware Append, And Code Splitting
+
+### Change Summary
+
+Phase 10 improved sandbox safety, UX, example integrity, append layout behavior, and frontend performance. The browser confirm flow was replaced with an in-app Persian preview modal, appended lesson components now avoid occupied positions more intelligently, lesson examples use checksum envelopes, and heavy panels are lazy-loaded.
+
+### New Completed Systems
+
+- Persian apply preview modal with mode, affected counts, action explanation, risks, and diagnostics summary.
+- Collision-aware append offset selection.
+- Route point offset preservation during append.
+- Lesson example checksum export/import.
+- Corrupted example import warning.
+- Example rename and notes editing.
+- Lazy loading for Lesson Panel, Project Data Panel, and Diagnostics Panel.
+
+### Performance Note
+
+Vite no longer reports the bundle-size warning after code splitting. The main chunk is now just under the warning threshold and lesson/data/diagnostics panels are separate async chunks.

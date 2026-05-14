@@ -780,3 +780,68 @@ Production JS chunk is now about 522 kB minified and Vite warns about chunk size
 Recommended fix:
 
 - Add dynamic imports/code splitting for lesson mode, diagnostics, and report panels.
+
+## 2026-05-14 21:30 Europe/Istanbul - Known Issues Update After Phase 10
+
+### KI-035 Status Update - Apply Preview Modal Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- `window.confirm` was replaced for apply flow with an in-app Persian preview modal.
+
+Remaining limitation:
+
+- Modal does not yet trap focus or support Escape key close.
+
+### KI-036 Status Update - Collision-Aware Append Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Append mode now searches candidate offsets to reduce overlap and offsets route points consistently.
+
+Remaining limitation:
+
+- This is not a full packing/layout solver.
+
+### KI-037 Status Update - Code Splitting Added
+
+Status:
+
+- Resolved for current build.
+
+Resolution:
+
+- Lesson, project data, and diagnostics panels are lazy-loaded.
+- Vite build no longer reports chunk-size warning.
+
+### KI-038 - Main Chunk Still Near Threshold
+
+Severity: Low.
+
+Description:
+
+The main production chunk is below the Vite warning threshold but still close to 500 kB.
+
+Recommended fix:
+
+- Continue feature-level splitting as the app grows.
+
+### KI-039 - Example Envelope Is Separate From Project Envelope
+
+Severity: Low.
+
+Description:
+
+Project export and example export use similar checksum envelope logic but not a shared generic artifact helper.
+
+Recommended fix:
+
+- Create shared artifact envelope utilities before adding lesson-pack import/export.
