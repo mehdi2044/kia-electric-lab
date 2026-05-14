@@ -652,3 +652,47 @@ Audit and layout logic remain pure and testable in `lessonSandbox.ts`. React ren
 ### Electrical Simulation Note
 
 No electrical simulation behavior was changed in Phase 11. The topology/current/safety/cost engines remain untouched; this phase improves UX safety, transparency, auditability, and visual QA readiness.
+
+## 2026-05-14 22:00 Europe/Istanbul - Phase 12 Shared Modal, Audit Viewer, Stable Selectors, And Playwright Smoke Tests
+
+### Change Summary
+
+Phase 12 converted the Phase 11 apply modal behavior into reusable UI infrastructure and introduced real browser-level smoke testing. The project now has a shared accessible modal component, a visible audit history panel, stable `data-testid` selectors for core flows, Playwright configuration, and CI-friendly e2e scripts.
+
+### New Completed Systems
+
+- `AccessibleModal` shared component for Persian RTL confirmation workflows.
+- Lesson apply preview refactored to use the shared modal without changing behavior.
+- Audit History Viewer panel:
+  - last 50 audit records
+  - action filter
+  - timestamps
+  - lesson title
+  - affected circuit/component/wire counts
+  - diagnostics count
+  - warnings
+  - JSON export
+- Stable test selectors for:
+  - lesson panel
+  - start lesson button
+  - apply modal
+  - modal confirm/cancel
+  - diagnostics panel
+  - project data panel
+  - audit viewer
+  - example list
+- Playwright smoke tests for:
+  - app load
+  - core panels
+  - starting sandbox lesson
+  - opening/canceling apply modal
+  - diagnostics/project data/audit/example reachability
+- Pure apply diff helper for before/after summaries.
+
+### Engineering Decision
+
+Browser tests use `data-testid` selectors instead of Persian text selectors. Persian copy can now evolve without breaking smoke tests.
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed in Phase 12. The phase is strictly UI infrastructure, audit visibility, and test coverage.

@@ -925,3 +925,75 @@ Apply/example audit entries are persisted in project state, but there is not yet
 Recommended fix:
 
 - Add an audit history viewer with filters by action type, lesson, and warning status.
+
+## 2026-05-14 22:00 Europe/Istanbul - Known Issues Update After Phase 12
+
+### KI-035 Status Update - Shared Accessible Modal Added
+
+Status:
+
+- Resolved for apply preview.
+
+Resolution:
+
+- `AccessibleModal` is now shared infrastructure.
+- Apply preview uses the shared modal.
+- Modal behavior remains safer than before.
+
+Remaining limitation:
+
+- Other destructive flows still need to migrate to `AccessibleModal`.
+
+### KI-040 Status Update - Automated Browser QA Started
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Playwright was added.
+- Three Chromium smoke tests pass.
+- Stable `data-testid` selectors were added for core flows.
+
+Remaining limitation:
+
+- Coverage is still smoke-level, not full workflow-level.
+
+### KI-041 Status Update - Audit Viewer Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Audit viewer now lists and filters audit records and exports JSON.
+
+Remaining limitation:
+
+- Viewer is read-only and does not yet support search/date filters.
+
+### KI-042 - Browser Tests Cover Only Chromium
+
+Severity: Low.
+
+Description:
+
+Current Playwright setup runs only Chromium.
+
+Recommended fix:
+
+- Add Firefox/WebKit projects after baseline tests stabilize and CI runtime is acceptable.
+
+### KI-043 - Test IDs Are Now Compatibility Surface
+
+Severity: Low.
+
+Description:
+
+Critical UI elements now expose `data-testid` values used by Playwright. Removing or renaming these ids without updating tests will break e2e coverage.
+
+Recommended fix:
+
+- Treat test ids as part of UI engineering contract and document selector changes in phase reports.
