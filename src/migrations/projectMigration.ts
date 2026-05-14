@@ -1,7 +1,7 @@
-import type { ElectricalProject, ElectricalWire, PanelBreakerSlot, Point2D } from '../types/electrical';
+import type { ElectricalProject, ElectricalWire, LessonAttempt, LessonProgress, PanelBreakerSlot, Point2D } from '../types/electrical';
 
-export const CURRENT_SCHEMA_VERSION = 5;
-export const CURRENT_APP_VERSION = '0.5-phase5-migrations';
+export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_APP_VERSION = '0.7-phase7-lessons';
 export const PROJECT_STORAGE_KEY = 'kia-electric-lab-project';
 export const BACKUP_STORAGE_KEY = 'kia-electric-lab-project-backups';
 export const MIGRATION_ERROR_STORAGE_KEY = 'kia-electric-lab-project-migration-error';
@@ -161,6 +161,58 @@ function normalizePanelboard(project: UnknownRecord) {
   };
 }
 
+function normalizeLessonProgress(value: unknown): LessonProgress {
+  const progress = isRecord(value) ? value : {};
+  const attemptsRecord = isRecord(progress.attemptsByLesson) ? progress.attemptsByLesson : {};
+  const attemptsByLesson = Object.fromEntries(
+    Object.entries(attemptsRecord)
+      .flatMap(([lessonId, attempt]) => {
+        if (!isRecord(attempt)) return [];
+        const normalized: LessonAttempt = {
+          lessonId: asString(attempt.lessonId, lessonId),
+          attemptsCount: Math.max(0, asNumber(attempt.attemptsCount, 0)),
+          hintsUsed: Math.max(0, asNumber(attempt.hintsUsed, 0)),
+          completed: Boolean(attempt.completed),
+          completedAt: typeof attempt.completedAt === 'string' ? attempt.completedAt : undefined,
+          lastFeedbackFa: typeof attempt.lastFeedbackFa === 'string' ? attempt.lastFeedbackFa : undefined
+        };
+        if (isRecord(attempt.score)) {
+          normalized.score = {
+            technical: asNumber(attempt.score.technical, 0),
+            safety: asNumber(attempt.score.safety, 0),
+            cost: asNumber(attempt.score.cost, 0),
+            learning: asNumber(attempt.score.learning, 0),
+            final: asNumber(attempt.score.final, 0)
+          };
+        }
+        return [[lessonId, normalized] as const];
+      })
+  );
+  const completedLessonIds = Array.from(
+    new Set([
+      ...asArray<string>(progress.completedLessonIds).filter((id) => typeof id === 'string' && id),
+      ...Object.values(attemptsByLesson)
+        .filter((attempt) => attempt.completed)
+        .map((attempt) => attempt.lessonId)
+    ])
+  );
+  return {
+    completedLessonIds,
+    attemptsByLesson,
+    lastActiveLessonId: typeof progress.lastActiveLessonId === 'string' ? progress.lastActiveLessonId : undefined
+  };
+}
+
+function migrateToV6(project: UnknownRecord): ElectricalProject {
+  const migrated = migrateToV5(project);
+  return {
+    ...migrated,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    appVersion: CURRENT_APP_VERSION,
+    lessonProgress: normalizeLessonProgress(project.lessonProgress)
+  };
+}
+
 export function migrateProject(project: unknown): MigrationResult {
   if (!isRecord(project)) {
     throw new Error('Project is not an object');
@@ -173,7 +225,8 @@ export function migrateProject(project: unknown): MigrationResult {
   if (fromVersion < 3) working = migrateToV3(working);
   if (fromVersion < 4) working = migrateToV4(working);
   if (fromVersion < 5) working = migrateToV5(working) as unknown as UnknownRecord;
-  if (fromVersion >= 5) working = migrateToV5(working) as unknown as UnknownRecord;
+  if (fromVersion < 6) working = migrateToV6(working) as unknown as UnknownRecord;
+  if (fromVersion >= 6) working = migrateToV6(working) as unknown as UnknownRecord;
 
   const migrated = working as unknown as ElectricalProject;
   const validation = validateMigratedProject(migrated);
@@ -202,6 +255,7 @@ export function validateMigratedProject(project: ElectricalProject): ValidationR
   if (!Array.isArray(project.components)) errorsFa.push('لیست قطعه‌ها معتبر نیست.');
   if (!Array.isArray(project.circuits)) errorsFa.push('لیست مدارها معتبر نیست.');
   if (!Number.isFinite(project.pixelsPerMeter) || (project.pixelsPerMeter ?? 0) < 6) errorsFa.push('مقیاس نقشه معتبر نیست.');
+  if (!project.lessonProgress || !Array.isArray(project.lessonProgress.completedLessonIds)) errorsFa.push('پیشرفت درس‌ها معتبر نیست.');
 
   project.circuits.forEach((circuit) => {
     if (!circuit.id) errorsFa.push('یک مدار بدون شناسه پیدا شد.');

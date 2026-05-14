@@ -166,6 +166,30 @@ export interface ProjectReport {
   };
 }
 
+export interface LessonScore {
+  technical: number;
+  safety: number;
+  cost: number;
+  learning: number;
+  final: number;
+}
+
+export interface LessonAttempt {
+  lessonId: string;
+  attemptsCount: number;
+  hintsUsed: number;
+  completed: boolean;
+  score?: LessonScore;
+  completedAt?: string;
+  lastFeedbackFa?: string;
+}
+
+export interface LessonProgress {
+  completedLessonIds: string[];
+  attemptsByLesson: Record<string, LessonAttempt>;
+  lastActiveLessonId?: string;
+}
+
 export interface ElectricalProject {
   schemaVersion: number;
   appVersion: string;
@@ -179,4 +203,5 @@ export interface ElectricalProject {
   circuits: Circuit[];
   wires?: ElectricalWire[];
   panelboard?: Panelboard;
+  lessonProgress?: LessonProgress;
 }

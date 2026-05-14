@@ -1015,3 +1015,94 @@ Import accepts both new envelopes and legacy raw project JSON. Checksum mismatch
 - Add undo history for repair operations.
 - Add diagnostics as an input channel for a future AI electrical tutor.
 - Add incremental diagnostics for large projects.
+
+## 2026-05-14 16:10 Europe/Istanbul - Phase 7 Lesson Mode Architecture
+
+### Change Type
+
+Educational platform layer, guided lesson validation, progress persistence, and Persian RTL learner UI.
+
+### New Modules
+
+```text
+src/features/lesson-mode/
+  lessonEngine.ts
+  lessonValidation.ts
+  lessonProgress.ts
+  LessonPanel.tsx
+```
+
+### Lesson Engine Architecture
+
+`lessonEngine.ts` owns static lesson definitions:
+
+- id
+- title
+- difficulty
+- learning goals
+- required components
+- target behavior
+- steps
+- validation rules
+- explanation
+- success criteria
+- hints
+- common mistakes
+
+### Lesson Validation Architecture
+
+`lessonValidation.ts` owns lesson-specific success criteria and score generation. It calls existing simulator engines instead of duplicating formulas:
+
+- topology traversal
+- safety warnings
+- panelboard warnings
+- cost engine
+- current/topology infrastructure where appropriate
+
+### Lesson Progress Architecture
+
+`lessonProgress.ts` owns pure progress transforms:
+
+- create empty progress
+- set active lesson
+- record hint usage
+- record validation attempt
+- calculate progress percentage
+
+`ElectricalProject.lessonProgress` stores persistent educational progress and is migrated into schema version 6.
+
+### UI Architecture
+
+`LessonPanel.tsx` renders:
+
+- lesson list
+- active lesson instructions
+- step checklist
+- hint box
+- validate button
+- progress percentage
+- score cards
+- completion badges
+- current-circuit wiring reset action
+
+### State Flow
+
+```text
+LessonPanel -> useLabStore action -> pure lessonProgress function -> project snapshot -> Zustand persist
+LessonPanel -> validateLesson(project) -> existing engines -> feedback/score -> recordLessonValidation
+```
+
+### Boundary Rules
+
+- Lesson UI does not calculate electrical truth.
+- Lesson validation does not approve real-world electrical work.
+- Lesson validation may express educational criteria that are more specific than generic safety warnings.
+- Existing topology/current/safety/cost engines remain the source of calculations.
+
+### Future Architecture Notes
+
+- Move lesson content to versioned lesson packs when lessons grow.
+- Add reusable validation rule primitives.
+- Add lesson-specific starter project snapshots.
+- Add floor-plan highlighting for next required action.
+- Add AI tutor layer over `LessonValidationResult`.

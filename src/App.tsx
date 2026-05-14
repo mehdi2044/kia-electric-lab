@@ -12,6 +12,7 @@ import { WireRoutingPanel } from './features/wire-routing/WireRoutingPanel';
 import { PanelboardPanel } from './features/panelboard/PanelboardPanel';
 import { ProjectDataPanel } from './features/project-data/ProjectDataPanel';
 import { ProjectDiagnosticsPanel } from './features/project-diagnostics/ProjectDiagnosticsPanel';
+import { LessonPanel } from './features/lesson-mode/LessonPanel';
 import { useLabStore } from './store/useLabStore';
 import { formatNumber, formatToman } from './utils/format';
 
@@ -81,6 +82,7 @@ export function App() {
         <div className="grid gap-5 xl:grid-cols-[290px_minmax(0,1fr)_380px]">
           <ApplianceLibrary />
           <div className="space-y-5">
+            <LessonPanel />
             <FloorPlan />
             <WireRoutingPanel />
             <PanelboardPanel />

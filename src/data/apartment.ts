@@ -74,5 +74,10 @@ export const defaultProject: ElectricalProject = {
       { id: 'slot-2', labelFa: 'فیوز ۲', amp: 16, circuitId: 'c-kitchen' },
       { id: 'slot-3', labelFa: 'فیوز ۳', amp: 16, circuitId: 'c-living-outlet' }
     ]
+  },
+  lessonProgress: {
+    completedLessonIds: [],
+    attemptsByLesson: {},
+    lastActiveLessonId: 'lesson-1-one-way-lamp'
   }
 };
