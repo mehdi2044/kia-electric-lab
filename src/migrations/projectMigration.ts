@@ -1,7 +1,7 @@
 import type { ElectricalProject, ElectricalWire, LessonAttempt, LessonProgress, PanelBreakerSlot, Point2D } from '../types/electrical';
 
-export const CURRENT_SCHEMA_VERSION = 6;
-export const CURRENT_APP_VERSION = '0.7-phase7-lessons';
+export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_APP_VERSION = '0.8-phase8-lesson-sandbox';
 export const PROJECT_STORAGE_KEY = 'kia-electric-lab-project';
 export const BACKUP_STORAGE_KEY = 'kia-electric-lab-project-backups';
 export const MIGRATION_ERROR_STORAGE_KEY = 'kia-electric-lab-project-migration-error';
@@ -207,9 +207,19 @@ function migrateToV6(project: UnknownRecord): ElectricalProject {
   const migrated = migrateToV5(project);
   return {
     ...migrated,
+    schemaVersion: 6,
+    appVersion: asString(project.appVersion, '0.7-phase7-lessons'),
+    lessonProgress: normalizeLessonProgress(project.lessonProgress)
+  };
+}
+
+function migrateToV7(project: UnknownRecord): ElectricalProject {
+  const migrated = migrateToV6(project);
+  return {
+    ...migrated,
     schemaVersion: CURRENT_SCHEMA_VERSION,
     appVersion: CURRENT_APP_VERSION,
-    lessonProgress: normalizeLessonProgress(project.lessonProgress)
+    useExplicitWiresOnly: Boolean(project.useExplicitWiresOnly)
   };
 }
 
@@ -226,7 +236,8 @@ export function migrateProject(project: unknown): MigrationResult {
   if (fromVersion < 4) working = migrateToV4(working);
   if (fromVersion < 5) working = migrateToV5(working) as unknown as UnknownRecord;
   if (fromVersion < 6) working = migrateToV6(working) as unknown as UnknownRecord;
-  if (fromVersion >= 6) working = migrateToV6(working) as unknown as UnknownRecord;
+  if (fromVersion < 7) working = migrateToV7(working) as unknown as UnknownRecord;
+  if (fromVersion >= 7) working = migrateToV7(working) as unknown as UnknownRecord;
 
   const migrated = working as unknown as ElectricalProject;
   const validation = validateMigratedProject(migrated);

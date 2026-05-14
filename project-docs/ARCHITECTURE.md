@@ -1106,3 +1106,84 @@ LessonPanel -> validateLesson(project) -> existing engines -> feedback/score -> 
 - Add lesson-specific starter project snapshots.
 - Add floor-plan highlighting for next required action.
 - Add AI tutor layer over `LessonValidationResult`.
+
+## 2026-05-14 18:35 Europe/Istanbul - Phase 8 Lesson Sandbox Architecture
+
+### Change Type
+
+Lesson isolation, data-driven templates, explicit topology enforcement, sandbox persistence, and guided floor-plan highlighting.
+
+### New Module
+
+```text
+src/features/lesson-mode/
+  lessonSandbox.ts
+  lessonSandbox.test.ts
+```
+
+### Sandbox State Flow
+
+```text
+Main project active
+  -> startLessonSandbox(lessonId)
+  -> store mainProject snapshot
+  -> create lessonProject from template
+  -> active project becomes sandboxProject
+  -> learner edits sandbox
+  -> exit restores mainProject OR apply replaces main project after confirmation
+```
+
+### Template Architecture
+
+Each lesson template defines:
+
+- lesson id
+- focus room
+- required circuit
+- pre-placed components
+- panelboard breaker assignment
+
+Templates intentionally start with no wires and `useExplicitWiresOnly = true` so user-authored wiring is required.
+
+### Highlight Architecture
+
+`generateLessonHighlight(project, lessonId, stepIndex)` returns:
+
+- room ids to highlight
+- component ids to highlight
+- terminal refs to highlight
+- invalid wire ids
+- optional ghost wire suggestion
+- Persian message
+
+`FloorPlan` consumes this data and remains a renderer only.
+
+### Store Architecture
+
+`useLabStore` now persists:
+
+- active project
+- optional `lessonSandbox`
+- selected circuit/wire UI state
+
+Sandbox actions:
+
+- `startLessonSandbox`
+- `resetLessonSandbox`
+- `exitLessonSandbox`
+- `applyLessonSandboxToMainProject`
+- `saveSandboxAsExample`
+
+### Boundary Rules
+
+- Sandbox engine is independent from React.
+- React confirms before applying sandbox result to main project.
+- Generated topology fallback is disabled only when `useExplicitWiresOnly` is true.
+- Main project must be restorable until explicit apply.
+
+### Future Architecture Notes
+
+- Add append/merge apply strategies.
+- Add lesson example library.
+- Move templates into versioned lesson-pack data.
+- Add explicit per-step terminal guidance instead of fallback guidance.

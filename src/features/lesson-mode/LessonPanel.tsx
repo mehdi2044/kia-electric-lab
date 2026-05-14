@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { useLabStore } from '../../store/useLabStore';
 import { calculateProgressPercent, getLessonAttempt } from './lessonProgress';
-import { lessons } from './lessonEngine';
+import { getStepGuidance, lessons } from './lessonEngine';
 import { validateLesson } from './lessonValidation';
+import { generateLessonHighlight } from './lessonSandbox';
 
 const difficultyLabels = {
   beginner: 'شروع',
@@ -20,10 +21,16 @@ function scoreTone(score?: number) {
 
 export function LessonPanel() {
   const project = useLabStore((state) => state.project);
+  const lessonSandbox = useLabStore((state) => state.lessonSandbox);
   const setActiveLesson = useLabStore((state) => state.setActiveLesson);
   const useLessonHint = useLabStore((state) => state.useLessonHint);
   const recordLessonValidation = useLabStore((state) => state.recordLessonValidation);
   const resetCurrentLessonWiring = useLabStore((state) => state.resetCurrentLessonWiring);
+  const startLessonSandbox = useLabStore((state) => state.startLessonSandbox);
+  const resetLessonSandbox = useLabStore((state) => state.resetLessonSandbox);
+  const exitLessonSandbox = useLabStore((state) => state.exitLessonSandbox);
+  const applyLessonSandboxToMainProject = useLabStore((state) => state.applyLessonSandboxToMainProject);
+  const saveSandboxAsExample = useLabStore((state) => state.saveSandboxAsExample);
   const activeLessonId = project.lessonProgress?.lastActiveLessonId ?? lessons[0].id;
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
   const attempt = getLessonAttempt(project, activeLesson.id);
@@ -31,6 +38,9 @@ export function LessonPanel() {
   const [hintIndex, setHintIndex] = useState(0);
   const [feedback, setFeedback] = useState<string[]>([]);
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
+  const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
+  const currentGuidance = getStepGuidance(activeLesson.id, currentStepIndex);
+  const highlight = useMemo(() => generateLessonHighlight(project, activeLesson.id, currentStepIndex), [project, activeLesson.id, currentStepIndex]);
 
   const requestHint = () => {
     useLessonHint(activeLesson.id);
@@ -41,6 +51,11 @@ export function LessonPanel() {
     const result = validateLesson(project, activeLesson.id, attempt.hintsUsed);
     recordLessonValidation(activeLesson.id, result.passed, result.score, result.feedbackFa.join(' '));
     setFeedback(result.feedbackFa);
+  };
+
+  const applySandbox = () => {
+    const ok = window.confirm('آیا مطمئنی می‌خواهی نتیجه تمرین را روی پروژه اصلی اعمال کنی؟ این کار فقط با تایید تو انجام می‌شود.');
+    if (ok) applyLessonSandboxToMainProject();
   };
 
   return (
@@ -65,6 +80,17 @@ export function LessonPanel() {
         </div>
       </div>
 
+      <div className={`mb-4 rounded-md border p-3 text-sm leading-7 ${lessonSandbox ? 'border-teal-200 bg-teal-50 text-teal-950 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-100' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950'}`}>
+        {lessonSandbox ? (
+          <div>
+            <div className="font-bold">حالت sandbox فعال است؛ پروژه اصلی دست‌نخورده نگه داشته شده.</div>
+            <div className="mt-1 text-xs">شروع: {new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(lessonSandbox.startedAt))}</div>
+          </div>
+        ) : (
+          <div>برای تمرین امن، درس را داخل sandbox شروع کن. تغییرها تا وقتی خودت تایید نکنی روی پروژه اصلی اعمال نمی‌شود.</div>
+        )}
+      </div>
+
       <div className="grid gap-2 md:grid-cols-2">
         <div className="max-h-80 space-y-2 overflow-auto">
           {lessons.map((lesson, index) => {
@@ -73,7 +99,11 @@ export function LessonPanel() {
               <button
                 key={lesson.id}
                 onClick={() => {
-                  setActiveLesson(lesson.id);
+                  if (lessonSandbox) {
+                    startLessonSandbox(lesson.id);
+                  } else {
+                    setActiveLesson(lesson.id);
+                  }
                   setFeedback([]);
                   setHintIndex(0);
                 }}
@@ -102,6 +132,23 @@ export function LessonPanel() {
             {attempt.completed && <span className="rounded-md bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">کامل شده</span>}
           </div>
 
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button onClick={() => startLessonSandbox(activeLesson.id)} className="inline-flex items-center justify-center gap-2 rounded-md bg-tealish px-3 py-2 text-sm font-bold text-white">
+              <Icon name="BookOpen" className="h-4 w-4" />
+              {lessonSandbox ? 'شروع دوباره درس' : 'شروع درس'}
+            </button>
+            <button onClick={resetLessonSandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950">
+              <Icon name="RefreshCcw" className="h-4 w-4" />
+              ریست sandbox
+            </button>
+            <button onClick={exitLessonSandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+              خروج بدون اعمال
+            </button>
+            <button onClick={applySandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+              اعمال روی پروژه اصلی
+            </button>
+          </div>
+
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
             {(['technical', 'safety', 'cost', 'learning'] as const).map((key) => (
               <div key={key} className="rounded-md bg-slate-50 px-2 py-2 dark:bg-slate-950">
@@ -124,6 +171,12 @@ export function LessonPanel() {
                 );
               })}
             </div>
+          </div>
+
+          <div className="mt-3 rounded-md border border-teal-200 bg-teal-50 p-3 text-sm leading-7 text-teal-950 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-100">
+            <div className="font-bold">راهنمای قدم فعلی</div>
+            <div>{highlight.messageFa}</div>
+            <div className="mt-1 text-xs">اقدام مورد انتظار: {currentGuidance.expectedActionType} | {currentGuidance.validationHintFa}</div>
           </div>
 
           <div className="mt-4 rounded-md bg-slate-50 p-3 text-sm leading-7 dark:bg-slate-950">
@@ -156,6 +209,9 @@ export function LessonPanel() {
             <button onClick={resetCurrentLessonWiring} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
               <Icon name="RefreshCcw" className="h-4 w-4" />
               پاک کردن سیم‌های مدار انتخاب‌شده برای تمرین
+            </button>
+            <button onClick={saveSandboxAsExample} disabled={!lessonSandbox} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950">
+              ذخیره sandbox به عنوان مثال
             </button>
           </div>
         </div>

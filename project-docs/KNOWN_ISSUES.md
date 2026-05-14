@@ -649,3 +649,63 @@ Impact:
 Recommended fix:
 
 - Introduce route-level or feature-level dynamic imports for lesson, diagnostics, and report panels if bundle growth continues.
+
+## 2026-05-14 18:35 Europe/Istanbul - Known Issues Update After Lesson Sandbox
+
+### KI-030 Status Update - Lesson Reset Improved
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- A true lesson sandbox reset now recreates the sandbox from the lesson template.
+
+Remaining limitation:
+
+- The older current-circuit wiring reset still exists as a quick practice tool.
+
+### KI-032 - Sandbox Apply Replaces Main Project
+
+Severity: Medium.
+
+Description:
+
+Applying sandbox result currently replaces the active main project with the sandbox project. It does not yet offer append/merge strategies.
+
+Impact:
+
+- Useful for lessons, but advanced users may expect only the lesson circuit to be copied into the apartment project.
+
+Recommended fix:
+
+- Add apply modes: replace, append circuit, save named example.
+
+### KI-033 - Ghost Wire Suggestions Are Geometric Hints Only
+
+Severity: Low.
+
+Description:
+
+Ghost wire suggestions show a simple terminal-to-terminal hint and do not yet compute an optimal route with bends.
+
+Impact:
+
+- Helpful for learning the next connection, but not a routing optimization tool.
+
+Recommended fix:
+
+- Generate route-aware ghost wires using floor-plan geometry and lesson step metadata.
+
+### KI-034 - Saved Sandbox Examples Have No Management UI
+
+Severity: Low.
+
+Description:
+
+Sandbox examples can be saved in state, but there is no list/export/delete UI yet.
+
+Recommended fix:
+
+- Add saved examples panel under lesson mode.

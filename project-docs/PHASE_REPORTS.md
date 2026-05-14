@@ -1862,3 +1862,120 @@ final = technical x 0.40 + safety x 0.30 + cost x 0.15 + learning x 0.15
 ### Next Recommended Step
 
 Phase 8 should add lesson sandbox templates and floor-plan guidance/highlighting so Kiarash can start each mission from a clean guided setup without affecting the whole apartment project.
+
+## 2026-05-14 18:35 Europe/Istanbul - Phase 8 Engineering Report: Lesson Sandbox Templates And Guided Floor-Plan Highlighting
+
+### Completed Work
+
+Phase 8 implemented safe lesson sandbox mode, data-driven lesson templates, guided floor-plan highlighting, ghost wire suggestions, sandbox persistence, reset/discard/apply controls, and tests for sandbox safety.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/migrations/projectMigration.ts`
+- `src/data/apartment.ts`
+- `src/features/topology-engine/topologyEngine.ts`
+- `src/features/lesson-mode/lessonEngine.ts`
+- `src/features/lesson-mode/lessonSandbox.ts`
+- `src/features/lesson-mode/lessonSandbox.test.ts`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/features/floor-plan/FloorPlan.tsx`
+- `src/store/useLabStore.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Dependencies Added
+
+No package dependency was added.
+
+### Architecture Changes
+
+New sandbox engine:
+
+```text
+src/features/lesson-mode/
+  lessonSandbox.ts
+  lessonSandbox.test.ts
+```
+
+Schema update:
+
+- `CURRENT_SCHEMA_VERSION` changed from `6` to `7`.
+- `CURRENT_APP_VERSION` changed to `0.8-phase8-lesson-sandbox`.
+- `ElectricalProject.useExplicitWiresOnly` was added.
+- `LessonSandboxState`, `LessonHighlight`, and `LessonStepGuidance` were added.
+
+Store update:
+
+- `lessonSandbox` is persisted in Zustand.
+- Starting a lesson stores the main project and switches the active project to the sandbox template.
+- Exiting restores the untouched main project.
+- Applying uses the current sandbox project only after explicit UI confirmation.
+
+### Engineering Decisions
+
+- Sandbox logic is pure TypeScript and independent from React.
+- Templates are data-driven and create a small project containing only relevant lesson components.
+- `useExplicitWiresOnly` disables generated topology fallback inside sandbox templates so validation cannot pass without learner-authored wiring.
+- Floor-plan highlighting is derived from lesson guidance instead of hard-coded UI behavior.
+- Main project safety takes priority over convenience; sandbox apply is explicit and confirmed.
+
+### Electrical Logic Implemented
+
+No new electrical formulas were added.
+
+Electrical behavior changed only in a controlled way:
+
+- topology generation now respects `useExplicitWiresOnly`
+- when true, explicit `ElectricalWire[]` is the only topology source even if empty
+- this prevents fake success in lesson sandboxes
+
+### Formulas Implemented
+
+No new physics formulas.
+
+### Bugs Found And Fixed
+
+- Build initially caught a destructuring comma error in `TerminalButton`. Fixed before final verification.
+
+### Limitations
+
+- Applying a sandbox result currently replaces the active project with the sandbox result; it does not merge only lesson artifacts into the old main project.
+- Ghost wire suggestions are simple terminal-to-terminal hints, not route-optimized conduit paths.
+- Step guidance uses a mix of explicit guidance and generated fallback hints.
+- Saved sandbox examples are stored in sandbox state but do not yet have a management UI.
+- Bundle-size warning increased to about 514 kB minified JS.
+
+### TODOs
+
+- Add merge/apply modes: replace, append lesson circuit, or save as separate example.
+- Add full UI for saved sandbox examples.
+- Add per-step explicit guidance for every lesson step.
+- Add terminal-specific highlight for each step.
+- Add route-aware ghost wire suggestions.
+- Add code splitting for lesson/diagnostics panels.
+
+### Risks
+
+- Replacing main project with sandbox result may surprise advanced users; confirmation reduces risk but merge modes should be added.
+- `useExplicitWiresOnly` must remain restricted to sandbox/template cases unless the user intentionally wants strict explicit topology.
+- Large saved examples inside localStorage could increase storage use.
+
+### Scalability Concerns
+
+- Lesson templates are currently TypeScript data. Future education platform mode should move templates into versioned lesson packs.
+- Highlight generation should become rule-based as lessons grow.
+- Sandbox snapshots should move to SQLite/Tauri storage for durable long-term examples.
+
+### Verification
+
+- `npm test`: 12 test files passed, 51 tests passed.
+- `npm run build`: passed with Vite chunk-size warning.
+- Local HTTP check: `http://localhost:5173/` returned 200.
+
+### Next Recommended Step
+
+Phase 9 should add merge/apply choices for sandbox results, full saved-example management, and more precise per-step terminal guidance.
