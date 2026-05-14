@@ -1,0 +1,131 @@
+# Kia Electric Lab - TODO
+
+TODO policy: append new TODO entries with timestamps. Mark items complete with a dated note rather than deleting them.
+
+## 2026-05-14 13:05 Europe/Istanbul - Phase 1 Backlog And Phase 2 Recommendations
+
+### Highest Priority
+
+- [ ] Initialize Git repository in `C:\kiaelectriclab`.
+- [ ] Add `.gitignore` covering `node_modules`, `dist`, logs, TypeScript build info, Vite generated JS/d.ts outputs if they are not intentionally source controlled.
+- [ ] Commit Phase 1 source and governance documentation.
+- [ ] Add `schemaVersion` to `ElectricalProject`.
+- [ ] Add local storage migration and fallback handling.
+- [ ] Add delete/remove actions for circuits, components, and appliance assignments.
+- [ ] Add tests for every safety warning branch.
+- [ ] Add tests for cost engine calculations.
+
+### Electrical Simulation
+
+- [ ] Introduce a `LoadInstance` or `PlacedLoad` model so multiple copies of the same appliance can exist independently.
+- [ ] Add custom appliance wattage editing for lessons.
+- [ ] Add circuit demand/diversity educational mode, clearly labeled as an approximation.
+- [ ] Add inrush/startup current educational warnings for compressor/motor loads.
+- [ ] Add RCD/GFCI/RCCB educational component and bathroom/kitchen protection warnings.
+- [ ] Add grounding/protective earth educational concept without representing it as professional approval.
+- [ ] Add clearer distinction between warning, educational note, and hard invalid state.
+- [ ] Add recommended correction objects rather than plain warning strings.
+
+### Visual Simulator
+
+- [ ] Make placed components draggable after placement.
+- [ ] Add component delete button.
+- [ ] Add circuit membership badges on components.
+- [ ] Implement real wire path drawing.
+- [ ] Calculate wire length from drawn path.
+- [ ] Allow wire path editing and snapping.
+- [ ] Add room-level zoom/focus.
+- [ ] Add visual legend for circuit colors.
+- [ ] Add panel/breaker board visual representation.
+
+### Circuit Builder
+
+- [ ] Add circuit deletion.
+- [ ] Add appliance removal from circuit.
+- [ ] Add component removal from circuit.
+- [ ] Add duplicated appliance handling.
+- [ ] Add per-circuit notes and lesson hints.
+- [ ] Add warning badges near relevant controls.
+- [ ] Add suggested wire/breaker correction buttons.
+
+### Cost Engine
+
+- [ ] Add cost-engine unit tests.
+- [ ] Add currency metadata.
+- [ ] Add cost profile name and effective date.
+- [ ] Add editable price assumptions.
+- [ ] Add import/export for cost profiles.
+- [ ] Add uncertainty range for educational estimates.
+- [ ] Improve room cost allocation using actual components and wire length.
+- [ ] Show exact overdesign alternative wire size.
+
+### Report Engine
+
+- [ ] Add printable report mode.
+- [ ] Add JSON export of report snapshot.
+- [ ] Add report version metadata.
+- [ ] Split warnings, corrections, and learning explanations into structured sections.
+- [ ] Add teacher/parent summary.
+- [ ] Add AI tutor context export after safety/privacy review.
+
+### UI/UX
+
+- [ ] Complete accessibility pass.
+- [ ] Add keyboard interactions for component placement where practical.
+- [ ] Improve mobile layout for floor plan.
+- [ ] Add empty states and onboarding microcopy.
+- [ ] Add guided scenario mode.
+- [ ] Add Persian typography polish with a bundled/local font decision.
+- [ ] Add visual feedback when drag/drop succeeds.
+
+### Testing And QA
+
+- [ ] Add linting.
+- [ ] Add formatting command.
+- [ ] Add CI script once Git is initialized.
+- [ ] Add store mutation tests.
+- [ ] Add UI smoke tests.
+- [ ] Add browser screenshot verification for desktop and mobile.
+- [ ] Add tests for local storage migration after schema versioning.
+
+### Documentation
+
+- [x] Create `project-docs/PROJECT_MEMORY.md` on 2026-05-14.
+- [x] Create `project-docs/PHASE_REPORTS.md` on 2026-05-14.
+- [x] Create `project-docs/ARCHITECTURE.md` on 2026-05-14.
+- [x] Create `project-docs/TODO.md` on 2026-05-14.
+- [x] Create `project-docs/KNOWN_ISSUES.md` on 2026-05-14.
+- [x] Create `project-docs/ELECTRICAL_RULES.md` on 2026-05-14.
+- [x] Create `project-docs/COST_ENGINE_RULES.md` on 2026-05-14.
+- [ ] Update docs after every completed task.
+- [ ] Add ADR files if Vi wants formal architectural decision records.
+
+### Future Platform
+
+- [ ] Plan Tauri shell architecture.
+- [ ] Plan SQLite schema.
+- [ ] Plan multiplayer state architecture before implementation.
+- [ ] Plan AI tutor boundaries and safety language.
+- [ ] Plan lesson/scenario content format.
+
+## 2026-05-14 13:25 Europe/Istanbul - Version Control TODO Update
+
+### Completed
+
+- [x] Initialize Git repository in `C:\kiaelectriclab`.
+- [x] Add `.gitignore` covering `node_modules`, `dist`, `build`, Vite caches, coverage, environment files, OS files, editor files, logs, and TypeScript build info.
+- [x] Create `main` branch.
+- [x] Create `develop` branch.
+- [x] Commit Phase 1 baseline.
+- [x] Tag Phase 1 baseline as `v0.1-phase1-baseline`.
+- [x] Create `CONTRIBUTING.md`.
+- [x] Create `DEVELOPMENT_WORKFLOW.md`.
+
+### New TODOs
+
+- [ ] Add remote Git repository.
+- [ ] Push `main`, `develop`, and `v0.1-phase1-baseline`.
+- [ ] Add CI workflow for `npm test` and `npm run build`.
+- [ ] Add branch protection for `main` after remote setup.
+- [ ] Add release checklist.
+- [ ] Decide whether to add formal ADR files for major architectural decisions.

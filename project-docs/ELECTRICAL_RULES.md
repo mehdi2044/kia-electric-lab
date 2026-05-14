@@ -1,0 +1,443 @@
+# Kia Electric Lab - Electrical Rules
+
+Electrical rules policy: this file documents implemented educational rules and assumptions. Any change to formulas, thresholds, wire tables, breaker tables, or safety warning logic must be appended with a timestamp and reason.
+
+## 2026-05-14 13:05 Europe/Istanbul - Phase 1 Electrical Rule Baseline
+
+### Safety Disclaimer
+
+Kia Electric Lab is an educational simulator only. It must not be used as a professional electrical design, installation, inspection, permitting, or approval tool. The rules below are simplified teaching rules, not code-compliance rules.
+
+### Electrical System Model
+
+Current model:
+
+- Residential single-phase voltage.
+- Default voltage: 220V.
+- Default main household breaker: 25A.
+- Approximate maximum whole-home power: `220V x 25A = 5500W`.
+- Appliances are treated as parallel loads.
+- Total power is the sum of appliance watts.
+- Current is calculated from power and voltage.
+
+Not modeled:
+
+- Three-phase systems.
+- Neutral loading details.
+- Protective earth.
+- RCD/GFCI/RCCB behavior.
+- Short circuit current.
+- Fault loop impedance.
+- Cable installation method.
+- Thermal derating.
+- Ambient temperature.
+- Conduit fill.
+- Diversity factor.
+- Motor/compressor inrush current.
+- Local electrical code.
+
+### Implemented Formulas
+
+#### Current
+
+Formula:
+
+```text
+I = P / V
+Ampere = Watt / Volt
+```
+
+Implemented by:
+
+- `calculateCurrent(watt, voltage)` in `src/features/safety-engine/electricalMath.ts`
+
+Behavior:
+
+- If voltage is less than or equal to zero, returns `0`.
+- Otherwise returns `watt / voltage`.
+
+#### Power
+
+Formula:
+
+```text
+P = V x I
+Watt = Volt x Ampere
+```
+
+Implemented by:
+
+- `calculatePower(voltage, ampere)`
+
+#### Resistance
+
+Formula:
+
+```text
+R = V / I
+Ohm = Volt / Ampere
+```
+
+Implemented by:
+
+- `calculateResistance(voltage, ampere)`
+
+Behavior:
+
+- If ampere is less than or equal to zero, returns `0`.
+- Otherwise returns `voltage / ampere`.
+
+#### Total Parallel Load
+
+Formula:
+
+```text
+TotalPower = sum(appliance watts)
+TotalCurrent = TotalPower / 220
+```
+
+Implemented by:
+
+- `calculateTotalLoad(loads, voltage)`
+- `calculateCircuitLoad(circuit, voltage)`
+- `getProjectLoads(project)`
+
+#### Approximate Voltage Drop
+
+Educational formula:
+
+```text
+VoltageDrop = Current x CableResistance
+```
+
+Current implementation:
+
+```text
+VoltageDrop = totalCurrent x resistanceOhmPerMeter x lengthMeters
+```
+
+Implemented by:
+
+- `calculateVoltageDrop(circuit, voltage)`
+
+Educational threshold:
+
+- Warning if voltage drop is greater than 4 percent of 220V and circuit wattage is greater than zero.
+- 4 percent of 220V = 8.8V.
+
+Important limitation:
+
+- This is a simplified one-way educational approximation. It does not model full conductor loop length, installation method, temperature, or code-specific voltage-drop practices.
+
+### Appliance Table
+
+Implemented appliances:
+
+| Appliance | Persian Name | Power | Voltage | Category |
+| --- | --- | ---: | ---: | --- |
+| Refrigerator | یخچال | 400W | 220V | stable |
+| Dishwasher | ماشین ظرف‌شویی | 1800W | 220V | heavy |
+| Washing machine | ماشین لباس‌شویی | 2000W | 220V | heavy |
+| Oven | فر برقی | 2500W | 220V | heavy |
+| Electric kettle | کتری برقی | 2000W | 220V | heavy |
+| Microwave | مایکروویو | 1200W | 220V | small |
+| TV | تلویزیون | 150W | 220V | small |
+| Computer | کامپیوتر | 500W | 220V | small |
+| Air conditioner | کولر گازی | 2200W | 220V | heavy |
+| Ceiling LED lamp | چراغ سقفی LED | 20W | 220V | light |
+| Iron | اتو | 2200W | 220V | heavy |
+| Vacuum cleaner | جاروبرقی | 1600W | 220V | small |
+
+### Wire Size Table
+
+Simplified educational model:
+
+| Wire Size | Educational Limit | Intended Use | Price/Meter | Resistance/Meter |
+| ---: | ---: | --- | ---: | ---: |
+| 1.5 mm2 | 10A | Lighting | 28,000 toman | 0.0121 ohm/m |
+| 2.5 mm2 | 16A | Outlets | 43,000 toman | 0.0074 ohm/m |
+| 4 mm2 | 25A | Heavier circuits | 67,000 toman | 0.0046 ohm/m |
+| 6 mm2 | 32A | Feeder/heavy loads | 96,000 toman | 0.0031 ohm/m |
+
+Rule:
+
+- Circuit current must be less than or equal to selected wire educational limit.
+
+Implemented by:
+
+- `validateWireCapacity(circuit)`
+
+Warning text:
+
+```text
+این سیم برای این مقدار جریان مناسب نیست. ممکن است در مصرف طولانی‌مدت گرم شود و خطر آتش‌سوزی ایجاد کند.
+```
+
+### Breaker Table
+
+Simplified educational model:
+
+| Breaker | Intended Use |
+| ---: | --- |
+| 6A | small lighting |
+| 10A | lighting circuits |
+| 16A | outlet circuits |
+| 20A | heavier outlet circuits |
+| 25A | main/home feeder or heavy circuit |
+| 32A | advanced/heavy educational case |
+
+Rule:
+
+- Circuit current should not exceed breaker rating.
+- Breaker rating should not exceed selected wire educational current capacity.
+
+Implemented by:
+
+- Direct check in `generateSafetyWarnings`
+- `validateBreakerWireCompatibility(circuit)`
+
+Breaker too large warning text:
+
+```text
+فیوز باید قبل از داغ شدن سیم مدار را قطع کند. این فیوز برای این سیم بیش از حد بزرگ است و از سیم محافظت کافی نمی‌کند.
+```
+
+### Implemented Safety Rules
+
+#### ER-001 - Whole Home Overload
+
+Trigger:
+
+- `project total current > project.mainBreakerAmp`
+
+Default:
+
+- Main breaker is 25A.
+
+Severity:
+
+- danger
+
+Educational meaning:
+
+- Total simultaneous load is higher than the household limit.
+
+#### ER-002 - Circuit Breaker Overload
+
+Trigger:
+
+- `circuit current > circuit.breakerAmp`
+
+Severity:
+
+- danger
+
+Educational meaning:
+
+- The circuit load exceeds the selected breaker capacity.
+
+#### ER-003 - Wire Too Thin
+
+Trigger:
+
+- `circuit current > selected wire maxAmp`
+
+Severity:
+
+- danger
+
+Educational meaning:
+
+- Wire may overheat during sustained use.
+
+#### ER-004 - Breaker Too Large For Wire
+
+Trigger:
+
+- `circuit.breakerAmp > selected wire maxAmp`
+
+Severity:
+
+- danger
+
+Educational meaning:
+
+- Breaker may not protect the wire before the wire overheats.
+
+#### ER-005 - Multiple Heavy Appliances On One Circuit
+
+Trigger:
+
+- More than one appliance on the circuit has category `heavy`.
+
+Severity:
+
+- warning
+
+Educational meaning:
+
+- High-load appliances should preferably be separated.
+
+#### ER-006 - Lighting And Outlet Loads Mixed
+
+Trigger:
+
+- Circuit includes at least one `light` appliance and at least one non-light appliance.
+
+Severity:
+
+- warning
+
+Educational meaning:
+
+- Lighting and outlet circuits are clearer and safer to learn/debug when separated.
+
+#### ER-007 - Voltage Drop Warning
+
+Trigger:
+
+- `calculateVoltageDrop(circuit) > project.voltage * 0.04`
+- Circuit wattage must be greater than zero.
+
+Severity:
+
+- warning
+
+Educational meaning:
+
+- Long/high-current circuits may lose noticeable voltage.
+
+#### ER-008 - Wire Overdesign
+
+Trigger:
+
+- A smaller wire size exists that can still carry the circuit current.
+
+Severity:
+
+- info
+
+Educational meaning:
+
+- Technically works, but may be unnecessarily expensive.
+
+Warning text:
+
+```text
+از نظر فنی کار می‌کند، اما برای این مصرف بیش از حد گران است. می‌توانی با سیم مناسب‌تر هزینه را کاهش بدهی.
+```
+
+#### ER-009 - Refrigerator Stable Circuit
+
+Trigger:
+
+- No fridge circuit exists, or fridge circuit has more than two appliances.
+
+Severity:
+
+- warning
+
+Educational meaning:
+
+- Refrigerator should be on a stable or dedicated circuit.
+
+#### ER-010 - Kitchen Too Few Circuits
+
+Trigger:
+
+- Fewer than two circuits include room ID `kitchen`.
+
+Severity:
+
+- warning
+
+Educational meaning:
+
+- Kitchen usually has multiple heavy appliances and benefits from multiple circuits.
+
+#### ER-011 - Bathroom Outlet Risk
+
+Trigger:
+
+- Any component with room ID `bath` and type `outlet`.
+
+Severity:
+
+- danger
+
+Educational meaning:
+
+- Bathroom is a wet/high-risk area; real installations need professional protection and code checks.
+
+#### ER-012 - Unknown Appliance
+
+Trigger:
+
+- Circuit contains appliance ID not found in appliance library.
+
+Severity:
+
+- info
+
+Educational meaning:
+
+- Unknown appliance is ignored by load calculation and should be corrected.
+
+### Scoring Rules
+
+Implemented in:
+
+- `generateProjectScore(project)`
+
+Safety score:
+
+```text
+100 - dangerCount * 22 - warningCount * 9 - infoCount * 2
+```
+
+Technical score:
+
+```text
+65 + configuredCircuits * 8 + kitchenSeparationBonus - dangerCount * 15 - warningCount * 5
+```
+
+Where:
+
+- `kitchenSeparationBonus = 10` if kitchen has at least two circuits.
+
+Economic score:
+
+```text
+100 - round(overdesignCost / 100000) * 4 - infoCount * 6 - dangerCount * 5
+```
+
+Learning score:
+
+```text
+if project has circuits:
+  70 + min(20, componentCount * 2) + min(10, circuitCount * 2)
+else:
+  35
+```
+
+All scores are clamped to 0-100.
+
+### Electrical Rule Risks
+
+- Current rules are useful for teaching but not enough for real installation design.
+- Wire-size limits are simplified and do not include derating.
+- Heavy appliance categories are hardcoded.
+- Refrigerator stability rule is approximate.
+- Bathroom rule is intentionally broad.
+- Voltage-drop calculation is simplified.
+- Duplicate appliances are not accurately modeled due to appliance ID deduplication.
+
+### Recommended Electrical Rule Next Steps
+
+- Add tests for each rule ID.
+- Add `RuleResult` metadata with formula, trigger, and correction.
+- Add `LoadInstance` model.
+- Add protective-device educational module.
+- Add rule-profile abstraction.
+- Add clear UI labels that every rule is educational and simplified.
+

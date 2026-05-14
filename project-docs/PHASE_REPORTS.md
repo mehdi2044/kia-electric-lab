@@ -1,0 +1,836 @@
+# Kia Electric Lab - Phase Reports
+
+Reporting policy: append every completed task, feature, fix, or phase with a timestamp. Do not delete historical reports. If a previous report needs correction, append a correction note.
+
+## 2026-05-14 13:05 Europe/Istanbul - Phase 1 Reconstructed Engineering Report
+
+### Audience
+
+This report is for Mehdi, Project Owner and Product Architect, and Vi, Technical Project Manager and Lead System Architect.
+
+### Phase Name
+
+Phase 1 MVP: Local Persian RTL Educational Electrical Simulator
+
+### Phase Objective
+
+Build a local educational simulator named Kia Electric Lab for teaching residential 220V single-phase wiring concepts to a teenager. The MVP must allow a learner to visually place components/appliances, create circuits, select wire and breaker sizes, calculate electrical load, estimate cost, receive safety/economic feedback, and view a final educational report.
+
+### Scope Reconstructed From Codebase
+
+The current codebase implements a client-side React application using TypeScript, Vite, TailwindCSS, React Flow, and Zustand. It contains a default 100 sqm two-bedroom apartment model, a common appliance library, a simplified wire and breaker table, safety validation functions, a cost engine, and a final report engine.
+
+The application is local-first. Project state is persisted in browser local storage through Zustand middleware. No backend, database, Tauri shell, or SQLite layer exists yet.
+
+### Completed Work
+
+- Created a Vite React TypeScript app in `C:\kiaelectriclab`.
+- Added TailwindCSS and PostCSS configuration.
+- Added React Flow for the visual apartment/floor-plan surface.
+- Added Zustand with persistence middleware for local project state.
+- Defined TypeScript interfaces for:
+  - `Appliance`
+  - `Room`
+  - `ElectricalComponent`
+  - `Circuit`
+  - `Wire`
+  - `Breaker`
+  - `CostItem`
+  - `SafetyWarning`
+  - `ProjectReport`
+  - `ElectricalProject`
+- Implemented common appliance data:
+  - Refrigerator: 400W
+  - Dishwasher: 1800W
+  - Washing machine: 2000W
+  - Oven: 2500W
+  - Electric kettle: 2000W
+  - Microwave: 1200W
+  - TV: 150W
+  - Computer: 500W
+  - Air conditioner: 2200W
+  - Ceiling LED lamp: 20W
+  - Iron: 2200W
+  - Vacuum cleaner: 1600W
+- Implemented simplified educational wire-size table:
+  - 1.5 mm2: 10A, lighting
+  - 2.5 mm2: 16A, outlet circuits
+  - 4 mm2: 25A, heavier circuits
+  - 6 mm2: 32A, feeder/heavy loads
+- Implemented breaker table:
+  - 6A
+  - 10A
+  - 16A
+  - 20A
+  - 25A
+  - 32A
+- Implemented cost table:
+  - Wire price per meter by size
+  - Breaker price
+  - Outlet price
+  - Switch price
+  - Lamp point price
+  - Junction box price
+  - Labor price per point
+  - Labor price per meter
+- Implemented default 100 sqm apartment model:
+  - Living room
+  - Kitchen
+  - Bedroom 1
+  - Bedroom 2
+  - Bathroom
+  - Hallway
+  - Balcony
+  - Electrical panel
+- Implemented initial demo project with:
+  - Main panel
+  - Living room lamp
+  - Living room outlet/TV
+  - Kitchen refrigerator
+  - Kitchen oven
+  - Bathroom outlet
+  - Lighting circuit
+  - Kitchen circuit
+  - Living outlet circuit
+- Implemented Persian RTL dashboard shell.
+- Implemented dark/light mode.
+- Implemented drag/drop component placement onto the floor plan.
+- Implemented appliance assignment to selected circuit by click or drag/drop placement.
+- Implemented manual circuit creation.
+- Implemented selected circuit editing:
+  - Circuit name
+  - Circuit type
+  - Wire size
+  - Breaker size
+  - Approximate length
+- Implemented live display of circuit wattage, ampere, and voltage drop.
+- Implemented safety warning panel.
+- Implemented economic cost summary panel.
+- Implemented final educational report panel.
+- Implemented scoring system:
+  - Safety score
+  - Technical score
+  - Economic score
+  - Learning score
+- Added unit tests for calculation and report generation.
+- Added README with install/run/test/build instructions and safety disclaimer.
+- Started local Vite dev server at `http://localhost:5173/`.
+
+### Modified Files In Phase 1
+
+Project setup and config:
+
+- `package.json`
+- `package-lock.json`
+- `index.html`
+- `vite.config.ts`
+- `tsconfig.json`
+- `tsconfig.node.json`
+- `tailwind.config.js`
+- `postcss.config.js`
+- `src/vite-env.d.ts`
+- `README.md`
+
+Application entry and styling:
+
+- `src/main.tsx`
+- `src/App.tsx`
+- `src/styles.css`
+
+Shared components:
+
+- `src/components/Icon.tsx`
+- `src/components/StatCard.tsx`
+
+Domain model:
+
+- `src/types/electrical.ts`
+
+Data:
+
+- `src/data/appliances.ts`
+- `src/data/electricalTables.ts`
+- `src/data/apartment.ts`
+
+Store:
+
+- `src/store/useLabStore.ts`
+
+Feature modules:
+
+- `src/features/appliance-library/ApplianceLibrary.tsx`
+- `src/features/floor-plan/FloorPlan.tsx`
+- `src/features/circuit-builder/CircuitBuilder.tsx`
+- `src/features/safety-engine/electricalMath.ts`
+- `src/features/safety-engine/safetyEngine.ts`
+- `src/features/safety-engine/SafetyPanel.tsx`
+- `src/features/cost-engine/costEngine.ts`
+- `src/features/cost-engine/CostPanel.tsx`
+- `src/features/report-engine/reportEngine.ts`
+- `src/features/report-engine/ReportPanel.tsx`
+
+Tests:
+
+- `src/features/safety-engine/electricalMath.test.ts`
+- `src/features/report-engine/reportEngine.test.ts`
+
+Generated build/runtime artifacts present in workspace:
+
+- `dist/`
+- `vite-dev.log`
+- `vite-dev.err.log`
+- `tsconfig.tsbuildinfo`
+- `tsconfig.node.tsbuildinfo`
+- `vite.config.js`
+- `vite.config.d.ts`
+
+Recommendation: generated artifacts should be ignored by version control once Git is initialized.
+
+### Dependencies Added
+
+Runtime dependencies:
+
+- `@vitejs/plugin-react`
+- `lucide-react`
+- `react`
+- `react-dom`
+- `reactflow`
+- `zustand`
+
+Development dependencies:
+
+- `@types/react`
+- `@types/react-dom`
+- `autoprefixer`
+- `postcss`
+- `tailwindcss`
+- `typescript`
+- `vite`
+- `vitest`
+
+### Architecture Changes
+
+Because the workspace was empty before Phase 1, the main architectural change was the creation of the initial application architecture.
+
+Architecture established:
+
+- Feature-based module layout under `src/features`.
+- Shared domain model under `src/types`.
+- Static educational data under `src/data`.
+- Pure calculation functions separated from UI components.
+- Report generation separated from display.
+- Local persistence contained inside Zustand store.
+- React Flow isolated to the floor-plan feature.
+- Persian formatting utilities isolated under `src/utils`.
+
+No backend architecture was introduced.
+
+No database schema was introduced.
+
+No Tauri architecture was introduced yet.
+
+### Engineering Decisions
+
+1. Use React + TypeScript + Vite.
+   - Reason: fast local development, strong typing, and low ceremony for MVP.
+
+2. Use React Flow for the apartment canvas.
+   - Reason: supports visual nodes and edges now, and can evolve toward circuit graph representation later.
+
+3. Use Zustand for project state.
+   - Reason: simple, scalable enough for Phase 1, and local persistence works without backend setup.
+
+4. Use pure TypeScript functions for electrical calculations.
+   - Reason: testability and separation from UI.
+
+5. Use a simplified educational electrical model.
+   - Reason: the app is not a professional electrical installation tool.
+
+6. Keep warning text in Persian and simple.
+   - Reason: target learner is a teenager, and the product is Persian RTL.
+
+7. Use static data tables for wire, breaker, appliance, and cost values.
+   - Reason: transparent assumptions and easier future migration into editable profiles.
+
+8. Treat bathroom outlet as a high-risk warning whenever present.
+   - Reason: Phase 1 does not model bathroom zones or protective devices, so the safest educational response is explicit risk feedback.
+
+### Electrical Logic Implemented
+
+Implemented formulas and logic:
+
+- `calculateCurrent(watt, voltage)`: returns `watt / voltage`.
+- `calculatePower(voltage, ampere)`: returns `voltage * ampere`.
+- `calculateResistance(voltage, ampere)`: returns `voltage / ampere`.
+- `calculateTotalLoad(appliances, voltage)`: sums appliance watts and calculates total current.
+- `calculateCircuitLoad(circuit, voltage)`: calculates load for a circuit from appliance IDs.
+- `validateWireCapacity(circuit)`: checks current against selected wire limit.
+- `validateBreakerWireCompatibility(circuit)`: checks breaker rating is not larger than selected wire educational capacity.
+- `calculateVoltageDrop(circuit)`: calculates approximate voltage drop using current, selected wire resistance per meter, and circuit length.
+- `getProjectLoads(project)`: calculates total project wattage and ampere from all circuit appliances.
+
+Implemented warning cases:
+
+- Total home current exceeds main breaker limit.
+- Circuit current exceeds breaker rating.
+- Wire capacity is too small for circuit current.
+- Breaker rating is too large for selected wire.
+- Multiple heavy appliances exist on one circuit.
+- Refrigerator is missing or appears on an overloaded/non-dedicated circuit.
+- Kitchen has fewer than two circuits.
+- Bathroom outlet exists in high-risk room.
+- Lighting and outlet loads are mixed.
+- Voltage drop exceeds 4 percent of 220V in the simplified model.
+- Wire is larger than necessary for the current load.
+- Unknown appliance IDs are found.
+
+### Formulas Implemented
+
+- Current: `I = P / V`
+- Power: `P = V x I`
+- Resistance: `R = V / I`
+- Total load in parallel: `TotalPower = sum(appliance watts)`
+- Total current: `TotalCurrent = TotalPower / 220`
+- Approximate voltage drop: `VoltageDrop = Current x CableResistance`
+- Implemented voltage drop detail: `VoltageDrop = totalCurrent x resistanceOhmPerMeter x lengthMeters`
+
+### Cost Logic Implemented
+
+Implemented cost calculations:
+
+- Wire cost by size and length.
+- Breaker cost by selected breaker.
+- Outlet material cost by outlet count.
+- Switch material cost by switch count.
+- Lamp point material cost by lamp count.
+- Junction box estimate as `max(1, ceil(points / 4))`.
+- Labor per point.
+- Labor per meter.
+- Circuit-level material, labor, total, and overdesign cost.
+- Project-level material, labor, total, cost by circuit, cost by room, and overdesign cost.
+
+Current overdesign estimate:
+
+- If the selected wire is larger than required and a smaller wire would still be safe for current, the engine estimates overdesign cost as 25 percent of selected wire material cost for that circuit.
+
+### UI Implemented
+
+Implemented screens/panels:
+
+- Header with product name and local controls.
+- Educational safety disclaimer.
+- KPI cards:
+  - Total wattage
+  - Total current
+  - Main breaker limit
+  - Total cost
+- Component/appliance palette.
+- Apartment floor plan.
+- Circuit builder.
+- Safety feedback panel.
+- Cost panel.
+- Final educational report.
+
+UI properties:
+
+- Persian text.
+- RTL direction.
+- Dark/light support.
+- Warning colors:
+  - danger: rose/red
+  - warning: amber
+  - info: blue
+  - good: emerald
+- Card-based layout.
+- Icons through `lucide-react`.
+
+### Tests Implemented
+
+`src/features/safety-engine/electricalMath.test.ts` verifies:
+
+- Current calculation.
+- Power calculation.
+- Resistance calculation.
+- Parallel load summing.
+- Undersized wire detection.
+- Breaker/wire compatibility for a test case.
+- Approximate voltage drop is positive.
+
+`src/features/report-engine/reportEngine.test.ts` verifies:
+
+- Report totals/costs/warnings/scores are generated.
+- Scores remain within 0 to 100.
+
+### Verification Results
+
+Commands run:
+
+- `npm install`: completed, zero vulnerabilities reported.
+- `npm test`: passed.
+  - 2 test files passed.
+  - 7 tests passed.
+- `npm run build`: passed.
+  - TypeScript build passed.
+  - Vite production build passed.
+- Local server check:
+  - `Invoke-WebRequest http://localhost:5173/` returned HTTP 200.
+
+Known verification limitation:
+
+- In-app browser automation timed out during visual verification. This does not imply app failure, but it means no automated screenshot/DOM visual report was completed.
+
+### Bugs Found Or Suspected
+
+1. Component removal is not implemented.
+   - Impact: user cannot clean up mistakes except by reset.
+
+2. Appliance removal from circuit is not implemented.
+   - Impact: circuit edits are additive only.
+
+3. Component coordinates are not editable after placement.
+   - Impact: layout correction is limited.
+
+4. Wire path component is defined in types but not fully implemented as a real path/routing tool.
+   - Impact: length is manually estimated with a slider instead of measured from visual geometry.
+
+5. Cost by room is approximate.
+   - Impact: multi-room circuit cost is divided equally by room count, not by actual wire length or component distribution.
+
+6. Refrigerator dedicated circuit check is simplified.
+   - Impact: a fridge circuit with one other low-load appliance may be treated as acceptable even though real design preferences vary.
+
+7. Bathroom safety is only a warning.
+   - Impact: no RCD/GFCI device model or bathroom zone model exists.
+
+8. `breaker` and `wire-path` component types exist but are not fully represented as interactive circuit construction tools.
+   - Impact: future UI may need richer component semantics.
+
+9. Unknown appliance IDs are ignored in load calculation and only warned.
+   - Impact: invalid persisted data could understate load.
+
+10. Generated files are present in the working directory.
+   - Impact: once Git is initialized, `dist`, build info files, logs, and `node_modules` should be ignored.
+
+### Limitations
+
+Electrical limitations:
+
+- No real code compliance.
+- No conductor installation method derating.
+- No thermal model.
+- No short-circuit/fault model.
+- No protective earth model.
+- No RCD/GFCI/RCCB logic.
+- No diversity/demand factor.
+- No motor starting/inrush current.
+- No real cable route geometry.
+- No multi-phase support.
+
+Product limitations:
+
+- No onboarding lessons.
+- No guided correction workflow.
+- No scenario system.
+- No project import/export.
+- No print/PDF report.
+- No backend.
+- No user accounts.
+- No multiplayer.
+
+Engineering limitations:
+
+- No Git repository detected in `C:\kiaelectriclab`.
+- No linting script currently exists.
+- Test coverage is initial, not comprehensive.
+- Documentation governance files did not exist until this reconstruction task.
+
+### TODOs
+
+- Initialize Git and add `.gitignore`.
+- Add delete/remove/edit actions for components and circuit loads.
+- Add JSON export/import.
+- Add real wire route drawing and measured lengths.
+- Split large UI components if they grow further.
+- Add validation tests for every warning branch.
+- Add data versioning for persisted local storage.
+- Add reset/migration logic for outdated local storage schemas.
+- Add standards/profile abstraction for educational rule sets.
+- Add report export and print CSS.
+- Add accessibility review for keyboard use and screen-reader labels.
+
+### Architecture Quality Assessment
+
+Current architecture quality is good for an MVP. The most important decision, separating calculation logic from UI, is already implemented. Domain interfaces are centralized, and engines are grouped by feature. This supports future expansion into AI tutoring, richer reports, and persistence migration.
+
+Strong points:
+
+- Pure calculation functions are testable.
+- Feature modules are clear.
+- Static educational assumptions are visible in data files.
+- UI uses generated reports instead of duplicating formulas.
+- Zustand store is simple and local-first.
+
+Weak points:
+
+- Circuit topology is not yet a true graph model.
+- React Flow currently visualizes nodes and edges but does not own a rigorous electrical network representation.
+- There is no schema validation for persisted local storage.
+- No formal rule engine abstraction exists yet; warnings are implemented as direct procedural checks.
+- Cost model is hardcoded and not profile/version based.
+
+### Risks
+
+Safety/product risk:
+
+- Users may misunderstand the simulator as professional guidance. The disclaimer must remain prominent.
+
+Electrical correctness risk:
+
+- Simplified rules could be interpreted too broadly if future UI language becomes overly authoritative.
+
+Architecture risk:
+
+- If future features add rules directly into UI components, maintainability will degrade. Rule logic should stay inside engines or future rule-profile modules.
+
+Persistence risk:
+
+- Local storage shape may become stale as TypeScript interfaces evolve. Migrations are not implemented.
+
+Scalability risk:
+
+- React Flow can support richer interactions, but large simulations may require better graph/state normalization.
+
+Cost accuracy risk:
+
+- Current prices are static educational placeholders. They should be labeled as configurable assumptions, not market estimates.
+
+### Scalability Concerns
+
+As Kia Electric Lab grows into an educational platform, the current MVP should evolve toward:
+
+- Versioned project schema.
+- Explicit rule profiles.
+- A circuit graph model separated from visual nodes.
+- Scenario and lesson engine.
+- Serializable report snapshots.
+- SQLite persistence layer for Tauri.
+- AI tutor context generated from validated project state.
+- More granular test coverage for engines.
+
+### Next Recommended Step
+
+Next recommended Phase 2 foundation step:
+
+Create project governance and persistence infrastructure:
+
+1. Initialize Git and `.gitignore`.
+2. Add documentation update discipline to every task.
+3. Add schema version to `ElectricalProject`.
+4. Add local storage migration path.
+5. Add component/circuit deletion and edit flows.
+6. Add complete tests for all safety warnings.
+
+Reason: before adding advanced simulator features, the project needs durable engineering hygiene and state-management safeguards.
+
+## 2026-05-14 13:05 Europe/Istanbul - Documentation Governance Phase Report
+
+### Completed Work
+
+Created persistent project documentation directory and files required by Mehdi and Vi:
+
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/ELECTRICAL_RULES.md`
+- `project-docs/COST_ENGINE_RULES.md`
+
+### Why This Was Done
+
+The Phase 1 implementation existed, but the project did not yet have the required persistent memory and governance documentation. Since the project is expected to grow into a larger simulator, AI tutor, cost engine, and safety analysis platform, architecture continuity is now a project requirement.
+
+### Architecture Changes
+
+No application runtime architecture was changed. Documentation architecture was added under `project-docs`.
+
+### Dependencies Added
+
+None.
+
+### Electrical Logic Changed
+
+None.
+
+### Cost Logic Changed
+
+None.
+
+### Risks
+
+The reconstructed Phase 1 report is based on current codebase inspection rather than original commit history, because no Git repository/history exists in the workspace.
+
+### Next Recommended Step
+
+Initialize Git and commit the Phase 1 baseline plus governance documentation.
+
+## 2026-05-14 13:25 Europe/Istanbul - Phase 1 Version Control Initialization Report
+
+### Audience
+
+This report is for Mehdi, Project Owner and Product Architect, and Vi, Technical Project Manager and Lead System Architect.
+
+### Task Objective
+
+Initialize a professional Git workflow for Kia Electric Lab as the project enters long-term engineering development. Preserve the current Phase 1 implementation and governance documentation as a stable baseline with a release tag.
+
+### Completed Work
+
+- Initialized a Git repository in `C:\kiaelectriclab`.
+- Created `.gitignore` for dependency folders, build outputs, caches, logs, environment files, OS files, and editor files.
+- Created branch structure:
+  - `main`
+  - `develop`
+- Created `CONTRIBUTING.md`.
+- Created `DEVELOPMENT_WORKFLOW.md`.
+- Committed the current Phase 1 baseline with a professional baseline commit message.
+- Tagged the current baseline as `v0.1-phase1-baseline`.
+- Updated persistent documentation to record the version-control governance phase.
+
+### Modified Files
+
+- `.gitignore`
+- `CONTRIBUTING.md`
+- `DEVELOPMENT_WORKFLOW.md`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Architecture Changes
+
+No runtime application architecture was changed. The change is engineering-process architecture:
+
+- Git repository is now the source of change history.
+- `main` and `develop` establish release/integration separation.
+- Tagged baseline gives the team a stable recovery point.
+- Contribution and development workflow docs define how future work should be performed.
+
+### Dependencies Added
+
+None.
+
+### Electrical Logic Implemented Or Changed
+
+None. No electrical formulas, safety thresholds, wire tables, breaker tables, or warning rules were changed in this task.
+
+### Cost Engine Logic Implemented Or Changed
+
+None. No cost formulas, unit prices, overdesign logic, labor assumptions, or cost allocation rules were changed in this task.
+
+### Git Workflow
+
+The repository now uses a professional branch model:
+
+- `main`: stable release branch.
+- `develop`: active integration branch.
+- `feature/*`: isolated product/engineering work.
+- `experimental/*`: risky prototypes and research.
+
+Recommended day-to-day flow:
+
+```text
+develop -> feature/* -> develop -> main -> release tag
+```
+
+The project should keep `develop` buildable and reserve `main` for verified stable states.
+
+### Branch Strategy
+
+#### `main`
+
+Purpose:
+
+- Stable releases.
+- Release tags.
+- Known-good project states.
+
+Rules:
+
+- Do not use for risky active work.
+- Merge from `develop` after verification.
+- Tag releases from `main`.
+
+#### `develop`
+
+Purpose:
+
+- Active integration.
+- Landing place for completed feature branches.
+
+Rules:
+
+- Feature work starts here.
+- Should remain buildable.
+- Should contain updated docs for merged work.
+
+#### `feature/*`
+
+Purpose:
+
+- Isolated implementation.
+
+Examples:
+
+- `feature/circuit-deletion`
+- `feature/wire-routing`
+- `feature/cost-profile-editor`
+
+Rules:
+
+- Keep scope narrow.
+- Include tests when logic changes.
+- Include documentation updates.
+
+#### `experimental/*`
+
+Purpose:
+
+- Risky or uncertain work.
+
+Examples:
+
+- AI tutor prototypes.
+- Multiplayer state sync prototypes.
+- Electrical graph simulation experiments.
+
+Rules:
+
+- Must not merge directly to `main`.
+- Should be promoted into `feature/*` only after Vi approves the architecture direction.
+
+### Commit Rules
+
+Future commits should be small and descriptive.
+
+Recommended prefixes:
+
+- `feat:`
+- `fix:`
+- `docs:`
+- `test:`
+- `refactor:`
+- `chore:`
+- `build:`
+
+Architecture changes, safety-rule changes, cost-rule changes, and persistence changes must include documentation updates in the same commit or in an immediately adjacent documentation commit.
+
+### Recovery Strategy
+
+The new Git setup enables recovery at several levels:
+
+1. Recover current uncommitted work:
+   - Use `git status`, `git diff`, and `git stash`.
+
+2. Recover a file:
+   - Use `git restore path/to/file`.
+   - Use `git restore --source <commit> path/to/file` for historical recovery.
+
+3. Recover the full Phase 1 baseline:
+   - Use the tag `v0.1-phase1-baseline`.
+   - Create a recovery branch with:
+
+```text
+git checkout -b recovery/phase1 v0.1-phase1-baseline
+```
+
+### Rollback Strategy
+
+Preferred rollback for shared branches:
+
+```text
+git revert <commit>
+```
+
+Reason:
+
+- Preserves history.
+- Avoids destructive branch rewrites.
+- Safe for `main` and `develop`.
+
+For complete baseline inspection:
+
+```text
+git show v0.1-phase1-baseline
+```
+
+For full baseline recovery:
+
+```text
+git checkout -b recovery/from-phase1 v0.1-phase1-baseline
+```
+
+Destructive commands such as hard reset should be avoided unless Mehdi or Vi explicitly approves the recovery plan.
+
+### Future Scaling Strategy
+
+As Kia Electric Lab grows, the workflow should evolve toward:
+
+- Pull request review before merging into `develop`.
+- Protected `main`.
+- CI checks for `npm test` and `npm run build`.
+- Release checklist for `main` merges.
+- Architecture Decision Records for major decisions.
+- Versioned project schema and migration tests.
+- Separate simulation engine package if Tauri, AI tutor, or multiplayer layers need shared logic.
+- Automated release notes derived from `project-docs/PHASE_REPORTS.md`.
+
+### Bugs
+
+No runtime bugs were introduced or fixed in this task.
+
+### Limitations
+
+- No remote repository was configured.
+- No CI pipeline exists yet.
+- Branch protection cannot be enforced locally.
+- No pull request process exists until a remote Git platform is selected.
+
+### TODOs Created Or Updated
+
+- Add remote repository when Mehdi/Vi choose hosting.
+- Add CI pipeline.
+- Add branch protection rules after remote setup.
+- Add release checklist.
+- Add ADR process if Vi wants formal decision records.
+
+### Risks
+
+- Without a remote, local disk failure could still lose history.
+- Without CI, developers must manually run verification.
+- Without branch protection, accidental commits to `main` are still possible locally.
+
+### Verification
+
+Verification performed:
+
+- Confirmed Git repository initialized.
+- Confirmed `main` branch exists.
+- Confirmed `develop` branch exists.
+- Confirmed baseline commit exists.
+- Confirmed tag `v0.1-phase1-baseline` exists.
+- Confirmed ignored generated folders/files are not staged.
+
+### Next Recommended Step
+
+Create a remote repository and push both branches and the baseline tag:
+
+```text
+git remote add origin <repo-url>
+git push -u origin main
+git push -u origin develop
+git push origin v0.1-phase1-baseline
+```
+
+After remote setup, enable branch protection for `main` and require tests/build before merge.

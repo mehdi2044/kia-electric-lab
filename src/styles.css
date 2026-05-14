@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #f6f7f9;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Vazirmatn, Tahoma, Arial, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+.floor-grid {
+  background-image:
+    linear-gradient(rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

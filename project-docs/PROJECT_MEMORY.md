@@ -1,0 +1,252 @@
+# Kia Electric Lab - Project Memory
+
+Persistent memory policy: this file is append-first. Future phases must add dated entries rather than deleting prior history. Corrections should be recorded as new notes with context, not silently rewritten.
+
+## 2026-05-14 13:05 Europe/Istanbul - Governance Memory Bootstrap
+
+### Ownership And Roles
+
+- Mehdi is the Project Owner and Product Architect.
+- Vi is the Technical Project Manager and Lead System Architect.
+- Codex is the Senior Software Engineer responsible for implementation.
+- Codex must follow architecture and product direction from Mehdi and Vi.
+- Codex must not silently change architecture decisions.
+- Every completed implementation step, fix, feature, or phase must produce an engineering report for Mehdi.
+- Persistent documentation must remain current so another engineer can continue the project without depending on chat history.
+
+### Overall Project Vision
+
+Kia Electric Lab is a local Persian RTL educational simulator for teaching a teenager the fundamentals of residential electrical wiring. It models a simplified 220V single-phase apartment environment where a learner can place electrical components and appliances, build circuits, choose wire sizes and breakers, calculate load, estimate cost, and receive educational feedback.
+
+The product is explicitly not a professional installation, permitting, inspection, or design approval system. Its role is educational: it should explain electricity, safety risk, circuit planning, and economic tradeoffs in simple Persian.
+
+Long-term product direction:
+
+- Advanced visual electrical simulator
+- Educational platform for home wiring concepts
+- AI-assisted electrical tutor
+- Cost estimation engine
+- Safety analysis engine
+- Potential multiplayer classroom simulator
+- Later desktop packaging with Tauri
+- Later persistence using SQLite
+
+### Current Architecture
+
+The current Phase 1 application is a Vite React TypeScript frontend with a feature-oriented folder structure. It runs locally in the browser and stores project state in local storage through Zustand persistence.
+
+Current major modules:
+
+- `src/types/electrical.ts`: domain model interfaces and discriminated domain types.
+- `src/data/appliances.ts`: common appliance library.
+- `src/data/electricalTables.ts`: educational wire, breaker, and unit-cost tables.
+- `src/data/apartment.ts`: default apartment layout, starter components, and starter circuits.
+- `src/features/safety-engine/electricalMath.ts`: pure electrical formulas and load calculations.
+- `src/features/safety-engine/safetyEngine.ts`: warning generation and safety rule checks.
+- `src/features/cost-engine/costEngine.ts`: material/labor cost calculations and overdesign cost estimate.
+- `src/features/report-engine/reportEngine.ts`: final report generation and scoring.
+- `src/store/useLabStore.ts`: editable project state, selected circuit, theme state, local persistence, and mutation actions.
+- `src/features/floor-plan/FloorPlan.tsx`: visual floor plan and component placement using React Flow.
+- `src/features/circuit-builder/CircuitBuilder.tsx`: manual circuit creation and circuit configuration UI.
+- `src/features/appliance-library/ApplianceLibrary.tsx`: draggable components and appliances.
+- `src/features/safety-engine/SafetyPanel.tsx`: Persian safety feedback UI.
+- `src/features/cost-engine/CostPanel.tsx`: Persian cost summary UI.
+- `src/features/report-engine/ReportPanel.tsx`: final report UI.
+
+### Engineering Goals
+
+Priority order defined by governance:
+
+1. Clean architecture
+2. Correct electrical logic
+3. Educational clarity
+4. Scalability
+5. UI polish
+6. Performance optimization
+
+Practical interpretation:
+
+- Calculation logic must stay separated from React UI.
+- Safety/cost/report functions should remain pure or mostly pure where possible.
+- UI should be a consumer of state and calculated outputs, not the owner of formulas.
+- Persian RTL wording must be simple, educational, and non-professional in tone.
+- All future changes should update project documentation and phase reports.
+
+### Completed Systems In Phase 1
+
+- Vite/React/TypeScript project scaffold.
+- TailwindCSS styling setup.
+- React Flow floor plan surface.
+- Zustand store with local browser persistence.
+- Persian RTL shell with dark/light support.
+- Basic apartment model for a 100 sqm two-bedroom unit.
+- Component palette for outlet, lamp, junction box, switches, and appliances.
+- Appliance library with common home loads.
+- Drag and drop placement onto the floor plan.
+- Circuit creation and selection.
+- Component/appliance assignment to circuits.
+- Wire size and breaker selection per circuit.
+- Current, wattage, approximate voltage drop, and cost display.
+- Safety warning generation.
+- Final report generation.
+- Scoring system for safety, technical, economic, and learning dimensions.
+- Unit tests for calculation and report functions.
+- README with safety disclaimer and run instructions.
+
+### Pending Systems
+
+- True wire path drawing and editable routing.
+- Reliable component repositioning after placement.
+- Circuit deletion, component deletion, and appliance removal.
+- Import/export of project JSON.
+- Tauri packaging.
+- SQLite persistence.
+- Guided lessons and quiz mode.
+- AI tutor layer.
+- Full validation test suite for every safety rule.
+- Better visual report export/print mode.
+- More complete cost model with currency/version metadata.
+- Room-level editing and multiple apartment templates.
+- Accessibility audit and keyboard-first interactions.
+
+### Important Decisions
+
+1. The simulator uses 220V as the default single-phase residential voltage.
+   - Reason: matches the requested educational model and keeps formulas understandable for a teenager.
+
+2. The current main household breaker limit is 25A.
+   - Reason: requested baseline; gives approximate max power of 5500W using `P = V x I`.
+
+3. The wire table is intentionally simplified.
+   - Reason: this is not a professional sizing tool; simplified limits help teach the relationship between current, wire size, and overheating risk.
+
+4. Calculation logic is implemented in pure TypeScript functions.
+   - Reason: enables unit testing and protects architecture as the simulator grows.
+
+5. React Flow is used for the floor plan surface.
+   - Reason: supports visual nodes and future graph/circuit interactions.
+
+6. Zustand with local persistence is used for Phase 1 state.
+   - Reason: simple local-first architecture, compatible with later migration to Tauri + SQLite.
+
+7. Persian RTL is enforced in `index.html` and at runtime in `App.tsx`.
+   - Reason: UI language and reading direction are product requirements, not optional styling.
+
+### Simulation Limitations
+
+The current simulator is educational only and does not model:
+
+- National electrical code requirements.
+- Real protective earth/grounding design.
+- RCD/GFCI/RCCB protection behavior.
+- Short-circuit current.
+- Fault loop impedance.
+- Cable grouping, installation method, ambient temperature, insulation derating, or conduit fill.
+- Three-phase systems.
+- Diversity/demand factors.
+- Starting/inrush current for motors and compressors.
+- Real circuit topology or conductor length derived from drawn geometry.
+- Real material market prices.
+- Professional bathroom/kitchen zone rules.
+
+### Educational Assumptions
+
+- Appliances connected in parallel are modeled by summing watts.
+- Circuit current is calculated from total watts divided by 220V.
+- Wire current capacity uses a simplified teaching table:
+  - 1.5 mm2: about 10A, lighting
+  - 2.5 mm2: about 16A, outlets
+  - 4 mm2: about 25A, heavier circuits
+  - 6 mm2: about 32A, feeder/heavier loads
+- Breaker selection is evaluated against circuit current and selected wire capacity.
+- Heavy appliances should preferably have separate circuits.
+- Refrigerator should preferably be on a stable or dedicated circuit.
+- Bathroom outlets are always treated as high-risk educational items.
+- Kitchen should have multiple circuits because many kitchen appliances are high load.
+
+### Important Formulas
+
+- Current: `I = P / V`
+- Power: `P = V x I`
+- Resistance: `R = V / I`
+- Total parallel load: `TotalPower = sum(appliance watts)`
+- Total current: `TotalCurrent = TotalPower / 220`
+- Approximate voltage drop: `VoltageDrop = Current x CableResistance`
+- Current implementation uses `VoltageDrop = totalCurrent x resistanceOhmPerMeter x lengthMeters`
+
+### Electrical Standards Used
+
+No formal national or international electrical standard is implemented in Phase 1. The application uses the simplified educational rules provided by Mehdi/Vi in the Phase 1 brief. All warnings are teaching guidance, not approval rules.
+
+Future architecture should isolate standard profiles if professional-like educational scenarios are added, for example:
+
+- `EducationalSimplified220VProfile`
+- `IranResidentialTeachingProfile`
+- `IECConceptualProfile`
+
+Those profiles should remain explicitly educational unless Mehdi and Vi approve a different product scope.
+
+### UI/UX Principles
+
+- Persian RTL first.
+- Simple Persian educational explanations.
+- Teenager-friendly visual simulator.
+- Modern clean cards and clear warning colors.
+- Dark/light support.
+- Immediate feedback after circuit edits.
+- Warning language should explain why a choice is unsafe or expensive, not merely mark it wrong.
+- The first screen should be the simulator itself, not a marketing page.
+
+### Persian RTL Requirements
+
+- `html` must use `lang="fa"` and `dir="rtl"`.
+- App runtime should preserve RTL by setting `document.documentElement.dir = 'rtl'`.
+- Main educational explanations must be Persian.
+- Numeric output can use Persian locale formatting through `toLocaleString('fa-IR')` and `Intl.NumberFormat('fa-IR')`.
+
+### Current Verification State
+
+Phase 1 was verified with:
+
+- `npm test`: passed 7 tests.
+- `npm run build`: passed.
+- Local Vite server responded at `http://localhost:5173/` with HTTP 200.
+
+Known verification gap:
+
+- In-app browser automation timed out during visual verification. Manual browser view is available at the local URL, but automated screenshot verification was not completed.
+
+## 2026-05-14 13:25 Europe/Istanbul - Version Control Governance Established
+
+### Change Summary
+
+The project entered long-term engineering development mode. A professional Git workflow was initialized for Kia Electric Lab with stable release, integration, feature, and experimental branch rules.
+
+### New Governance Files
+
+- `.gitignore`
+- `CONTRIBUTING.md`
+- `DEVELOPMENT_WORKFLOW.md`
+
+### Branch Strategy Decision
+
+- `main` is the stable release branch.
+- `develop` is the active integration branch.
+- `feature/*` branches are for isolated implementation work.
+- `experimental/*` branches are for risky prototypes and uncertain architecture.
+
+### Baseline Version Decision
+
+The current Phase 1 source, documentation, and governance baseline is tagged as:
+
+```text
+v0.1-phase1-baseline
+```
+
+### Reason
+
+The project is expected to grow into a larger simulator and educational platform. Version control is now required for rollback, continuity, reviewability, and release discipline.
+
+### Continuity Rule
+
+Future tasks must update `project-docs/` before committing when they affect implementation, architecture, electrical logic, cost logic, known issues, or project direction.
