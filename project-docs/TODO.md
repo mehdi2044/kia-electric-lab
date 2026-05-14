@@ -625,3 +625,33 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add CI caching guidance for Playwright browsers.
 - [ ] Add snapshot review process to `DEVELOPMENT_WORKFLOW.md`.
 - [ ] Evaluate Firefox/WebKit snapshot stability.
+
+## 2026-05-15 01:37 Europe/Istanbul - Phase 16 TODO Update
+
+### Completed
+
+- [x] Add mobile viewport screenshot baseline for lesson panel.
+- [x] Add mobile viewport screenshot baseline for apply preview modal.
+- [x] Add mobile viewport screenshot baseline for diagnostics panel.
+- [x] Add mobile viewport screenshot baseline for audit viewer.
+- [x] Add mobile viewport screenshot baseline for floor plan with routed wire.
+- [x] Separate desktop and mobile Playwright projects.
+- [x] Preserve existing desktop snapshot names.
+- [x] Add CI-aware Playwright retry policy.
+- [x] Add Playwright screenshot and video artifact policy.
+- [x] Add `npm run test:e2e:update`.
+- [x] Add `npm run test:e2e:headed`.
+- [x] Add `npm run test:all`.
+- [x] Add snapshot review policy to `DEVELOPMENT_WORKFLOW.md`.
+- [x] Add CI readiness plan to `DEVELOPMENT_WORKFLOW.md`.
+- [x] Add mobile visual QA rules to `UI_QA_CHECKLIST.md`.
+
+### New TODOs
+
+- [ ] Add a real CI workflow file after Mehdi and Vi choose the hosting platform.
+- [ ] Upload `test-results/` and `playwright-report/` as CI artifacts.
+- [ ] Evaluate Firefox visual snapshot stability.
+- [ ] Evaluate WebKit visual snapshot stability.
+- [ ] Add mobile viewport visual coverage for wire inspector.
+- [ ] Add mobile viewport visual coverage for panelboard.
+- [ ] Decide whether visual tests should run on every pull request or only on release candidates.

@@ -1760,3 +1760,95 @@ Before enabling:
 - define per-browser snapshot paths
 - decide acceptable pixel thresholds
 - add mobile viewport baselines separately from desktop
+
+## 2026-05-15 01:37 Europe/Istanbul - Phase 16 Mobile Visual QA And CI-Ready Test Architecture
+
+### Change Type
+
+Mobile visual baselines, Playwright project separation, snapshot governance, and CI readiness planning.
+
+### Playwright Project Architecture
+
+The browser test suite now has two Chromium projects:
+
+- `chromium`: desktop functional and desktop visual coverage.
+- `chromium-mobile`: mobile visual coverage for `.mobile.spec.ts` files.
+
+The desktop project intentionally keeps the historical `chromium` name so Phase 15 desktop snapshot filenames remain stable. The mobile project uses a Pixel 5 style viewport of `390x844` and writes separate mobile snapshot baselines with the `chromium-mobile` suffix.
+
+### Test Server Architecture
+
+Playwright continues to run against a dedicated test server:
+
+```text
+http://127.0.0.1:5174
+```
+
+The server command uses `--strictPort`, does not reuse an existing server, and remains separate from the user-facing in-app browser server on `5173`.
+
+### Artifact And Retry Policy
+
+The Playwright config is now CI-aware:
+
+- local retries: `0`
+- CI retries: `2`
+- trace: `on-first-retry`
+- screenshot: `only-on-failure`
+- video: `retain-on-failure`
+
+This keeps local runs fast while preserving enough artifacts for CI debugging.
+
+### Mobile Visual Baseline Architecture
+
+Mobile screenshot tests live in:
+
+```text
+tests/e2e/phase16-mobile-visual.mobile.spec.ts
+```
+
+Baselines live in:
+
+```text
+tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/
+```
+
+Covered mobile surfaces:
+
+- lesson panel
+- apply preview modal
+- diagnostics panel
+- audit viewer
+- floor plan with routed wire
+
+### Snapshot Stability Strategy
+
+- Use deterministic typed fixture builders.
+- Seed localStorage directly for visual states.
+- Use stable `data-testid` anchors.
+- Blur active focus before screenshot comparison.
+- Keep desktop and mobile baselines separate.
+- Preserve existing desktop snapshot names unless the UI intentionally changes.
+
+### Future CI Architecture Plan
+
+A CI pipeline should run:
+
+```text
+npm ci
+npm test
+npm run build
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+Recommended CI artifacts:
+
+- `test-results/`
+- `playwright-report/`
+
+Recommended cache targets:
+
+- npm cache
+- Playwright browser cache
+
+Firefox, WebKit, and mobile browser expansion should remain planned work until CI runtime stability and snapshot review ownership are formalized.

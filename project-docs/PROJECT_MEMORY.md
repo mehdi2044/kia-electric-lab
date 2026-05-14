@@ -810,3 +810,43 @@ Phase 15 made browser testing more maintainable and introduced the first visual 
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed in Phase 15.
+
+## 2026-05-15 01:37 Europe/Istanbul - Phase 16 Mobile Visual Baselines, Snapshot Review Policy, And CI Readiness
+
+### Change Summary
+
+Phase 16 prepared Kia Electric Lab for more reliable visual QA across desktop and mobile viewports and documented the rules needed before future CI adoption. The Playwright suite now has separate Chromium desktop and mobile projects, committed mobile screenshot baselines, CI-friendly retry/artifact behavior, and npm scripts for normal verification, snapshot updates, headed debugging, and full local verification.
+
+### New Completed Systems
+
+- Mobile visual regression baselines for:
+  - lesson panel
+  - apply preview modal
+  - diagnostics panel
+  - audit viewer
+  - floor plan with routed wire
+- Playwright project separation:
+  - `chromium` for existing desktop tests and desktop visual snapshots
+  - `chromium-mobile` for mobile screenshot baselines
+- CI-oriented Playwright behavior:
+  - retry policy enabled only under `CI`
+  - traces on first retry
+  - screenshots only on failure
+  - videos retained on failure
+  - dedicated strict test server on `127.0.0.1:5174`
+- Developer scripts:
+  - `npm run test:e2e`
+  - `npm run test:e2e:update`
+  - `npm run test:e2e:headed`
+  - `npm run test:all`
+- Snapshot review and CI readiness policies documented in workflow and QA docs.
+
+### Important Decisions
+
+- Existing desktop project name remains `chromium` to preserve Phase 15 desktop snapshot paths and avoid unnecessary baseline churn.
+- Mobile visual tests live in a `.mobile.spec.ts` file and are routed only to the `chromium-mobile` Playwright project.
+- Mobile screenshot checks use deterministic seeded data and viewport screenshots anchored around stable test ids. This avoids mobile element screenshot instability caused by responsive scrolling and fixed application chrome.
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed in Phase 16. The topology engine, current engine, safety engine, cost engine, migration engine, diagnostics engine, repair engine, lesson engine, and sandbox apply logic are preserved.

@@ -1151,3 +1151,52 @@ The project now has committed visual baselines, but `DEVELOPMENT_WORKFLOW.md` do
 Recommended fix:
 
 - Add snapshot update/review policy to development workflow documentation.
+
+## 2026-05-15 01:37 Europe/Istanbul - Known Issues Update After Phase 16
+
+### KI-049 Status Update - Snapshot Review Policy Added
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- `DEVELOPMENT_WORKFLOW.md` and `UI_QA_CHECKLIST.md` now document when snapshots may be updated, who must approve changes, how to inspect diffs, and which commands are used for normal verification versus intentional snapshot updates.
+
+### KI-050 - CI Workflow File Not Yet Created
+
+Severity: Low.
+
+Description:
+
+Phase 16 documents CI readiness and configures Playwright for CI-friendly execution, but it does not add a concrete GitHub Actions, GitLab CI, or other provider workflow file.
+
+Recommended fix:
+
+- Add the CI workflow after Mehdi and Vi select the hosting provider and artifact retention policy.
+
+### KI-051 - Mobile Visual Baselines Are Chromium/Windows Specific
+
+Severity: Medium.
+
+Description:
+
+Mobile visual baselines currently run through Chromium device emulation on the Windows development machine. Rendering can differ on Linux CI due to font rasterization and browser build differences.
+
+Recommended fix:
+
+- Establish the CI environment as the source of truth before treating mobile snapshots as release-blocking artifacts.
+- Regenerate approved snapshots on the selected CI-compatible environment if needed.
+
+### KI-052 - Firefox And WebKit Coverage Still Planned
+
+Severity: Low.
+
+Description:
+
+The test architecture now separates desktop and mobile Chromium lanes, but Firefox and WebKit projects remain disabled.
+
+Recommended fix:
+
+- Trial Firefox and WebKit in CI after browser caching and snapshot review rules are stable.

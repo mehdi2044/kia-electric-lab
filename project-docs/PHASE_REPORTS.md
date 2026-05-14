@@ -2855,3 +2855,211 @@ No new electrical formulas.
 ### Next Recommended Step
 
 Phase 16 should add mobile visual baselines, document snapshot review policy in `DEVELOPMENT_WORKFLOW.md`, and consider first CI guidance for Playwright browser caching.
+
+## 2026-05-15 01:37 Europe/Istanbul - Phase 16 Engineering Report: Mobile Visual Baselines, Snapshot Review Policy, And CI Readiness
+
+### Completed Work
+
+Phase 16 prepared the project for stable visual QA across desktop and mobile viewports and documented the first CI-ready browser-test policy. The work adds mobile screenshot baselines for the most important learner and safety surfaces, refines Playwright configuration for CI diagnostics, adds developer scripts for snapshot and headed workflows, and records snapshot governance rules for Mehdi and Vi.
+
+The implementation deliberately does not modify simulator behavior or electrical calculations. This phase is QA infrastructure, visual baseline expansion, workflow documentation, and release-readiness preparation.
+
+### Modified Files
+
+- `package.json`
+- `playwright.config.ts`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/mobile-apply-preview-modal-rtl-chromium-mobile-win32.png`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/mobile-audit-viewer-rtl-chromium-mobile-win32.png`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/mobile-diagnostics-panel-rtl-chromium-mobile-win32.png`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/mobile-floor-plan-routed-wire-chromium-mobile-win32.png`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/mobile-lesson-panel-rtl-chromium-mobile-win32.png`
+- `DEVELOPMENT_WORKFLOW.md`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+No dependencies were added.
+
+Playwright was already present from earlier phases. Phase 16 only refines usage and scripts.
+
+### Architecture Changes
+
+#### Playwright Project Separation
+
+The Playwright config now separates desktop and mobile execution:
+
+- `chromium`: existing desktop functional and visual tests.
+- `chromium-mobile`: mobile visual tests matching `.mobile.spec.ts`.
+
+The desktop project name intentionally remains `chromium`. During implementation, renaming it to `chromium-desktop` caused Playwright to look for a new set of desktop snapshot filenames. That would have produced unnecessary snapshot churn without a product UI change. The final architecture keeps the stable desktop name and adds mobile coverage separately.
+
+#### CI-Friendly Test Configuration
+
+Playwright now has:
+
+- `retries: process.env.CI ? 2 : 0`
+- `trace: 'on-first-retry'`
+- `screenshot: 'only-on-failure'`
+- `video: 'retain-on-failure'`
+- strict dedicated web server on `http://127.0.0.1:5174`
+
+This improves future CI debugging while keeping local feedback fast.
+
+#### Mobile Visual Test Module
+
+New mobile visual tests live in:
+
+```text
+tests/e2e/phase16-mobile-visual.mobile.spec.ts
+```
+
+The tests use deterministic fixtures from the existing typed fixture builders and stable `data-testid` anchors. The screenshot helper scrolls the target surface into view, blurs active focus, and captures the viewport with controlled pixel tolerance.
+
+### Engineering Decisions
+
+- Mobile tests use a `390x844` viewport through Playwright's Pixel 5 profile because it is a practical middle-ground mobile size for Persian RTL layout validation.
+- Mobile visual tests are isolated with `.mobile.spec.ts` to prevent desktop and mobile snapshots from mixing.
+- Desktop project name was preserved to avoid renaming Phase 15 baseline files.
+- Visual tests use deterministic seeded project states instead of long UI setup.
+- Mobile screenshot assertions use `maxDiffPixels: 120` to tolerate small antialiasing differences while still catching meaningful layout regressions.
+- CI documentation is added before creating an actual provider workflow so Mehdi and Vi can choose the hosting and artifact retention policy.
+
+### Electrical Logic Implemented
+
+No electrical logic was implemented or changed.
+
+Preserved systems:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- migration engine
+- diagnostics engine
+- repair engine
+- lesson engine
+- lesson sandbox apply logic
+
+### Formulas Implemented
+
+No new formulas were implemented.
+
+Existing formulas remain unchanged:
+
+- `I = P / V`
+- `P = V * I`
+- `R = V / I`
+- simplified voltage drop from current and cable resistance
+- total parallel load as summed watts and `TotalCurrent = TotalPower / 220`
+
+### Bugs Found And Fixed
+
+#### Desktop Snapshot Churn From Project Rename
+
+Initial config used a new desktop project name, `chromium-desktop`. Playwright therefore expected new desktop snapshot filenames even though no desktop UI changed. This produced failing visual tests due to missing snapshots, not real pixel regressions.
+
+Fix:
+
+- restored the desktop project name to `chromium`
+- kept mobile tests isolated under `chromium-mobile`
+- removed accidental duplicate `chromium-desktop` snapshot files
+
+#### Mobile Element Screenshot Instability
+
+Early mobile screenshot attempts used direct element snapshots. On narrow viewports, responsive scrolling and fixed application layout made element-level screenshots less stable.
+
+Fix:
+
+- introduced a mobile helper that scrolls the target into view and captures the viewport
+- kept assertions anchored by stable `data-testid`
+- used deterministic seeded project data
+
+### Limitations
+
+- Visual baselines are still Chromium/Windows baselines.
+- CI workflow file is documented but not yet created.
+- Firefox and WebKit projects are not enabled.
+- Mobile tests cover high-value surfaces only, not every panel.
+- Mobile screenshots validate layout appearance, not real touch gestures.
+- CI artifact upload is documented but not automated until a provider workflow is selected.
+
+### TODOs
+
+- Add provider-specific CI workflow.
+- Upload `test-results/` and `playwright-report/` in CI.
+- Evaluate Firefox snapshot stability.
+- Evaluate WebKit snapshot stability.
+- Add mobile visual baselines for wire inspector and panelboard.
+- Decide whether visual snapshots should block every feature branch or only release candidates.
+
+### Risks
+
+- Visual snapshots can differ between Windows local development and Linux CI.
+- Mobile viewport emulation does not fully replace manual testing on a real device.
+- Over-expanding screenshot coverage could slow the test suite and create noisy maintenance.
+- Snapshot updates can hide regressions if not reviewed carefully.
+
+### Scalability Concerns
+
+- As the simulator grows, visual tests should be grouped by UI area and risk level.
+- Future CI should separate fast unit tests from slower visual tests if total time becomes high.
+- Snapshot approval may need an explicit review owner field in phase reports.
+- Browser cache strategy must be adapted to the selected CI provider.
+
+### Snapshot Review Policy Added
+
+Snapshot updates now require:
+
+- intentional UI change
+- manual visual inspection
+- approval by Mehdi or Vi
+- phase report explaining changed surfaces
+- normal verification run after update mode
+
+Commands:
+
+```text
+npm run test:e2e
+npm run test:e2e:update
+npm run test:e2e:headed
+```
+
+### CI Readiness Plan Added
+
+Recommended future CI sequence:
+
+```text
+npm ci
+npm test
+npm run build
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+Recommended artifacts:
+
+- `test-results/`
+- `playwright-report/`
+
+Recommended caches:
+
+- npm cache
+- Playwright browser cache
+
+### Verification
+
+- `npm run test:e2e:update -- --project=chromium-mobile`: passed, 5 mobile visual snapshots created.
+- `npm test`: passed, 12 test files and 60 tests.
+- `npm run build`: passed, production bundle generated without chunk-size warning.
+- `npm run test:e2e`: passed, 26 Playwright tests.
+
+### Next Recommended Step
+
+Phase 17 should choose the actual CI provider and add a concrete workflow that runs unit tests, build, Playwright e2e, uploads artifacts, and enforces the snapshot review policy. If CI selection is not ready, the next best engineering step is mobile UX refinement for the floor plan, wire inspector, and panelboard.
