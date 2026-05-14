@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from '../../components/Icon';
+import { AccessibleModal } from '../../components/AccessibleModal';
 import { useLabStore } from '../../store/useLabStore';
 import { calculateProgressPercent, getLessonAttempt } from './lessonProgress';
 import { getStepGuidance, lessons } from './lessonEngine';
@@ -55,8 +56,6 @@ export function LessonPanel() {
   }>();
   const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
   const [exampleImportMessageFa, setExampleImportMessageFa] = useState<string>();
-  const cancelApplyButtonRef = useRef<HTMLButtonElement>(null);
-  const confirmApplyButtonRef = useRef<HTMLButtonElement>(null);
   const validationPreview = useMemo(() => validateLesson(project, activeLesson.id, attempt.hintsUsed), [project, activeLesson.id, attempt.hintsUsed]);
   const currentStepIndex = Math.min(validationPreview.completedStepIds.length, activeLesson.steps.length - 1);
   const currentGuidance = getStepGuidance(activeLesson.id, currentStepIndex);
@@ -82,37 +81,6 @@ export function LessonPanel() {
     : { circuits: 0, components: 0, wires: 0 };
 
   const applyPreview = lessonSandbox ? createSandboxApplyPreview({ ...lessonSandbox, sandboxProject: project }, applyMode) : undefined;
-
-  useEffect(() => {
-    if (!applyPreviewOpen) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
-    cancelApplyButtonRef.current?.focus();
-    return () => previousFocus?.focus();
-  }, [applyPreviewOpen]);
-
-  const handleApplyModalKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      setApplyPreviewOpen(false);
-      return;
-    }
-    if (event.key === 'Enter') {
-      if (document.activeElement === confirmApplyButtonRef.current) {
-        event.preventDefault();
-        applySandbox();
-      }
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const focusable = [cancelApplyButtonRef.current, confirmApplyButtonRef.current].filter((item): item is HTMLButtonElement => Boolean(item));
-    if (!focusable.length) return;
-    const currentIndex = focusable.indexOf(document.activeElement as HTMLButtonElement);
-    const nextIndex = event.shiftKey
-      ? currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1
-      : currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
-    event.preventDefault();
-    focusable[nextIndex]?.focus();
-  };
 
   const applySandbox = () => {
     const preview = applyPreview;
@@ -161,7 +129,7 @@ export function LessonPanel() {
   };
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="lesson-panel">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-extrabold">درس‌های کیارش</h2>
@@ -235,7 +203,7 @@ export function LessonPanel() {
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button onClick={() => startLessonSandbox(activeLesson.id)} className="inline-flex items-center justify-center gap-2 rounded-md bg-tealish px-3 py-2 text-sm font-bold text-white">
+            <button onClick={() => startLessonSandbox(activeLesson.id)} data-testid="start-lesson-button" className="inline-flex items-center justify-center gap-2 rounded-md bg-tealish px-3 py-2 text-sm font-bold text-white">
               <Icon name="BookOpen" className="h-4 w-4" />
               {lessonSandbox ? 'شروع دوباره درس' : 'شروع درس'}
             </button>
@@ -246,7 +214,7 @@ export function LessonPanel() {
             <button onClick={exitLessonSandbox} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
               خروج بدون اعمال
             </button>
-            <button onClick={() => setApplyPreviewOpen(true)} disabled={!lessonSandbox} className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+            <button onClick={() => setApplyPreviewOpen(true)} disabled={!lessonSandbox} data-testid="open-apply-modal-button" className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
               پیش‌نمایش اعمال
             </button>
           </div>
@@ -370,7 +338,7 @@ export function LessonPanel() {
           </div>
 
           {lessonSandbox ? (
-            <div className="mt-4 rounded-md border border-slate-200 p-3 dark:border-slate-800">
+            <div className="mt-4 rounded-md border border-slate-200 p-3 dark:border-slate-800" data-testid="example-list">
               <div className="font-bold">نمونه‌های ذخیره‌شده</div>
               {lessonSandbox.savedExamples?.length ? (
                 <div className="mt-2 max-h-56 space-y-2 overflow-auto">
@@ -433,24 +401,17 @@ export function LessonPanel() {
         </div>
       </div>
       {applyPreviewOpen && applyPreview ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setApplyPreviewOpen(false);
-          }}
-          onKeyDown={handleApplyModalKeyDown}
+        <AccessibleModal
+          open={applyPreviewOpen}
+          title="پیش‌نمایش اعمال sandbox"
+          description={applyPreview.whatWillHappenFa}
+          onCancel={() => setApplyPreviewOpen(false)}
+          onConfirm={applySandbox}
+          confirmLabel="تایید و اعمال"
+          initialFocus="cancel"
+          testId="apply-modal"
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="apply-preview-title"
-            aria-describedby="apply-preview-description"
-            className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 text-right shadow-xl dark:border-slate-800 dark:bg-slate-900"
-          >
-            <h3 id="apply-preview-title" className="text-lg font-extrabold">پیش‌نمایش اعمال sandbox</h3>
-            <p id="apply-preview-description" className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">{applyPreview.whatWillHappenFa}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.circuits.toLocaleString('fa-IR')}</strong><div>مدار</div></div>
               <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.components.toLocaleString('fa-IR')}</strong><div>قطعه</div></div>
               <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-950"><strong>{applyPreview.summary.wires.toLocaleString('fa-IR')}</strong><div>سیم</div></div>
@@ -463,12 +424,7 @@ export function LessonPanel() {
               عیب‌یابی پس از اعمال: {applyPreview.diagnostics.issueCount.toLocaleString('fa-IR')} مورد
               {applyPreview.diagnostics.issueCount > 0 ? <p className="text-amber-700 dark:text-amber-300">بعد از اعمال، پنل عیب‌یابی را بررسی کن.</p> : <p className="text-emerald-700 dark:text-emerald-300">مشکل ساختاری مهمی دیده نشد.</p>}
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <button ref={cancelApplyButtonRef} onClick={() => setApplyPreviewOpen(false)} className="rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700">انصراف</button>
-              <button ref={confirmApplyButtonRef} onClick={applySandbox} className="rounded-md bg-tealish px-3 py-2 font-bold text-white">تایید و اعمال</button>
-            </div>
-          </div>
-        </div>
+        </AccessibleModal>
       ) : null}
     </section>
   );

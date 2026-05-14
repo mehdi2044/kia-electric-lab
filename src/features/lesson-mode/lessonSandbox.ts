@@ -252,6 +252,17 @@ export interface SandboxApplyAuditInput {
   warningsFa?: string[];
 }
 
+export interface ApplyDiffSummary {
+  circuitsAdded: number;
+  circuitsRemoved: number;
+  componentsAdded: number;
+  componentsRemoved: number;
+  wiresAdded: number;
+  wiresRemoved: number;
+  diagnosticsBefore: number;
+  diagnosticsAfter: number;
+}
+
 function uniqueId(base: string, existing: Set<string>): string {
   if (!existing.has(base)) {
     existing.add(base);
@@ -379,6 +390,31 @@ export function appendApplyAudit(project: ElectricalProject, entry: ApplyAuditEn
   return {
     ...project,
     applyAuditLog: [entry, ...(project.applyAuditLog ?? [])].slice(0, 50)
+  };
+}
+
+function countAddedRemoved(beforeIds: string[], afterIds: string[]) {
+  const before = new Set(beforeIds);
+  const after = new Set(afterIds);
+  return {
+    added: afterIds.filter((id) => !before.has(id)).length,
+    removed: beforeIds.filter((id) => !after.has(id)).length
+  };
+}
+
+export function summarizeApplyDiff(beforeProject: ElectricalProject, afterProject: ElectricalProject): ApplyDiffSummary {
+  const circuits = countAddedRemoved(beforeProject.circuits.map((circuit) => circuit.id), afterProject.circuits.map((circuit) => circuit.id));
+  const components = countAddedRemoved(beforeProject.components.map((component) => component.id), afterProject.components.map((component) => component.id));
+  const wires = countAddedRemoved((beforeProject.wires ?? []).map((wire) => wire.id), (afterProject.wires ?? []).map((wire) => wire.id));
+  return {
+    circuitsAdded: circuits.added,
+    circuitsRemoved: circuits.removed,
+    componentsAdded: components.added,
+    componentsRemoved: components.removed,
+    wiresAdded: wires.added,
+    wiresRemoved: wires.removed,
+    diagnosticsBefore: diagnoseProject(beforeProject).issueCount,
+    diagnosticsAfter: diagnoseProject(afterProject).issueCount
   };
 }
 

@@ -1423,3 +1423,96 @@ Automated browser tests remain a future step so the team can first define select
 - Lucide icons
 
 This keeps the main app chunk below Vite's warning threshold after Phase 11 UI growth.
+
+## 2026-05-14 22:00 Europe/Istanbul - Phase 12 Shared Modal And Browser QA Architecture
+
+### Change Type
+
+Reusable UI infrastructure, audit viewer surface, stable test selectors, and browser-level smoke testing.
+
+### Shared Modal Architecture
+
+`src/components/AccessibleModal.tsx` is now the standard confirmation modal foundation.
+
+Responsibilities:
+
+- Persian RTL-compatible dialog rendering
+- focus trap
+- Escape cancel
+- safe backdrop cancel
+- initial focus selection
+- ARIA dialog labels
+- confirm/cancel buttons
+- stable `data-testid` hooks
+
+Current consumer:
+
+- `LessonPanel` apply preview modal
+
+Future consumers:
+
+- saved example delete confirmation
+- project reset confirmation
+- backup restore confirmation
+- import warning confirmation
+
+### Audit Viewer Architecture
+
+`AuditViewerPanel` lives under `src/features/audit-viewer/` and is lazy-loaded from `App.tsx`.
+
+Data source:
+
+- `project.applyAuditLog`
+
+Capabilities:
+
+- list up to last 50 audit entries
+- filter by action
+- show lesson/title/time/counts/diagnostics/warnings
+- export JSON
+
+Important implementation detail:
+
+- Uses a stable empty array constant for missing audit logs to avoid unstable Zustand selector snapshots.
+
+### Stable Test Selector Architecture
+
+Critical flow elements now expose `data-testid`:
+
+- `lesson-panel`
+- `start-lesson-button`
+- `open-apply-modal-button`
+- `apply-modal`
+- `apply-modal-cancel`
+- `apply-modal-confirm`
+- `project-data-panel`
+- `diagnostics-panel`
+- `audit-viewer`
+- `example-list`
+
+These selectors are intended for automated tests and should be treated as compatibility surface.
+
+### Browser Test Architecture
+
+Playwright configuration:
+
+- `playwright.config.ts`
+- test directory: `tests/e2e`
+- browser: Chromium
+- web server: Vite dev server
+- base URL: `http://127.0.0.1:5173`
+
+Scripts:
+
+- `npm run test:e2e`
+- `npm run test:e2e:ui`
+
+Vitest explicitly excludes `tests/e2e/**` to keep unit and browser runners separate.
+
+### Apply Diff Helper Architecture
+
+`summarizeApplyDiff` is a pure helper in `lessonSandbox.ts`.
+
+It compares before/after project snapshots by ids and uses diagnostics to report project health movement.
+
+This can later power a richer apply preview/diff screen without embedding comparison logic in React.

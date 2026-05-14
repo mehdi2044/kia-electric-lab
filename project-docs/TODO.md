@@ -497,3 +497,32 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add before/after project diff preview for append and replace.
 - [ ] Add a stronger room-aware append placement solver.
 - [ ] Add project/example/lesson-pack shared artifact envelope utilities.
+
+## 2026-05-14 22:00 Europe/Istanbul - Phase 12 TODO Update
+
+### Completed
+
+- [x] Create shared `AccessibleModal`.
+- [x] Refactor apply preview modal to use shared modal.
+- [x] Preserve safer modal behavior.
+- [x] Add audit history viewer.
+- [x] Add audit action filter.
+- [x] Add audit JSON export.
+- [x] Add stable test selectors for lesson panel and apply flow.
+- [x] Add stable test selectors for project data, diagnostics, audit viewer, and example list.
+- [x] Add Playwright dependency and Chromium browser runtime.
+- [x] Add `playwright.config.ts`.
+- [x] Add `test:e2e` script.
+- [x] Add `test:e2e:ui` script.
+- [x] Add first browser smoke tests.
+- [x] Exclude e2e tests from Vitest.
+- [x] Add pure before/after apply diff helper.
+
+### New TODOs
+
+- [ ] Add Playwright tests for confirmed append and audit creation.
+- [ ] Add Playwright tests for Escape close, Tab focus trap, and Enter safety.
+- [ ] Add Playwright tests for checksum warning import flow.
+- [ ] Add shared modal usage for delete/restore/reset confirmations.
+- [ ] Add audit viewer search and date range filter.
+- [ ] Add CI caching guidance for Playwright browsers.

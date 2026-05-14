@@ -16,6 +16,7 @@ import { formatNumber, formatToman } from './utils/format';
 const LessonPanel = lazy(() => import('./features/lesson-mode/LessonPanel').then((module) => ({ default: module.LessonPanel })));
 const ProjectDataPanel = lazy(() => import('./features/project-data/ProjectDataPanel').then((module) => ({ default: module.ProjectDataPanel })));
 const ProjectDiagnosticsPanel = lazy(() => import('./features/project-diagnostics/ProjectDiagnosticsPanel').then((module) => ({ default: module.ProjectDiagnosticsPanel })));
+const AuditViewerPanel = lazy(() => import('./features/audit-viewer/AuditViewerPanel').then((module) => ({ default: module.AuditViewerPanel })));
 
 function PanelLoading({ label }: { label: string }) {
   return (
@@ -103,6 +104,9 @@ export function App() {
           <div className="space-y-5">
             <Suspense fallback={<PanelLoading label="داده‌های پروژه" />}>
               <ProjectDataPanel />
+            </Suspense>
+            <Suspense fallback={<PanelLoading label="تاریخچه اعمال" />}>
+              <AuditViewerPanel />
             </Suspense>
             <div id="project-diagnostics-panel">
               <Suspense fallback={<PanelLoading label="عیب‌یابی پروژه" />}>

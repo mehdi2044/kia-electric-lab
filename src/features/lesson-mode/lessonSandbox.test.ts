@@ -15,7 +15,8 @@ import {
   planAppendLayout,
   replaceMainProjectWithSandbox,
   resetLessonSandbox,
-  startLessonSandbox
+  startLessonSandbox,
+  summarizeApplyDiff
 } from './lessonSandbox';
 import { serializeLessonExampleExport } from '../../migrations/exportIntegrity';
 
@@ -244,5 +245,15 @@ describe('lesson sandbox', () => {
     expect(audited.applyAuditLog?.[0].action).toBe('append');
     expect(audited.applyAuditLog?.[0].diagnosticsCount).toBe(2);
     expect(audited.applyAuditLog?.[0].userNotes).toBe('تمرین اول');
+  });
+
+  it('summarizes before and after apply differences', () => {
+    const sandbox = startLessonSandbox(clone(defaultProject), 'lesson-3-standard-outlet');
+    const result = appendSandboxToMainProject(sandbox);
+    const diff = summarizeApplyDiff(defaultProject, result.project);
+
+    expect(diff.circuitsAdded).toBe(1);
+    expect(diff.componentsAdded).toBeGreaterThan(0);
+    expect(diff.diagnosticsAfter).toBeGreaterThanOrEqual(0);
   });
 });

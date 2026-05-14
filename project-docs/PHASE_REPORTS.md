@@ -2337,3 +2337,154 @@ This fixes the Phase 10 edge case where exported examples with undefined optiona
 ### Next Recommended Step
 
 Phase 12 should add an in-app audit history viewer, a shared modal component, and the first automated browser smoke tests if the team approves Playwright or an equivalent browser QA dependency.
+
+## 2026-05-14 22:00 Europe/Istanbul - Phase 12 Engineering Report: Shared Modal System, Audit Viewer, Stable Test Selectors, And Playwright Smoke Tests
+
+### Completed Work
+
+Phase 12 converted modal accessibility work into reusable infrastructure and added the project's first real browser-level smoke tests. The Lesson Panel now uses a shared accessible modal, audit history is visible in the UI, critical flows have stable test selectors, Playwright is installed/configured, and CI-friendly e2e scripts are available.
+
+### Modified Files
+
+- `src/components/AccessibleModal.tsx`
+- `src/features/audit-viewer/AuditViewerPanel.tsx`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `src/features/lesson-mode/lessonSandbox.ts`
+- `src/features/lesson-mode/lessonSandbox.test.ts`
+- `src/features/project-data/ProjectDataPanel.tsx`
+- `src/features/project-diagnostics/ProjectDiagnosticsPanel.tsx`
+- `src/App.tsx`
+- `vite.config.ts`
+- `playwright.config.ts`
+- `tests/e2e/phase12-smoke.spec.ts`
+- `package.json`
+- `package-lock.json`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+Development dependency:
+
+- `@playwright/test`
+
+Browser runtime installed locally:
+
+- Chromium for Playwright
+
+### Architecture Changes
+
+Shared UI infrastructure:
+
+- `AccessibleModal` provides a reusable RTL-compatible modal with:
+  - focus trap
+  - Escape close
+  - safe backdrop close
+  - ARIA dialog metadata
+  - initial focus control
+  - confirm/cancel action slots
+  - stable modal test ids
+
+Audit visibility:
+
+- `AuditViewerPanel` reads `project.applyAuditLog`.
+- It filters by action type and exports audit JSON.
+- A stable empty audit array is used so Zustand/React snapshots do not loop when no audit entries exist.
+
+Testing architecture:
+
+- `playwright.config.ts` starts/reuses the Vite dev server.
+- `tests/e2e/phase12-smoke.spec.ts` uses stable `data-testid` selectors.
+- `vite.config.ts` excludes `tests/e2e/**` from Vitest so Playwright specs are not collected by unit tests.
+
+Apply diff architecture:
+
+- `summarizeApplyDiff(beforeProject, afterProject)` reports:
+  - circuits added/removed
+  - components added/removed
+  - wires added/removed
+  - diagnostics before/after
+
+### Engineering Decisions
+
+- The shared modal preserves the safer Phase 11 behavior: cancel receives initial focus, Enter does not apply unless confirm is focused, and backdrop click is cancel-only.
+- The audit viewer is lazy-loaded with the other right-column infrastructure panels.
+- E2E tests avoid fragile text selectors and use `data-testid`.
+- Playwright navigation waits for `domcontentloaded`, not full `load`, so tests are not delayed by dev-server or long-running resource behavior.
+- Vitest excludes e2e files to avoid mixing Playwright's test runner with Vitest.
+
+### Electrical Logic Implemented
+
+No electrical logic was changed.
+
+Preserved systems:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- diagnostics engine behavior
+
+### Formulas Implemented
+
+No new electrical formulas.
+
+New project comparison logic:
+
+```text
+added = afterIds not present in beforeIds
+removed = beforeIds not present in afterIds
+diagnosticsBefore = diagnoseProject(beforeProject).issueCount
+diagnosticsAfter = diagnoseProject(afterProject).issueCount
+```
+
+### Bugs Found And Fixed
+
+- `AuditViewerPanel` initially used `state.project.applyAuditLog ?? []` directly. This returned a new array on every selector run and caused a React/Zustand maximum update depth error. It was fixed by using a stable `EMPTY_AUDIT_LOG` constant.
+- Vitest initially collected Playwright tests from `tests/e2e`. `vite.config.ts` now excludes `tests/e2e/**`.
+- `package.json` briefly had duplicate `@playwright/test` entries after dependency installation and manual script editing. The duplicate was removed.
+- Playwright's first navigation waited for the full `load` event and timed out in local dev conditions. The e2e test now waits for `domcontentloaded`.
+
+### Limitations
+
+- Only Chromium smoke tests exist.
+- The shared modal currently supports standard confirm/cancel layout, not arbitrary multi-action workflows.
+- Audit viewer is read-only except JSON export.
+- E2E tests validate core reachability and cancel safety, but do not yet validate every apply mode.
+
+### TODOs
+
+- Add Playwright coverage for append confirm and audit entry creation.
+- Add tests for keyboard modal behavior: Escape, Tab cycle, Enter safety.
+- Add tests for example import checksum warning flow.
+- Add reusable delete confirmation modal for saved examples and backups.
+- Add audit viewer search and date filters.
+
+### Risks
+
+- Playwright adds a heavier dev dependency and browser runtime that must be maintained in CI.
+- E2E tests can become brittle if future UI changes remove test ids without updating tests.
+- Audit viewer reads project history directly; future schema changes must preserve audit compatibility.
+
+### Scalability Concerns
+
+- Browser tests should be grouped by feature as the app grows.
+- CI should cache Playwright browsers.
+- Shared modal should eventually support nested descriptions and danger-mode destructive copy rules.
+- Audit history should move from localStorage to SQLite when Tauri storage arrives.
+
+### Verification
+
+- `npm test`: 12 test files passed, 60 tests passed.
+- `npm run build`: passed with no Vite chunk-size warning.
+- `npm run test:e2e`: 3 Playwright tests passed.
+- Local HTTP check remains required before final handoff.
+
+### Next Recommended Step
+
+Phase 13 should deepen browser coverage around keyboard accessibility, confirmed append/replace flows, example import warnings, and audit entry creation.
