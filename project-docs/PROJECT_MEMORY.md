@@ -349,3 +349,32 @@ React Flow remains a visual surface only. It renders nodes, terminals, and wire 
 Known verification gap:
 
 - In-app browser automation timed out again while trying to inspect the updated UI. This should be retried when the browser automation runtime is stable.
+
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 Geometric Wire Routing And Panelboard UI
+
+### Change Summary
+
+Phase 4 made wire routing spatially meaningful. Explicit `ElectricalWire[]` remains the source of truth, but wires now support route points, calculated geometric length, scale conversion, bend editing, and route-based cost/voltage-drop calculations. A simple educational panelboard UI was also added.
+
+### New Capabilities
+
+- Wires can store `routePoints`.
+- Project can store `pixelsPerMeter`.
+- Wire length is calculated from terminal coordinates and route geometry.
+- Manual length override remains as an advanced educational option.
+- Selected wires show bend handles.
+- Users can add, drag, remove, snap, and reset bend points.
+- Wire visuals render as SVG polylines instead of React Flow edge truth.
+- Wire cost uses geometric length when explicit wires exist.
+- Current/voltage-drop calculations use geometric length through topology graph construction.
+- Panelboard UI shows main breaker, branch breakers, circuit assignments, breaker amps, circuit loads, and warning badges.
+
+### Verification
+
+- `npm test`: 26 tests passed.
+- `npm run build`: passed.
+- Local server returned HTTP 200.
+
+Known verification gap:
+
+- In-app browser automation timed out during visual inspection. Manual viewing remains available at `http://localhost:5173/`.

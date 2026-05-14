@@ -758,3 +758,71 @@ React Flow edges are used to visually draw wires between component nodes. This i
 ### Next Architecture Step
 
 Add real path geometry for wires so a wire can have intermediate route points and measured length instead of a manually edited length.
+
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 Geometry And Panelboard Architecture
+
+### Change Type
+
+Simulation geometry, UI architecture, panelboard validation, and cost integration.
+
+### New Modules
+
+```text
+src/features/topology-engine/
+  terminalGeometry.ts
+  wireGeometry.ts
+  wireGeometry.test.ts
+src/features/panelboard-engine/
+  panelboardEngine.ts
+  panelboardEngine.test.ts
+src/features/panelboard/
+  PanelboardPanel.tsx
+```
+
+### Geometry Architecture
+
+`terminalGeometry.ts` owns:
+
+- default pixels-per-meter scale
+- terminal coordinate calculation
+- virtual breaker coordinates
+- snap-to-grid behavior
+
+`wireGeometry.ts` owns:
+
+- path-point assembly from terminal start, bend points, and terminal end
+- pixel length calculation
+- pixel-to-meter conversion
+- wire length calculation
+- bend insertion
+- bend update
+- bend deletion
+- route reset
+
+### Source Of Truth Rule
+
+`ElectricalWire[]` remains source of truth. React Flow is only used to display rooms/components. Routed wires are drawn as SVG polylines derived from explicit wire data and terminal geometry.
+
+### Panelboard Architecture
+
+Panelboard data is optional:
+
+- If `project.panelboard` exists, it is used.
+- If it does not exist, panelboard UI derives default slots from existing circuits for backward compatibility.
+
+`panelboardEngine.ts` validates:
+
+- circuit without breaker
+- breaker without circuit
+- overloaded breaker
+- breaker/wire incompatibility
+
+### Cost Architecture
+
+Cost engine now uses geometric explicit wire length for circuits when `project.wires` exist. If no explicit wires exist, it falls back to circuit estimated length for Phase 1 compatibility.
+
+### Remaining Architecture Limitations
+
+- Wire route points are simple bend coordinates, not full conduit/routing objects.
+- Terminal coordinates are deterministic offsets from component positions, not DOM-measured handle coordinates.
+- Panelboard slots are educational and simple; no physical DIN rail/panel layout model yet.

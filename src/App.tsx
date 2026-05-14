@@ -9,6 +9,7 @@ import { ReportPanel } from './features/report-engine/ReportPanel';
 import { generateProjectReport } from './features/report-engine/reportEngine';
 import { SafetyPanel } from './features/safety-engine/SafetyPanel';
 import { WireRoutingPanel } from './features/wire-routing/WireRoutingPanel';
+import { PanelboardPanel } from './features/panelboard/PanelboardPanel';
 import { useLabStore } from './store/useLabStore';
 import { formatNumber, formatToman } from './utils/format';
 
@@ -80,6 +81,7 @@ export function App() {
           <div className="space-y-5">
             <FloorPlan />
             <WireRoutingPanel />
+            <PanelboardPanel />
             <CircuitBuilder />
             <ReportPanel />
           </div>

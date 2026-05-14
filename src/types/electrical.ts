@@ -98,6 +98,11 @@ export interface ElectricalTerminalRef {
   terminalId: string;
 }
 
+export interface Point2D {
+  x: number;
+  y: number;
+}
+
 export interface ElectricalWire {
   id: string;
   circuitId: string;
@@ -106,7 +111,21 @@ export interface ElectricalWire {
   lengthMeters: number;
   wireSizeMm2: number;
   kind?: ElectricalWireKind;
+  routePoints?: Point2D[];
+  manualLengthOverride?: number;
   labelFa?: string;
+}
+
+export interface PanelBreakerSlot {
+  id: string;
+  labelFa: string;
+  amp: number;
+  circuitId?: string;
+}
+
+export interface Panelboard {
+  mainBreakerAmp: number;
+  breakers: PanelBreakerSlot[];
 }
 
 export interface CostItem {
@@ -150,8 +169,10 @@ export interface ProjectReport {
 export interface ElectricalProject {
   voltage: number;
   mainBreakerAmp: number;
+  pixelsPerMeter?: number;
   rooms: Room[];
   components: ElectricalComponent[];
   circuits: Circuit[];
   wires?: ElectricalWire[];
+  panelboard?: Panelboard;
 }

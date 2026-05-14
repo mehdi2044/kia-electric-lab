@@ -1,4 +1,4 @@
-import { breakers, unitCosts, wires } from '../../data/electricalTables';
+import { unitCosts, wires } from '../../data/electricalTables';
 import { useLabStore } from '../../store/useLabStore';
 import { formatNumber, formatToman } from '../../utils/format';
 import { simulateCurrentFlow } from '../current-engine/currentEngine';
@@ -6,6 +6,8 @@ import { createTerminalLookup } from '../topology-engine/topologyEngine';
 import { validateTerminalConnection } from '../topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../validation-engine/validationEngine';
 import { getWire } from '../safety-engine/electricalMath';
+import { calculateWireGeometryLength, getWirePathPoints } from '../topology-engine/wireGeometry';
+import { DEFAULT_PIXELS_PER_METER } from '../topology-engine/terminalGeometry';
 
 const kindLabels = {
   phase: 'فاز',
@@ -35,6 +37,11 @@ export function WireRoutingPanel() {
   const resetWiringForCircuit = useLabStore((state) => state.resetWiringForCircuit);
   const resetWiringForRoom = useLabStore((state) => state.resetWiringForRoom);
   const setWireDraft = useLabStore((state) => state.setWireDraft);
+  const updateWireBendPoint = useLabStore((state) => state.updateWireBendPoint);
+  const addWireBendPoint = useLabStore((state) => state.addWireBendPoint);
+  const removeWireBendPoint = useLabStore((state) => state.removeWireBendPoint);
+  const resetWireRoute = useLabStore((state) => state.resetWireRoute);
+  const setPixelsPerMeter = useLabStore((state) => state.setPixelsPerMeter);
 
   const flow = simulateCurrentFlow(project);
   const terminalLookup = createTerminalLookup(flow.graph);
@@ -48,7 +55,7 @@ export function WireRoutingPanel() {
     : [];
   const selectedWireCost =
     selectedWire && selectedWireCatalog
-      ? selectedWire.lengthMeters * selectedWireCatalog.pricePerMeter + selectedWire.lengthMeters * unitCosts.laborPerMeter
+      ? calculateWireGeometryLength(project, selectedWire) * selectedWireCatalog.pricePerMeter + calculateWireGeometryLength(project, selectedWire) * unitCosts.laborPerMeter
       : 0;
 
   const from = selectedWire ? terminalLookup.get(`${selectedWire.from.componentId}:${selectedWire.from.terminalId}`) : undefined;
@@ -82,6 +89,17 @@ export function WireRoutingPanel() {
               </option>
             ))}
           </select>
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="text-slate-600 dark:text-slate-300">مقیاس: {(project.pixelsPerMeter ?? DEFAULT_PIXELS_PER_METER).toLocaleString('fa-IR')} پیکسل/متر</span>
+          <input
+            type="range"
+            min={12}
+            max={60}
+            value={project.pixelsPerMeter ?? DEFAULT_PIXELS_PER_METER}
+            onChange={(event) => setPixelsPerMeter(Number(event.target.value))}
+            className="w-full"
+          />
         </label>
         <label className="space-y-1 text-sm">
           <span className="text-slate-600 dark:text-slate-300">طول پیش‌فرض: {wireDraft.lengthMeters.toLocaleString('fa-IR')} متر</span>
@@ -152,22 +170,62 @@ export function WireRoutingPanel() {
                 </select>
               </label>
               <label className="block space-y-1">
-                <span>طول سیم: {selectedWire.lengthMeters.toLocaleString('fa-IR')} متر</span>
+                <span>طول محاسبه‌شده: {formatNumber(calculateWireGeometryLength(project, selectedWire), 2)} متر</span>
                 <input
                   type="range"
                   min={1}
                   max={80}
-                  value={selectedWire.lengthMeters}
-                  onChange={(event) => updateWire(selectedWire.id, { lengthMeters: Number(event.target.value) })}
+                  value={selectedWire.manualLengthOverride ?? calculateWireGeometryLength(project, selectedWire)}
+                  onChange={(event) => updateWire(selectedWire.id, { manualLengthOverride: Number(event.target.value) })}
                   className="w-full"
                 />
+                <span className="text-xs text-slate-500">این لغزنده override آموزشی است؛ مسیر هندسی همچنان روی نقشه دیده می‌شود.</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900">مقاومت تقریبی: {formatNumber((selectedWireCatalog?.resistanceOhmPerMeter ?? 0) * selectedWire.lengthMeters, 4)} اهم</div>
+                <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900">مقاومت تقریبی: {formatNumber((selectedWireCatalog?.resistanceOhmPerMeter ?? 0) * calculateWireGeometryLength(project, selectedWire), 4)} اهم</div>
                 <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900">افت ولتاژ: {formatNumber(selectedWireFlow?.voltageDrop ?? 0, 2)} ولت</div>
                 <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900">جریان سیم: {formatNumber(selectedWireFlow?.currentAmp ?? 0, 2)} آمپر</div>
                 <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900">هزینه: {formatToman(selectedWireCost)}</div>
               </div>
+              <div className="rounded-md bg-sky-50 p-3 text-sm leading-7 text-sky-900 dark:bg-sky-950 dark:text-sky-100">
+                هرچه مسیر سیم طولانی‌تر شود، مقاومت و افت ولتاژ و هزینه سیم بیشتر می‌شود. مسیر مرتب و کوتاه‌تر معمولا اقتصادی‌تر و قابل فهم‌تر است.
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    const points = getWirePathPoints(project, selectedWire);
+                    if (points.length >= 2) {
+                      const a = points[0];
+                      const b = points[points.length - 1];
+                      addWireBendPoint(selectedWire.id, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+                    }
+                  }}
+                  className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  افزودن خم وسط مسیر
+                </button>
+                <button
+                  onClick={() => resetWireRoute(selectedWire.id)}
+                  className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  ریست مسیر
+                </button>
+                <button
+                  onClick={() => updateWire(selectedWire.id, { manualLengthOverride: undefined })}
+                  className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  حذف override طول
+                </button>
+              </div>
+              {(selectedWire.routePoints ?? []).map((point, index) => (
+                <div key={index} className="flex items-center justify-between rounded-md bg-slate-50 p-2 text-xs dark:bg-slate-900">
+                  <span>خم {(index + 1).toLocaleString('fa-IR')}: {formatNumber(point.x, 0)}, {formatNumber(point.y, 0)}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => updateWireBendPoint(selectedWire.id, index, point, true)} className="text-teal-700 dark:text-teal-300">snap</button>
+                    <button onClick={() => removeWireBendPoint(selectedWire.id, index)} className="text-rose-700 dark:text-rose-300">حذف</button>
+                  </div>
+                </div>
+              ))}
               <div className={`rounded-md p-3 leading-7 ${validation?.valid && !selectedWireFlow?.overloaded ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-100' : 'bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-100'}`}>
                 {validation?.valid && !selectedWireFlow?.overloaded
                   ? 'این سیم در مدل آموزشی فعلی از نظر نوع اتصال و جریان عبوری قابل قبول است.'

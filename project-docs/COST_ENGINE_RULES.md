@@ -279,3 +279,32 @@ The final report includes:
 - Improve cost-by-room allocation after wire path implementation.
 - Add clear label: "قیمت‌ها آموزشی و قابل تغییر هستند، نه قیمت قطعی بازار."
 
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 Geometric Wire Cost Rules
+
+### Change Summary
+
+Cost engine now uses calculated geometric wire length when explicit wires exist for a circuit.
+
+### New Rule
+
+For circuits with explicit wires:
+
+```text
+WireMaterialCost = sum(geometricWireLength x wireSizePricePerMeter)
+WireLaborCost = sum(geometricWireLength) x laborPerMeter
+```
+
+For circuits without explicit wires:
+
+```text
+WireMaterialCost = circuit.lengthMeters x selectedCircuitWirePricePerMeter
+WireLaborCost = circuit.lengthMeters x laborPerMeter
+```
+
+### Educational Meaning
+
+Longer routes cost more because they use more copper and more installation labor. Bad routing wastes wire and can increase voltage drop.
+
+### Limitation
+
+Geometry length depends on project scale (`pixelsPerMeter`). If the scale is unrealistic, cost estimates become unrealistic.
