@@ -2745,3 +2745,113 @@ No new electrical formulas.
 ### Next Recommended Step
 
 Phase 15 should introduce typed test-data builders and begin screenshot/visual regression checks for the highest-risk RTL modal and floor-plan flows.
+
+## 2026-05-15 01:13 Europe/Istanbul - Phase 15 Engineering Report: Typed E2E Fixture Builders, Audit Download Testing, And Visual Regression Baseline
+
+### Completed Work
+
+Phase 15 upgraded the e2e test foundation from hand-authored raw objects to typed fixture builders, added real download/export verification, and established the first committed visual regression baseline for key RTL UI surfaces.
+
+### Modified Files
+
+- `src/features/floor-plan/FloorPlan.tsx`
+- `src/features/lesson-mode/LessonPanel.tsx`
+- `tests/e2e/helpers/fixtures.ts`
+- `tests/e2e/phase13-advanced.spec.ts`
+- `tests/e2e/phase13-advanced.spec.ts-snapshots/*.png`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+No dependency was added.
+
+### Architecture Changes
+
+Typed fixture builders now import app TypeScript types where practical:
+
+- `ElectricalProject`
+- `ElectricalComponent`
+- `Circuit`
+- `ElectricalWire`
+- `LessonExample`
+- `LessonSandboxState`
+- `Panelboard`
+- `Room`
+- `ApplyAuditEntry`
+
+Fixture builder defaults are deterministic and support overrides. Tests now seed localStorage through typed builders rather than duplicating large anonymous object literals.
+
+New stable selector:
+
+- `floor-plan`
+
+### Engineering Decisions
+
+- Visual tests use seeded deterministic project states instead of interactive setup.
+- Visual tests use fixed viewport `1440x1200`.
+- Visual assertions allow a small `maxDiffPixels: 50` tolerance to prevent tiny font anti-aliasing differences from causing false failures.
+- Audit viewer visual baseline uses a seeded audit entry with fixed timestamp, not a freshly performed action.
+- Playwright snapshot files are committed as the Phase 15 baseline.
+
+### Electrical Logic Implemented
+
+No electrical logic was implemented or changed.
+
+Preserved:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- diagnostics engine
+
+### Formulas Implemented
+
+No new electrical formulas.
+
+### Bugs Found And Fixed
+
+- Initial visual baseline had tiny pixel differences on modal/audit screenshots caused by rendering anti-aliasing. The strategy was adjusted with deterministic audit seeding and small pixel tolerance.
+
+### Limitations
+
+- Visual baselines are Chromium/Windows specific.
+- No Firefox/WebKit/mobile visual baselines yet.
+- Screenshot tests cover selected high-risk surfaces, not the full app.
+- Fixture builders are typed but still live in the e2e folder, not a shared test-data package.
+
+### TODOs
+
+- Add mobile viewport visual baselines.
+- Add Firefox/WebKit planning and CI browser cache.
+- Add screenshot review/update policy to contribution docs.
+- Add visual coverage for wire inspector and panelboard.
+
+### Risks
+
+- Visual snapshots can be noisy if fonts or OS rendering changes.
+- Type-only imports in e2e fixtures must stay aligned with app type paths.
+- Overusing screenshot tests could slow CI.
+
+### Scalability Concerns
+
+- As fixtures grow, move builders to feature-specific fixture modules.
+- If schema migrations advance, fixture builders should be updated in the same phase as schema changes.
+- Visual tests should remain targeted to high-value UI surfaces.
+
+### Verification
+
+- `npm test`: 12 test files passed, 60 tests passed.
+- `npm run build`: passed with no Vite chunk-size warning.
+- `npm run test:e2e -- --update-snapshots`: 21 tests passed and wrote/updated visual baselines.
+- `npm run test:e2e`: 21 tests passed against committed baselines.
+
+### Next Recommended Step
+
+Phase 16 should add mobile visual baselines, document snapshot review policy in `DEVELOPMENT_WORKFLOW.md`, and consider first CI guidance for Playwright browser caching.

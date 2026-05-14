@@ -1,127 +1,194 @@
 import type { Page } from '@playwright/test';
+import type {
+  Circuit,
+  ElectricalComponent,
+  ElectricalProject,
+  ElectricalWire,
+  ApplyAuditEntry,
+  LessonExample,
+  LessonSandboxState,
+  Panelboard,
+  Room
+} from '../../../src/types/electrical';
 
 const PROJECT_STORAGE_KEY = 'kia-electric-lab-project';
 const BACKUP_STORAGE_KEY = 'kia-electric-lab-project-backups';
 const MIGRATION_ERROR_STORAGE_KEY = 'kia-electric-lab-project-migration-error';
 
-const now = '2026-05-15T00:00:00.000Z';
+export const FIXTURE_NOW = '2026-05-15T00:00:00.000Z';
 
-export function defaultProject() {
-  return {
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};
+
+function merge<T extends Record<string, unknown>>(base: T, override?: Partial<T>): T {
+  return { ...base, ...(override ?? {}) };
+}
+
+export function buildRoomFixture(overrides: Partial<Room> = {}): Room {
+  return merge<Room>({
+    id: 'living',
+    nameFa: 'پذیرایی',
+    type: 'living',
+    x: 150,
+    y: 20,
+    width: 360,
+    height: 210
+  }, overrides);
+}
+
+export function buildComponentFixture(overrides: Partial<ElectricalComponent> = {}): ElectricalComponent {
+  return merge<ElectricalComponent>({
+    id: 'outlet-living',
+    type: 'outlet',
+    labelFa: 'پریز پذیرایی',
+    roomId: 'living',
+    x: 445,
+    y: 180,
+    applianceId: 'tv',
+    costPointType: 'outlet'
+  }, overrides);
+}
+
+export function buildCircuitFixture(overrides: Partial<Circuit> = {}): Circuit {
+  return merge<Circuit>({
+    id: 'c-living-outlet',
+    nameFa: 'پریز پذیرایی',
+    roomIds: ['living'],
+    componentIds: ['outlet-living'],
+    applianceIds: ['tv'],
+    wireSizeMm2: 2.5,
+    breakerAmp: 16,
+    lengthMeters: 22,
+    kind: 'outlet'
+  }, overrides);
+}
+
+export function buildWireFixture(overrides: Partial<ElectricalWire> = {}): ElectricalWire {
+  return merge<ElectricalWire>({
+    id: 'wire-e2e',
+    circuitId: 'c-living-outlet',
+    from: { componentId: 'main-panel', terminalId: 'phase-bus' },
+    to: { componentId: 'outlet-living', terminalId: 'phase' },
+    lengthMeters: 2,
+    wireSizeMm2: 2.5,
+    kind: 'phase',
+    routePoints: [{ x: 58, y: 55 }, { x: 445, y: 180 }]
+  }, overrides);
+}
+
+export function buildPanelboardFixture(overrides: Partial<Panelboard> = {}): Panelboard {
+  return merge<Panelboard>({
+    mainBreakerAmp: 25,
+    breakers: [{ id: 'slot-1', labelFa: 'فیوز ۱', amp: 16, circuitId: 'c-living-outlet' }]
+  }, overrides);
+}
+
+export function buildProjectFixture(overrides: DeepPartial<ElectricalProject> = {}): ElectricalProject {
+  const project: ElectricalProject = {
     schemaVersion: 7,
     appVersion: '0.8-phase8-lesson-sandbox',
-    createdAt: now,
-    updatedAt: now,
+    createdAt: FIXTURE_NOW,
+    updatedAt: FIXTURE_NOW,
     voltage: 220,
     mainBreakerAmp: 25,
     pixelsPerMeter: 24,
     rooms: [
-      { id: 'panel', nameFa: 'تابلو برق', type: 'panel', x: 20, y: 20, width: 120, height: 90 },
-      { id: 'living', nameFa: 'پذیرایی', type: 'living', x: 150, y: 20, width: 360, height: 210 },
-      { id: 'kitchen', nameFa: 'آشپزخانه', type: 'kitchen', x: 520, y: 20, width: 250, height: 210 }
+      buildRoomFixture({ id: 'panel', nameFa: 'تابلو برق', type: 'panel', x: 20, y: 20, width: 120, height: 90 }),
+      buildRoomFixture(),
+      buildRoomFixture({ id: 'kitchen', nameFa: 'آشپزخانه', type: 'kitchen', x: 520, y: 20, width: 250, height: 210 })
     ],
     components: [
-      { id: 'main-panel', type: 'main-panel', labelFa: 'تابلو اصلی', roomId: 'panel', x: 58, y: 55 },
-      { id: 'outlet-living', type: 'outlet', labelFa: 'پریز پذیرایی', roomId: 'living', x: 445, y: 180, applianceId: 'tv', costPointType: 'outlet' }
+      buildComponentFixture({ id: 'main-panel', type: 'main-panel', labelFa: 'تابلو اصلی', roomId: 'panel', x: 58, y: 55, applianceId: undefined, costPointType: undefined }),
+      buildComponentFixture()
     ],
-    circuits: [
-      {
-        id: 'c-living-outlet',
-        nameFa: 'پریز پذیرایی',
-        roomIds: ['living'],
-        componentIds: ['outlet-living'],
-        applianceIds: ['tv'],
-        wireSizeMm2: 2.5,
-        breakerAmp: 16,
-        lengthMeters: 22,
-        kind: 'outlet'
-      }
-    ],
+    circuits: [buildCircuitFixture()],
     wires: [],
-    panelboard: {
-      mainBreakerAmp: 25,
-      breakers: [{ id: 'slot-1', labelFa: 'فیوز ۱', amp: 16, circuitId: 'c-living-outlet' }]
-    },
+    panelboard: buildPanelboardFixture(),
     lessonProgress: { completedLessonIds: [], attemptsByLesson: {}, lastActiveLessonId: 'lesson-1-one-way-lamp' },
     useExplicitWiresOnly: false
   };
-}
-
-export function projectWithExplicitWire() {
-  const project = defaultProject();
-  project.wires = [
-    {
-      id: 'wire-e2e',
-      circuitId: 'c-living-outlet',
-      from: { componentId: 'main-panel', terminalId: 'phase-bus' },
-      to: { componentId: 'outlet-living', terminalId: 'phase' },
-      lengthMeters: 2,
-      wireSizeMm2: 2.5,
-      kind: 'phase',
-      routePoints: [{ x: 58, y: 55 }, { x: 445, y: 180 }]
-    }
-  ];
-  return project;
-}
-
-export function projectWithDiagnosticsIssues() {
-  const project = defaultProject();
-  project.circuits[0].componentIds = ['missing-component'];
-  project.panelboard!.breakers[0].circuitId = 'missing-circuit';
-  return project;
-}
-
-export function lessonProject() {
   return {
-    ...defaultProject(),
-    components: [
-      { id: 'main-panel', type: 'main-panel', labelFa: 'تابلو اصلی', roomId: 'panel', x: 58, y: 55 },
-      { id: 'sandbox-outlet-1', type: 'outlet', labelFa: 'پریز تمرین', roomId: 'living', x: 420, y: 175, circuitId: 'sandbox-lesson-3-standard-outlet', costPointType: 'outlet' }
-    ],
-    circuits: [
-      {
-        id: 'sandbox-lesson-3-standard-outlet',
-        nameFa: 'تمرین پریز استاندارد',
-        roomIds: ['living'],
-        componentIds: ['sandbox-outlet-1'],
-        applianceIds: [],
-        wireSizeMm2: 2.5,
-        breakerAmp: 16,
-        lengthMeters: 10,
-        kind: 'outlet'
-      }
-    ],
-    wires: [],
-    useExplicitWiresOnly: true
+    ...project,
+    ...overrides,
+    panelboard: overrides.panelboard ? { ...project.panelboard, ...overrides.panelboard } as Panelboard : project.panelboard,
+    lessonProgress: overrides.lessonProgress ? { ...project.lessonProgress, ...overrides.lessonProgress } as ElectricalProject['lessonProgress'] : project.lessonProgress
   };
 }
 
-export function savedExample() {
-  return {
+export function buildDiagnosticsFixture(): ElectricalProject {
+  const project = buildProjectFixture();
+  project.circuits = [buildCircuitFixture({ componentIds: ['missing-component'] })];
+  project.panelboard = buildPanelboardFixture({ breakers: [{ id: 'slot-1', labelFa: 'فیوز ناسازگار', amp: 16, circuitId: 'missing-circuit' }] });
+  return project;
+}
+
+export function buildProjectWithExplicitWireFixture(): ElectricalProject {
+  return buildProjectFixture({ wires: [buildWireFixture()] });
+}
+
+export function buildLessonProjectFixture(): ElectricalProject {
+  return buildProjectFixture({
+    components: [
+      buildComponentFixture({ id: 'main-panel', type: 'main-panel', labelFa: 'تابلو اصلی', roomId: 'panel', x: 58, y: 55, applianceId: undefined, costPointType: undefined }),
+      buildComponentFixture({ id: 'sandbox-outlet-1', labelFa: 'پریز تمرین', x: 420, y: 175, circuitId: 'sandbox-lesson-3-standard-outlet', applianceId: undefined })
+    ],
+    circuits: [buildCircuitFixture({ id: 'sandbox-lesson-3-standard-outlet', nameFa: 'تمرین پریز استاندارد', componentIds: ['sandbox-outlet-1'], applianceIds: [], lengthMeters: 10 })],
+    wires: [],
+    useExplicitWiresOnly: true
+  });
+}
+
+export function buildExampleFixture(overrides: Partial<LessonExample> = {}): LessonExample {
+  return merge<LessonExample>({
     id: 'example-e2e',
     lessonId: 'lesson-1-one-way-lamp',
     title: 'نمونه تست',
-    projectSnapshot: lessonProject(),
-    createdAt: now,
+    projectSnapshot: buildLessonProjectFixture(),
+    createdAt: FIXTURE_NOW,
     notes: 'یادداشت اولیه'
-  };
+  }, overrides);
 }
 
-export function activeSandboxState() {
-  const mainProject = defaultProject();
-  const sandboxProject = lessonProject();
-  return {
+export function buildSandboxFixture(overrides: Partial<LessonSandboxState> = {}): LessonSandboxState {
+  const mainProject = buildProjectFixture();
+  const sandboxProject = buildLessonProjectFixture();
+  return merge<LessonSandboxState>({
     activeLessonId: 'lesson-3-standard-outlet',
     mainProject,
     sandboxProject,
-    sandboxProgress: mainProject.lessonProgress,
+    sandboxProgress: mainProject.lessonProgress!,
     attemptsCount: 0,
-    startedAt: now,
-    savedExamples: [savedExample()]
-  };
+    startedAt: FIXTURE_NOW,
+    savedExamples: [buildExampleFixture()]
+  }, overrides);
 }
 
-function persistedState(project = defaultProject(), extra: Record<string, unknown> = {}) {
+export function buildBackupFixture(overrides: Partial<{ id: string; createdAt: string; reasonFa: string; raw: string; schemaVersion?: number }> = {}) {
+  return merge({
+    id: 'backup-e2e',
+    createdAt: FIXTURE_NOW,
+    reasonFa: 'پشتیبان تست',
+    raw: JSON.stringify({ state: { project: buildDiagnosticsFixture() }, version: 7 }),
+    schemaVersion: 7
+  }, overrides);
+}
+
+export function buildAuditEntryFixture(overrides: Partial<ApplyAuditEntry> = {}): ApplyAuditEntry {
+  return merge<ApplyAuditEntry>({
+    id: 'audit-e2e',
+    action: 'append',
+    timestamp: FIXTURE_NOW,
+    lessonId: 'lesson-3-standard-outlet',
+    lessonTitle: 'تمرین پریز استاندارد',
+    affectedCounts: { circuits: 1, components: 1, wires: 1 },
+    diagnosticsCount: 0,
+    userNotes: 'رویداد تست',
+    warningsFa: []
+  }, overrides);
+}
+
+function persistedState(project: ElectricalProject = buildProjectFixture(), extra: Record<string, unknown> = {}) {
   return {
     state: {
       project,
@@ -134,7 +201,7 @@ function persistedState(project = defaultProject(), extra: Record<string, unknow
   };
 }
 
-export async function seedProject(page: Page, project = defaultProject()) {
+export async function seedProject(page: Page, project = buildProjectFixture()) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(({ key, value }) => {
     localStorage.clear();
@@ -144,7 +211,7 @@ export async function seedProject(page: Page, project = defaultProject()) {
 }
 
 export async function seedExplicitWire(page: Page) {
-  const project = projectWithExplicitWire();
+  const project = buildProjectWithExplicitWireFixture();
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(({ key, value }) => {
     localStorage.clear();
@@ -154,7 +221,7 @@ export async function seedExplicitWire(page: Page) {
 }
 
 export async function seedActiveSandbox(page: Page) {
-  const sandbox = activeSandboxState();
+  const sandbox = buildSandboxFixture();
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(({ key, value }) => {
     localStorage.clear();
@@ -164,18 +231,10 @@ export async function seedActiveSandbox(page: Page) {
 }
 
 export async function seedBackup(page: Page) {
-  const project = defaultProject();
-  const backup = {
-    id: 'backup-e2e',
-    createdAt: now,
-    reasonFa: 'پشتیبان تست',
-    raw: JSON.stringify({ state: { project: projectWithDiagnosticsIssues() }, version: 7 }),
-    schemaVersion: 7
-  };
-  await seedProject(page, project);
+  await seedProject(page, buildProjectFixture());
   await page.evaluate(({ key, backupValue }) => {
     localStorage.setItem(key, JSON.stringify([backupValue]));
-  }, { key: BACKUP_STORAGE_KEY, backupValue: backup });
+  }, { key: BACKUP_STORAGE_KEY, backupValue: buildBackupFixture() });
   await page.reload({ waitUntil: 'domcontentloaded' });
 }
 

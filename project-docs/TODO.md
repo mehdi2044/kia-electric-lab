@@ -593,3 +593,35 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add screenshot/visual regression checks for modals.
 - [ ] Add Firefox/WebKit Playwright projects.
 - [ ] Add schema-aware fixture generation when schema version changes.
+
+## 2026-05-15 01:13 Europe/Istanbul - Phase 15 TODO Update
+
+### Completed
+
+- [x] Add typed `buildProjectFixture`.
+- [x] Add typed `buildComponentFixture`.
+- [x] Add typed `buildCircuitFixture`.
+- [x] Add typed `buildWireFixture`.
+- [x] Add typed `buildSandboxFixture`.
+- [x] Add typed `buildBackupFixture`.
+- [x] Add typed `buildExampleFixture`.
+- [x] Add diagnostics fixture builder.
+- [x] Refactor e2e setup to use builders.
+- [x] Add audit JSON download e2e test.
+- [x] Add saved example download e2e test.
+- [x] Add visual baseline for apply preview modal.
+- [x] Add visual baseline for diagnostics panel.
+- [x] Add visual baseline for lesson panel.
+- [x] Add visual baseline for audit viewer.
+- [x] Add visual baseline for floor plan with routed wire.
+- [x] Document snapshot update process.
+- [x] Document cross-browser planning.
+
+### New TODOs
+
+- [ ] Add mobile viewport screenshot baselines.
+- [ ] Add visual baseline for wire inspector.
+- [ ] Add visual baseline for panelboard.
+- [ ] Add CI caching guidance for Playwright browsers.
+- [ ] Add snapshot review process to `DEVELOPMENT_WORKFLOW.md`.
+- [ ] Evaluate Firefox/WebKit snapshot stability.

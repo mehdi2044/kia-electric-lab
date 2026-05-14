@@ -1101,3 +1101,53 @@ The browser suite still runs only Chromium.
 Recommended fix:
 
 - Add Firefox and WebKit projects after CI caching/runtime is prepared.
+
+## 2026-05-15 01:13 Europe/Istanbul - Known Issues Update After Phase 15
+
+### KI-046 Status Update - Typed Fixture Builders Added
+
+Status:
+
+- Improved.
+
+Resolution:
+
+- E2E fixtures now use typed builders with app type imports and override support.
+
+Remaining limitation:
+
+- Builders still live in the e2e folder and should become more modular as fixture count grows.
+
+### KI-047 Status Update - Chromium-Only Still Applies
+
+Status:
+
+- Open.
+
+Resolution:
+
+- Cross-browser planning is documented, but Firefox/WebKit are not enabled yet.
+
+### KI-048 - Visual Snapshots Are OS/Browser Specific
+
+Severity: Medium.
+
+Description:
+
+The committed visual baselines are Chromium/Windows snapshots.
+
+Recommended fix:
+
+- Keep visual tests targeted and document platform expectations before adding more browsers.
+
+### KI-049 - Visual Snapshot Review Policy Needed
+
+Severity: Low.
+
+Description:
+
+The project now has committed visual baselines, but `DEVELOPMENT_WORKFLOW.md` does not yet define review/update rules.
+
+Recommended fix:
+
+- Add snapshot update/review policy to development workflow documentation.
