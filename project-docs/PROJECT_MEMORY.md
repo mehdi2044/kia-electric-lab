@@ -532,3 +532,42 @@ Lesson validation does not duplicate electrical calculation formulas. It calls e
 ### Current Limitation
 
 Lesson reset currently clears explicit wires for the selected circuit, not a fully isolated lesson sandbox. This is safe for MVP but should become lesson-scoped workspace reset later.
+
+## 2026-05-14 18:35 Europe/Istanbul - Phase 8 Lesson Sandbox Templates And Guided Floor-Plan Highlighting
+
+### Change Summary
+
+Phase 8 added a safe lesson sandbox mode so Kiarash can practice inside isolated lesson templates without damaging the main apartment project. The main project is preserved while the sandbox is active, and sandbox results can only replace the main project after explicit confirmation.
+
+### New Educational Safety Model
+
+- Main project is stored as a snapshot when a sandbox starts.
+- Lesson project is generated from a data-driven template.
+- Sandbox project uses `useExplicitWiresOnly` so generated fallback topology cannot fake lesson success.
+- Exiting sandbox restores the untouched main project.
+- Applying sandbox result to the main project is an explicit user action with Persian confirmation.
+
+### Template And Guidance Systems
+
+- `lessonSandbox.ts` creates lesson templates, sandbox state, reset behavior, apply behavior, and floor-plan highlights.
+- Templates place required components, circuits, and panelboard breaker assignments for each lesson.
+- Step guidance maps lesson steps to expected action type, target room, expected wire kind, and validation hint.
+- Floor plan now highlights target rooms, required components, highlighted terminals, invalid wires, and ghost wire suggestions.
+
+### Schema And Persistence
+
+Project schema advanced to version `7`.
+
+New persisted capability:
+
+- active sandbox lesson id
+- active sandbox project
+- sandbox progress
+- sandbox attempts
+- sandbox startedAt
+- main project snapshot during sandbox
+- saved sandbox examples
+
+### Important Decision
+
+`useExplicitWiresOnly` was added to prevent sandbox templates from passing through generated topology fallback. This preserves educational honesty: Kiarash must draw the required wires to complete wiring lessons.

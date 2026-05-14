@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultProject } from '../data/apartment';
-import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
+import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
 import { createElectricalWire, validateTerminalConnection } from '../features/topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../features/validation-engine/validationEngine';
 import { terminalKey } from '../features/topology-engine/types';
@@ -10,9 +10,11 @@ import { getPanelBreakers } from '../features/panelboard-engine/panelboardEngine
 import { CURRENT_APP_VERSION, CURRENT_SCHEMA_VERSION, createProjectTimestamp } from '../migrations/projectMigration';
 import { preparePersistedProjectStorage } from '../migrations/storageSafety';
 import { recordHintUsed, recordLessonAttempt, setActiveLesson } from '../features/lesson-mode/lessonProgress';
+import { applySandboxResult, resetLessonSandbox, startLessonSandbox } from '../features/lesson-mode/lessonSandbox';
 
 type LabState = {
   project: ElectricalProject;
+  lessonSandbox?: LessonSandboxState;
   selectedCircuitId: string;
   selectedWireId?: string;
   wireDrawingMode: boolean;
@@ -52,6 +54,11 @@ type LabState = {
   useLessonHint: (lessonId: string) => void;
   recordLessonValidation: (lessonId: string, passed: boolean, score: LessonScore, feedbackFa: string) => void;
   resetCurrentLessonWiring: () => void;
+  startLessonSandbox: (lessonId: string) => void;
+  resetLessonSandbox: () => void;
+  exitLessonSandbox: () => void;
+  applyLessonSandboxToMainProject: () => void;
+  saveSandboxAsExample: () => void;
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
@@ -68,6 +75,7 @@ export const useLabStore = create<LabState>()(
   persist(
     (set) => ({
       project: defaultProject,
+      lessonSandbox: undefined,
       selectedCircuitId: defaultProject.circuits[0]?.id ?? '',
       selectedWireId: undefined,
       wireDrawingMode: false,
@@ -78,6 +86,7 @@ export const useLabStore = create<LabState>()(
       replaceProject: (project) =>
         set({
           project: touchProject(project),
+          lessonSandbox: undefined,
           selectedCircuitId: project.circuits[0]?.id ?? '',
           selectedWireId: undefined,
           pendingTerminal: undefined
@@ -85,6 +94,7 @@ export const useLabStore = create<LabState>()(
       resetProject: () =>
         set({
           project: touchProject(defaultProject),
+          lessonSandbox: undefined,
           selectedCircuitId: defaultProject.circuits[0]?.id ?? '',
           selectedWireId: undefined,
           pendingTerminal: undefined
@@ -307,17 +317,40 @@ export const useLabStore = create<LabState>()(
           })
         })),
       setActiveLesson: (lessonId) =>
-        set((state) => ({
-          project: touchProject(setActiveLesson(state.project, lessonId))
-        })),
+        set((state) => {
+          const project = touchProject(setActiveLesson(state.project, lessonId));
+          return {
+            project,
+            lessonSandbox: state.lessonSandbox
+              ? { ...state.lessonSandbox, activeLessonId: lessonId, sandboxProject: project, sandboxProgress: project.lessonProgress ?? state.lessonSandbox.sandboxProgress }
+              : state.lessonSandbox
+          };
+        }),
       useLessonHint: (lessonId) =>
-        set((state) => ({
-          project: touchProject(recordHintUsed(state.project, lessonId))
-        })),
+        set((state) => {
+          const project = touchProject(recordHintUsed(state.project, lessonId));
+          return {
+            project,
+            lessonSandbox: state.lessonSandbox
+              ? { ...state.lessonSandbox, sandboxProject: project, sandboxProgress: project.lessonProgress ?? state.lessonSandbox.sandboxProgress }
+              : state.lessonSandbox
+          };
+        }),
       recordLessonValidation: (lessonId, passed, score, feedbackFa) =>
-        set((state) => ({
-          project: touchProject(recordLessonAttempt(state.project, lessonId, passed, score, feedbackFa))
-        })),
+        set((state) => {
+          const project = touchProject(recordLessonAttempt(state.project, lessonId, passed, score, feedbackFa));
+          return {
+            project,
+            lessonSandbox: state.lessonSandbox
+              ? {
+                  ...state.lessonSandbox,
+                  sandboxProject: project,
+                  sandboxProgress: project.lessonProgress ?? state.lessonSandbox.sandboxProgress,
+                  attemptsCount: state.lessonSandbox.attemptsCount + 1
+                }
+              : state.lessonSandbox
+          };
+        }),
       resetCurrentLessonWiring: () =>
         set((state) => {
           const selectedCircuit = state.project.circuits.find((circuit) => circuit.id === state.selectedCircuitId);
@@ -330,6 +363,67 @@ export const useLabStore = create<LabState>()(
             selectedWireId: undefined,
             pendingTerminal: undefined
           };
+        }),
+      startLessonSandbox: (lessonId) =>
+        set((state) => {
+          const sandbox = startLessonSandbox(state.lessonSandbox?.mainProject ?? state.project, lessonId);
+          return {
+            lessonSandbox: sandbox,
+            project: sandbox.sandboxProject,
+            selectedCircuitId: sandbox.sandboxProject.circuits[0]?.id ?? '',
+            selectedWireId: undefined,
+            pendingTerminal: undefined,
+            wireDrawingMode: true
+          };
+        }),
+      resetLessonSandbox: () =>
+        set((state) => {
+          if (!state.lessonSandbox) return {};
+          const sandbox = resetLessonSandbox(state.lessonSandbox);
+          return {
+            lessonSandbox: sandbox,
+            project: sandbox.sandboxProject,
+            selectedCircuitId: sandbox.sandboxProject.circuits[0]?.id ?? '',
+            selectedWireId: undefined,
+            pendingTerminal: undefined,
+            wireDrawingMode: true
+          };
+        }),
+      exitLessonSandbox: () =>
+        set((state) => {
+          if (!state.lessonSandbox) return {};
+          return {
+            project: touchProject(state.lessonSandbox.mainProject),
+            lessonSandbox: undefined,
+            selectedCircuitId: state.lessonSandbox.mainProject.circuits[0]?.id ?? '',
+            selectedWireId: undefined,
+            pendingTerminal: undefined,
+            wireDrawingMode: false
+          };
+        }),
+      applyLessonSandboxToMainProject: () =>
+        set((state) => {
+          if (!state.lessonSandbox) return {};
+          const applied = applySandboxResult({ ...state.lessonSandbox, sandboxProject: state.project });
+          return {
+            project: touchProject(applied),
+            lessonSandbox: undefined,
+            selectedCircuitId: applied.circuits[0]?.id ?? '',
+            selectedWireId: undefined,
+            pendingTerminal: undefined,
+            wireDrawingMode: false
+          };
+        }),
+      saveSandboxAsExample: () =>
+        set((state) => {
+          if (!state.lessonSandbox) return {};
+          return {
+            lessonSandbox: {
+              ...state.lessonSandbox,
+              sandboxProject: state.project,
+              savedExamples: [...(state.lessonSandbox.savedExamples ?? []), state.project]
+            }
+          };
         })
     }),
     {
@@ -337,6 +431,7 @@ export const useLabStore = create<LabState>()(
       version: CURRENT_SCHEMA_VERSION,
       partialize: (state) => ({
         project: state.project,
+        lessonSandbox: state.lessonSandbox,
         selectedCircuitId: state.selectedCircuitId,
         selectedWireId: state.selectedWireId,
         wireDraft: state.wireDraft,

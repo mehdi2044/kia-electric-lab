@@ -1,10 +1,11 @@
-import type { ComponentType } from '../../types/electrical';
+import type { ComponentType, LessonStepGuidance } from '../../types/electrical';
 
 export type LessonDifficulty = 'beginner' | 'intermediate' | 'advanced';
 
 export interface LessonStep {
   id: string;
   textFa: string;
+  guidance?: LessonStepGuidance;
 }
 
 export interface LessonDefinition {
@@ -181,4 +182,37 @@ export function getLessonById(lessonId: string): LessonDefinition | undefined {
 
 export function getFirstLesson(): LessonDefinition {
   return lessons[0];
+}
+
+const defaultStepGuidance: LessonStepGuidance = {
+  expectedActionType: 'validate',
+  validationHintFa: 'این مرحله را با نقشه، سیم‌ها و پیام‌های اعتبارسنجی بررسی کن.'
+};
+
+export function getStepGuidance(lessonId: string, stepIndex: number): LessonStepGuidance {
+  const lesson = getLessonById(lessonId);
+  const explicit = lesson?.steps[stepIndex]?.guidance;
+  if (explicit) return explicit;
+  const targetRoomId = lessonId.includes('kitchen') || lessonId.includes('fridge') ? 'kitchen' : lessonId.includes('outlet') ? 'living' : 'living';
+  if (stepIndex === 0) {
+    return {
+      expectedActionType: 'select-circuit',
+      targetRoomId,
+      validationHintFa: 'اول مدار درست را انتخاب کن تا سیم‌ها و قطعه‌ها به همان مدار اضافه شوند.'
+    };
+  }
+  if (stepIndex === 1) {
+    return {
+      expectedActionType: 'place-component',
+      targetRoomId,
+      validationHintFa: 'قطعه‌های لازم این درس باید روی نقشه و داخل مدار تمرین باشند.'
+    };
+  }
+  return {
+    ...defaultStepGuidance,
+    expectedActionType: 'connect-terminal',
+    targetRoomId,
+    expectedWireKind: stepIndex >= 4 ? 'neutral' : 'phase',
+    validationHintFa: 'ترمینال پیشنهادی را پیدا کن و اتصال را با سیم مناسب کامل کن.'
+  };
 }

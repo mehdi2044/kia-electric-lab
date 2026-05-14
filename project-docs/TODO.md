@@ -344,3 +344,43 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add lesson completion report export.
 - [ ] Add code splitting for lesson mode if bundle size continues growing.
 - [ ] Add teacher/parent progress summary.
+
+## 2026-05-14 18:35 Europe/Istanbul - Phase 8 TODO Update
+
+### Completed
+
+- [x] Add isolated lesson sandbox state.
+- [x] Preserve main project while sandbox is active.
+- [x] Create sandbox project from lesson template.
+- [x] Start lesson sandbox.
+- [x] Exit sandbox and restore main project.
+- [x] Apply sandbox result only through explicit action.
+- [x] Add Persian confirmation before apply.
+- [x] Add lesson templates with required components/circuit/breaker.
+- [x] Add `useExplicitWiresOnly` to prevent generated fallback success.
+- [x] Add guided floor-plan room highlight.
+- [x] Add required component highlight.
+- [x] Add terminal highlight support.
+- [x] Add invalid wire highlight integration.
+- [x] Add ghost wire suggestion rendering.
+- [x] Add step guidance model.
+- [x] Persist active sandbox data through Zustand.
+- [x] Add reset sandbox.
+- [x] Add discard sandbox.
+- [x] Add save sandbox as example action.
+- [x] Add tests for template creation.
+- [x] Add tests for main project preservation.
+- [x] Add tests for sandbox reset.
+- [x] Add tests for highlight generation.
+- [x] Add tests for explicit apply behavior.
+
+### New TODOs
+
+- [ ] Add apply strategy: replace main project.
+- [ ] Add apply strategy: append lesson circuit to main project.
+- [ ] Add apply strategy: save as named example without replacing.
+- [ ] Add saved examples UI.
+- [ ] Add explicit guidance metadata for every lesson step.
+- [ ] Add route-aware ghost wire suggestions.
+- [ ] Add lesson template import/export.
+- [ ] Add localStorage size diagnostics for saved examples.

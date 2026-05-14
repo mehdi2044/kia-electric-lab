@@ -190,6 +190,50 @@ export interface LessonProgress {
   lastActiveLessonId?: string;
 }
 
+export type LessonStepActionType =
+  | 'select-circuit'
+  | 'place-component'
+  | 'connect-terminal'
+  | 'select-wire'
+  | 'edit-wire'
+  | 'assign-breaker'
+  | 'validate';
+
+export interface LessonStepGuidance {
+  expectedActionType: LessonStepActionType;
+  targetRoomId?: string;
+  targetComponentId?: string;
+  targetTerminalId?: string;
+  targetTerminalRef?: ElectricalTerminalRef;
+  expectedWireKind?: ElectricalWireKind;
+  validationHintFa: string;
+}
+
+export interface LessonHighlight {
+  roomIds: string[];
+  componentIds: string[];
+  terminalRefs: ElectricalTerminalRef[];
+  invalidWireIds: string[];
+  ghostWire?: {
+    from: ElectricalTerminalRef;
+    to: ElectricalTerminalRef;
+    kind: ElectricalWireKind;
+    labelFa: string;
+  };
+  messageFa: string;
+}
+
+export interface LessonSandboxState {
+  activeLessonId: string;
+  mainProject: ElectricalProject;
+  sandboxProject: ElectricalProject;
+  sandboxProgress: LessonProgress;
+  attemptsCount: number;
+  startedAt: string;
+  savedExamples?: ElectricalProject[];
+  pendingApplyConfirmation?: boolean;
+}
+
 export interface ElectricalProject {
   schemaVersion: number;
   appVersion: string;
@@ -204,4 +248,5 @@ export interface ElectricalProject {
   wires?: ElectricalWire[];
   panelboard?: Panelboard;
   lessonProgress?: LessonProgress;
+  useExplicitWiresOnly?: boolean;
 }

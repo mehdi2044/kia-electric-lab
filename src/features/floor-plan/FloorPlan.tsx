@@ -7,6 +7,8 @@ import { createComponentNode, createVirtualBreakerNode } from '../topology-engin
 import { validateTerminalConnection } from '../topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../validation-engine/validationEngine';
 import { calculateWireGeometryLength, getWirePathPoints } from '../topology-engine/wireGeometry';
+import { generateLessonHighlight } from '../lesson-mode/lessonSandbox';
+import { validateLesson } from '../lesson-mode/lessonValidation';
 
 const palette: Record<string, string> = {
   living: 'bg-teal-50 border-teal-200 dark:bg-teal-950/40 dark:border-teal-900',
@@ -34,10 +36,12 @@ const wireColors: Record<ElectricalWireKind, string> = {
 function TerminalButton({
   terminal,
   active,
-  onClick
+  onClick,
+  highlighted
 }: {
   terminal: { id: string; labelFa: string; role: string };
   active: boolean;
+  highlighted?: boolean;
   onClick: () => void;
 }) {
   const color =
@@ -51,7 +55,7 @@ function TerminalButton({
 
   return (
     <button
-      className={`h-4 w-4 rounded-full border-2 border-white shadow ${color} ${active ? 'ring-2 ring-tealish ring-offset-1' : ''}`}
+      className={`h-4 w-4 rounded-full border-2 border-white shadow ${color} ${active || highlighted ? 'ring-2 ring-tealish ring-offset-1' : ''} ${highlighted ? 'animate-pulse' : ''}`}
       title={terminal.labelFa}
       onClick={(event) => {
         event.stopPropagation();
@@ -65,6 +69,7 @@ export function FloorPlan() {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const flowRef = useRef<ReactFlowInstance | null>(null);
   const project = useLabStore((state) => state.project);
+  const lessonSandbox = useLabStore((state) => state.lessonSandbox);
   const selectedCircuitId = useLabStore((state) => state.selectedCircuitId);
   const selectedWireId = useLabStore((state) => state.selectedWireId);
   const wireDrawingMode = useLabStore((state) => state.wireDrawingMode);
@@ -79,16 +84,28 @@ export function FloorPlan() {
   const removeWireBendPoint = useLabStore((state) => state.removeWireBendPoint);
   const resetWireRoute = useLabStore((state) => state.resetWireRoute);
   const [draggingBend, setDraggingBend] = useState<{ wireId: string; index: number } | undefined>();
+  const lessonHighlight = useMemo(() => {
+    if (!lessonSandbox) return undefined;
+    const preview = validateLesson(project, lessonSandbox.activeLessonId, 0);
+    return generateLessonHighlight(project, lessonSandbox.activeLessonId, preview.completedStepIds.length);
+  }, [lessonSandbox, project]);
+  const highlightedTerminalKeys = useMemo(
+    () => new Set((lessonHighlight?.terminalRefs ?? []).map((ref) => `${ref.componentId}:${ref.terminalId}`)),
+    [lessonHighlight]
+  );
 
   const topologyWarnings = useMemo(() => generateTopologyWarnings(project), [project]);
   const invalidWireIds = useMemo(
     () =>
       new Set(
-        topologyWarnings
+        [
+          ...topologyWarnings
           .map((warning) => warning.id.match(/^topology:(.+):short-circuit$/)?.[1] ?? warning.id.match(/^topology:(.+):wire-overload$/)?.[1])
-          .filter((wireId): wireId is string => Boolean(wireId))
+          .filter((wireId): wireId is string => Boolean(wireId)),
+          ...(lessonHighlight?.invalidWireIds ?? [])
+        ]
       ),
-    [topologyWarnings]
+    [lessonHighlight, topologyWarnings]
   );
 
   const virtualBreakerNodes = useMemo(
@@ -123,14 +140,14 @@ export function FloorPlan() {
         },
         data: {
           label: (
-            <div className={`h-full w-full rounded-lg border p-2 ${palette[room.type]}`}>
+              <div className={`h-full w-full rounded-lg border p-2 ${palette[room.type]} ${lessonHighlight?.roomIds.includes(room.id) ? 'ring-4 ring-tealish/60' : ''}`}>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-300">{room.nameFa}</div>
               {room.highRisk ? <div className="mt-1 text-[10px] text-rose-600 dark:text-rose-300">ناحیه پرخطر</div> : null}
             </div>
           )
         }
       })),
-    [project.rooms]
+    [lessonHighlight, project.rooms]
   );
 
   const componentNodes: Node[] = useMemo(
@@ -143,7 +160,7 @@ export function FloorPlan() {
         draggable: false,
         style: {
           width: 112,
-          border: component.circuitId === selectedCircuitId ? '2px solid #0f766e' : '1px solid #cbd5e1',
+          border: lessonHighlight?.componentIds.includes(component.id) ? '3px solid #14b8a6' : component.circuitId === selectedCircuitId ? '2px solid #0f766e' : '1px solid #cbd5e1',
           borderRadius: 8,
           background: component.type === 'main-panel' ? '#111827' : '#ffffff',
           color: component.type === 'main-panel' ? '#ffffff' : '#0f172a',
@@ -168,6 +185,7 @@ export function FloorPlan() {
                       key={terminal.id}
                       terminal={terminal}
                       active={Boolean(pendingTerminal && pendingTerminal.componentId === ref.componentId && pendingTerminal.terminalId === ref.terminalId)}
+                      highlighted={highlightedTerminalKeys.has(`${ref.componentId}:${ref.terminalId}`)}
                       onClick={() => selectTerminalForWire(ref)}
                     />
                   );
@@ -178,7 +196,7 @@ export function FloorPlan() {
         }
       };
     }),
-    [assignComponentToCircuit, pendingTerminal, project.components, selectTerminalForWire, selectedCircuitId]
+    [assignComponentToCircuit, highlightedTerminalKeys, lessonHighlight, pendingTerminal, project.components, selectTerminalForWire, selectedCircuitId]
   );
 
   const breakerNodes: Node[] = useMemo(
@@ -247,6 +265,19 @@ export function FloorPlan() {
       }),
     [invalidWireIds, project]
   );
+
+  const ghostWirePoints = useMemo(() => {
+    if (!lessonHighlight?.ghostWire) return [];
+    return getWirePathPoints(project, {
+      id: 'lesson-ghost-wire',
+      circuitId: selectedCircuitId,
+      from: lessonHighlight.ghostWire.from,
+      to: lessonHighlight.ghostWire.to,
+      lengthMeters: 1,
+      wireSizeMm2: 2.5,
+      kind: lessonHighlight.ghostWire.kind
+    });
+  }, [lessonHighlight, project, selectedCircuitId]);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -328,6 +359,21 @@ export function FloorPlan() {
           <Controls position="bottom-left" />
         </ReactFlow>
         <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
+          {ghostWirePoints.length >= 2 && lessonHighlight?.ghostWire ? (
+            <g>
+              <polyline
+                points={ghostWirePoints.map((point) => `${point.x},${point.y}`).join(' ')}
+                fill="none"
+                stroke="#14b8a6"
+                strokeWidth={3}
+                strokeDasharray="6 6"
+                opacity={0.75}
+              />
+              <text x={ghostWirePoints[0].x + 8} y={ghostWirePoints[0].y - 8} fill="#0f766e" fontSize="12" fontWeight="700">
+                {lessonHighlight.ghostWire.labelFa}
+              </text>
+            </g>
+          ) : null}
           {routedWires.map(({ wire, invalid, points, color, lengthMeters }) => {
             if (points.length < 2) return null;
             return (

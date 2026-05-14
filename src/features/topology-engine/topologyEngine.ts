@@ -109,8 +109,8 @@ export function buildTopologyGraph(project: ElectricalProject): { graph: Electri
     });
   }
 
-  const sourceWires = project.wires?.length
-    ? project.wires.map((wire) => ({ wire, source: 'explicit' as const }))
+  const sourceWires = project.useExplicitWiresOnly || project.wires?.length
+    ? (project.wires ?? []).map((wire) => ({ wire, source: 'explicit' as const }))
     : project.circuits.flatMap((circuit) => generateCircuitWires(project, circuit, panelId).map((wire) => ({ wire, source: 'generated' as const })));
 
   const topologyWires = sourceWires
