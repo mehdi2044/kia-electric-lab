@@ -378,3 +378,53 @@ Phase 4 made wire routing spatially meaningful. Explicit `ElectricalWire[]` rema
 Known verification gap:
 
 - In-app browser automation timed out during visual inspection. Manual viewing remains available at `http://localhost:5173/`.
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 Project Schema Versioning And Migration System
+
+### Change Summary
+
+Phase 5 introduced long-term data-governance infrastructure for Kia Electric Lab. The project now carries explicit schema metadata, has a pure TypeScript migration engine, protects local storage before hydration, and exposes a Persian Project Data panel for export, import, reset, corrupted-data export, and backup restoration.
+
+### Project Metadata Now Stored
+
+Each `ElectricalProject` now includes:
+
+- `schemaVersion`
+- `appVersion`
+- `createdAt`
+- `updatedAt`
+
+Current values:
+
+- Current schema version: `5`
+- Current app version marker: `0.5-phase5-migrations`
+
+### Completed Systems
+
+- Pure project migration engine under `src/migrations/`.
+- Version detection for Phase 1, Phase 2, Phase 3, Phase 4, and latest Phase 5 project shapes.
+- Migration to latest schema while preserving explicit wires, route points, manual length overrides, panelboard assignments, scale, rooms, components, and circuits.
+- Local-storage preparation before Zustand hydration.
+- Automatic backup before migration.
+- Corrupted-storage quarantine instead of app crash.
+- Manual JSON export/import.
+- Backup restore list.
+- Persian UI feedback for import, export, migration, corrupted data, and backup restoration.
+- Unit tests for version detection, legacy migration, wire preservation, panelboard preservation, corrupt-data handling, and latest schema validation.
+
+### Engineering Decisions
+
+- Migration logic is isolated from React UI so future Tauri/SQLite persistence can reuse the same migration path.
+- Zustand remains the application-state owner, but storage is preflighted before the store hydrates.
+- Historical project data is not silently discarded. When storage is incompatible or corrupt, the raw data is copied to backups and to a migration-error key for debugging/export.
+- `ElectricalWire[]` remains the electrical source of truth. Phase 5 only protects persistence and does not alter simulation behavior.
+
+### Simulation Limitations Preserved
+
+- The tool remains educational and not a professional installation approval system.
+- Schema migration validates data integrity but does not certify electrical correctness.
+- Corrupt references can be warnings instead of fatal errors when the project can still load safely for educational correction.
+
+### Next Memory Note
+
+Future phases should treat schema migration as mandatory whenever adding new persistent fields, especially for grounding, advanced routing, panelboard slot models, multi-phase simulation, or AI tutor history.

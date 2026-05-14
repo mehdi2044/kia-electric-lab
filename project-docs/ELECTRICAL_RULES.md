@@ -756,3 +756,59 @@ Trigger:
 Meaning:
 
 - The breaker may fail to protect the wire before overheating.
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 Electrical Data Integrity Rules
+
+### Change Summary
+
+Phase 5 did not add new electrical physics. It added persistence validation for electrical data so old or corrupted saved projects do not silently damage the educational simulation.
+
+### ER-030 - Project Schema Must Be Known
+
+Trigger:
+
+- Project data has no recognizable structure or cannot be migrated to the current schema.
+
+Meaning:
+
+- The simulator cannot safely reason about circuits, wires, breakers, and terminals if the project shape is unknown.
+
+Handling:
+
+- Back up raw data.
+- Quarantine corrupted data.
+- Load a safe default educational project.
+- Allow export of corrupted data for engineering debugging.
+
+### ER-031 - Electrical References Should Resolve
+
+Trigger:
+
+- A wire references a missing component.
+- A wire references a missing circuit.
+- A panelboard breaker references a missing circuit.
+- A circuit references a missing component.
+
+Meaning:
+
+- The project can still be loaded for correction, but topology or panelboard results may be incomplete.
+
+Handling:
+
+- Treat as migration validation warning, not fatal error, when the core project can still load.
+- Future repair tooling should help users remove or reconnect orphan references.
+
+### ER-032 - Geometry Scale Must Be Valid
+
+Trigger:
+
+- `pixelsPerMeter` is missing, non-numeric, or too small for stable educational geometry.
+
+Meaning:
+
+- Route length, wire cost, and voltage drop estimates depend on scale. A bad scale can make the simulation misleading.
+
+Handling:
+
+- Migration normalizes missing scale to the educational default.
+- Validation rejects structurally invalid scale.

@@ -7,6 +7,8 @@ import { generateTopologyWarnings } from '../features/validation-engine/validati
 import { terminalKey } from '../features/topology-engine/types';
 import { insertBendPoint, removeBendPoint, resetWireRoute, updateBendPoint } from '../features/topology-engine/wireGeometry';
 import { getPanelBreakers } from '../features/panelboard-engine/panelboardEngine';
+import { CURRENT_APP_VERSION, CURRENT_SCHEMA_VERSION, createProjectTimestamp } from '../migrations/projectMigration';
+import { preparePersistedProjectStorage } from '../migrations/storageSafety';
 
 type LabState = {
   project: ElectricalProject;
@@ -20,6 +22,7 @@ type LabState = {
   };
   darkMode: boolean;
   setDarkMode: (value: boolean) => void;
+  replaceProject: (project: ElectricalProject) => void;
   resetProject: () => void;
   addComponent: (component: Omit<ElectricalComponent, 'id'>) => void;
   addCircuit: () => void;
@@ -47,6 +50,14 @@ type LabState = {
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
+const touchProject = (project: ElectricalProject): ElectricalProject => ({
+  ...project,
+  schemaVersion: CURRENT_SCHEMA_VERSION,
+  appVersion: CURRENT_APP_VERSION,
+  updatedAt: createProjectTimestamp()
+});
+
+preparePersistedProjectStorage();
 
 export const useLabStore = create<LabState>()(
   persist(
@@ -59,9 +70,16 @@ export const useLabStore = create<LabState>()(
       wireDraft: { wireSizeMm2: 2.5, lengthMeters: 8 },
       darkMode: false,
       setDarkMode: (value) => set({ darkMode: value }),
+      replaceProject: (project) =>
+        set({
+          project: touchProject(project),
+          selectedCircuitId: project.circuits[0]?.id ?? '',
+          selectedWireId: undefined,
+          pendingTerminal: undefined
+        }),
       resetProject: () =>
         set({
-          project: defaultProject,
+          project: touchProject(defaultProject),
           selectedCircuitId: defaultProject.circuits[0]?.id ?? '',
           selectedWireId: undefined,
           pendingTerminal: undefined
@@ -70,25 +88,26 @@ export const useLabStore = create<LabState>()(
         set((state) => {
           const componentId = id(component.type);
           const nextComponent = { ...component, id: componentId };
+          const nextProject = {
+            ...state.project,
+            components: [...state.project.components, nextComponent],
+            circuits: component.circuitId
+              ? state.project.circuits.map((circuit) =>
+                  circuit.id === component.circuitId
+                    ? {
+                        ...circuit,
+                        componentIds: Array.from(new Set([...circuit.componentIds, componentId])),
+                        applianceIds: component.applianceId
+                          ? Array.from(new Set([...circuit.applianceIds, component.applianceId]))
+                          : circuit.applianceIds,
+                        roomIds: Array.from(new Set([...circuit.roomIds, component.roomId]))
+                      }
+                    : circuit
+                )
+              : state.project.circuits
+          };
           return {
-            project: {
-              ...state.project,
-              components: [...state.project.components, nextComponent],
-              circuits: component.circuitId
-                ? state.project.circuits.map((circuit) =>
-                    circuit.id === component.circuitId
-                      ? {
-                          ...circuit,
-                          componentIds: Array.from(new Set([...circuit.componentIds, componentId])),
-                          applianceIds: component.applianceId
-                            ? Array.from(new Set([...circuit.applianceIds, component.applianceId]))
-                            : circuit.applianceIds,
-                          roomIds: Array.from(new Set([...circuit.roomIds, component.roomId]))
-                        }
-                      : circuit
-                  )
-                : state.project.circuits
-            }
+            project: touchProject(nextProject)
           };
         }),
       addCircuit: () =>
@@ -105,34 +124,34 @@ export const useLabStore = create<LabState>()(
             kind: 'outlet'
           };
           return {
-            project: { ...state.project, circuits: [...state.project.circuits, circuit] },
+            project: touchProject({ ...state.project, circuits: [...state.project.circuits, circuit] }),
             selectedCircuitId: circuit.id
           };
         }),
       selectCircuit: (selectedCircuitId) => set({ selectedCircuitId }),
       updateCircuit: (idToUpdate, patch) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             circuits: state.project.circuits.map((circuit) => (circuit.id === idToUpdate ? { ...circuit, ...patch } : circuit))
-          }
+          })
         })),
       assignApplianceToCircuit: (circuitId, applianceId) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             circuits: state.project.circuits.map((circuit) =>
               circuit.id === circuitId
                 ? { ...circuit, applianceIds: Array.from(new Set([...circuit.applianceIds, applianceId])) }
                 : circuit
             )
-          }
+          })
         })),
       assignComponentToCircuit: (circuitId, componentId) =>
         set((state) => {
           const component = state.project.components.find((item) => item.id === componentId);
           return {
-            project: {
+            project: touchProject({
               ...state.project,
               components: state.project.components.map((item) => (item.id === componentId ? { ...item, circuitId } : item)),
               circuits: state.project.circuits.map((circuit) =>
@@ -147,7 +166,7 @@ export const useLabStore = create<LabState>()(
                     }
                   : circuit
               )
-            }
+            })
           };
         }),
       setWireDrawingMode: (wireDrawingMode) =>
@@ -173,30 +192,30 @@ export const useLabStore = create<LabState>()(
           if (!result.wire) return { pendingTerminal: terminal };
 
           return {
-            project: {
+            project: touchProject({
               ...state.project,
               wires: [...(state.project.wires ?? []), result.wire]
-            },
+            }),
             selectedWireId: result.wire.id,
             pendingTerminal: undefined
           };
         }),
       addWire: (wire) =>
         set((state) => ({
-          project: { ...state.project, wires: [...(state.project.wires ?? []), wire] },
+          project: touchProject({ ...state.project, wires: [...(state.project.wires ?? []), wire] }),
           selectedWireId: wire.id
         })),
       selectWire: (selectedWireId) => set({ selectedWireId }),
       updateWire: (wireId, patch) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? { ...wire, ...patch } : wire))
-          }
+          })
         })),
       deleteWire: (wireId) =>
         set((state) => ({
-          project: { ...state.project, wires: (state.project.wires ?? []).filter((wire) => wire.id !== wireId) },
+          project: touchProject({ ...state.project, wires: (state.project.wires ?? []).filter((wire) => wire.id !== wireId) }),
           selectedWireId: state.selectedWireId === wireId ? undefined : state.selectedWireId
         })),
       clearInvalidWires: () =>
@@ -211,13 +230,13 @@ export const useLabStore = create<LabState>()(
             return validation.valid && !invalidWireIds.has(wire.id);
           });
           return {
-            project: { ...state.project, wires: nextWires },
+            project: touchProject({ ...state.project, wires: nextWires }),
             selectedWireId: nextWires.some((wire) => wire.id === state.selectedWireId) ? state.selectedWireId : undefined
           };
         }),
       resetWiringForCircuit: (circuitId) =>
         set((state) => ({
-          project: { ...state.project, wires: (state.project.wires ?? []).filter((wire) => wire.circuitId !== circuitId) },
+          project: touchProject({ ...state.project, wires: (state.project.wires ?? []).filter((wire) => wire.circuitId !== circuitId) }),
           selectedWireId: (state.project.wires ?? []).find((wire) => wire.id === state.selectedWireId)?.circuitId === circuitId ? undefined : state.selectedWireId
         })),
       resetWiringForRoom: (roomId) =>
@@ -227,65 +246,65 @@ export const useLabStore = create<LabState>()(
             (wire) => !componentIds.has(wire.from.componentId) && !componentIds.has(wire.to.componentId)
           );
           return {
-            project: { ...state.project, wires: nextWires },
+            project: touchProject({ ...state.project, wires: nextWires }),
             selectedWireId: nextWires.some((wire) => wire.id === state.selectedWireId) ? state.selectedWireId : undefined
           };
         }),
-      setWireDraft: (patch) => set((state) => ({ wireDraft: { ...state.wireDraft, ...patch } }))
-      ,
+      setWireDraft: (patch) => set((state) => ({ wireDraft: { ...state.wireDraft, ...patch } })),
       addWireBendPoint: (wireId, point) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? insertBendPoint(wire, point) : wire))
-          }
+          })
         })),
       updateWireBendPoint: (wireId, index, point, snap) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? updateBendPoint(wire, index, point, snap) : wire))
-          }
+          })
         })),
       removeWireBendPoint: (wireId, index) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? removeBendPoint(wire, index) : wire))
-          }
+          })
         })),
       resetWireRoute: (wireId) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? resetWireRoute(wire) : wire))
-          }
+          })
         })),
       setPixelsPerMeter: (pixelsPerMeter) =>
-        set((state) => ({ project: { ...state.project, pixelsPerMeter } })),
+        set((state) => ({ project: touchProject({ ...state.project, pixelsPerMeter }) })),
       assignCircuitToBreaker: (slotId, circuitId) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             panelboard: {
               mainBreakerAmp: state.project.panelboard?.mainBreakerAmp ?? state.project.mainBreakerAmp,
               breakers: getPanelBreakers(state.project).map((breaker) => (breaker.id === slotId ? { ...breaker, circuitId } : breaker))
             }
-          }
+          })
         })),
       updatePanelBreaker: (slotId, patch) =>
         set((state) => ({
-          project: {
+          project: touchProject({
             ...state.project,
             panelboard: {
               mainBreakerAmp: state.project.panelboard?.mainBreakerAmp ?? state.project.mainBreakerAmp,
               breakers: getPanelBreakers(state.project).map((breaker) => (breaker.id === slotId ? { ...breaker, ...patch } : breaker))
             }
-          }
+          })
         }))
     }),
     {
       name: 'kia-electric-lab-project',
+      version: CURRENT_SCHEMA_VERSION,
       partialize: (state) => ({
         project: state.project,
         selectedCircuitId: state.selectedCircuitId,

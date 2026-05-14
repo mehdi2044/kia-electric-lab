@@ -308,3 +308,58 @@ Longer routes cost more because they use more copper and more installation labor
 ### Limitation
 
 Geometry length depends on project scale (`pixelsPerMeter`). If the scale is unrealistic, cost estimates become unrealistic.
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 Cost Persistence Rules
+
+### Change Summary
+
+Phase 5 did not change the cost formulas. It protects the persistent fields that cost calculations depend on, especially explicit wires, geometric route points, manual length overrides, panelboard assignments, and scale.
+
+### Persisted Cost Inputs Protected By Migration
+
+- `circuits[].wireSizeMm2`
+- `circuits[].breakerAmp`
+- `circuits[].lengthMeters`
+- `wires[].wireSizeMm2`
+- `wires[].lengthMeters`
+- `wires[].routePoints`
+- `wires[].manualLengthOverride`
+- `pixelsPerMeter`
+- `panelboard.breakers[].amp`
+- `panelboard.breakers[].circuitId`
+
+### Cost Rule CR-010 - Migration Must Preserve Cost-Relevant Geometry
+
+Trigger:
+
+- A project from Phase 3 or Phase 4 contains explicit wire records.
+
+Rule:
+
+- Migration must preserve every explicit wire, route point, wire size, manual length override, and circuit assignment when structurally valid.
+
+Reason:
+
+- Losing wire geometry would silently change material cost, labor cost, voltage drop estimates, and educational feedback.
+
+### Cost Rule CR-011 - Invalid Scale Must Not Produce Silent Cost Output
+
+Trigger:
+
+- `pixelsPerMeter` is missing or invalid.
+
+Rule:
+
+- Migration should normalize a missing scale to the educational default.
+- Validation should reject impossible scale values.
+
+Reason:
+
+- Wire cost from geometry is only meaningful when scale conversion is valid.
+
+### Future Cost Persistence Work
+
+- Add editable cost profiles with versioned price tables.
+- Store cost profile effective date and currency.
+- Add migration for future regional price presets.
+- Add checksum to exported project/cost JSON.

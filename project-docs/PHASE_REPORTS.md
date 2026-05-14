@@ -1469,3 +1469,138 @@ Phase 5 should add:
 - explicit panelboard slot add/remove controls
 - project schema version and migration for old local storage
 - UI indicator for calculated length vs manual override
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 Engineering Report: Project Schema Versioning And Migration System
+
+### Completed Work
+
+Phase 5 implemented a professional persistence-safety layer for long-term Kia Electric Lab development. The simulator can now identify old project shapes, migrate them to the current schema, protect local JSON storage with backups, avoid app crashes on corrupted data, and expose project-data controls in the Persian RTL interface.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/data/apartment.ts`
+- `src/migrations/projectMigration.ts`
+- `src/migrations/storageSafety.ts`
+- `src/migrations/projectMigration.test.ts`
+- `src/store/useLabStore.ts`
+- `src/features/project-data/ProjectDataPanel.tsx`
+- `src/App.tsx`
+- `src/components/Icon.tsx`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/ELECTRICAL_RULES.md`
+- `project-docs/COST_ENGINE_RULES.md`
+
+### Dependencies Added
+
+No package dependency was added. The implementation uses existing React, Zustand, TypeScript, Vitest, browser `localStorage`, `Blob`, and `FileReader` APIs.
+
+### Architecture Changes
+
+New migration layer:
+
+```text
+src/migrations/
+  projectMigration.ts
+  storageSafety.ts
+  projectMigration.test.ts
+```
+
+`projectMigration.ts` is pure TypeScript and owns schema detection, migration, and validation.
+
+`storageSafety.ts` owns browser-storage operations:
+
+- read current persisted JSON
+- create automatic backups
+- migrate before Zustand hydration
+- quarantine corrupted persisted data
+- import project JSON
+- restore from backup
+- export current/corrupted data
+
+`useLabStore.ts` now calls storage preparation before Zustand `persist` hydrates. Store mutations touch `updatedAt`, `schemaVersion`, and `appVersion` so persisted state stays current.
+
+### Engineering Decisions
+
+- `schemaVersion` is a project-level field, not only Zustand persist version, because future storage targets may include local JSON files, SQLite rows, or shared projects.
+- `appVersion` is stored separately from schema version to distinguish data format from product release identity.
+- Migration preserves partial/correctable data where possible and reports warnings rather than failing on every dangling reference.
+- Broken local storage is backed up and quarantined, then the app falls back to a safe default project.
+- The UI exposes data tools in a small operational panel rather than hiding them in developer-only code, because Mehdi/Vi need project continuity across sessions.
+
+### Electrical Logic Implemented
+
+No new electrical formulas were added in Phase 5. Existing electrical behavior remains unchanged:
+
+- explicit `ElectricalWire[]` remains source of truth
+- topology engine remains independent from React Flow
+- geometric wire length remains available for voltage drop and cost calculations
+- panelboard assignment validation remains active
+
+Phase 5 adds persistence validation for electrical data:
+
+- circuits array shape
+- components array shape
+- wire terminal references
+- wire length and route point validity
+- panelboard breaker assignments
+- breaker amp numeric validity
+- pixels-per-meter validity
+
+### Formulas Implemented
+
+No new electrical formulas were introduced. Phase 5 indirectly protects fields used by existing formulas:
+
+- `I = P / V`
+- `P = V x I`
+- `R = V / I`
+- `VoltageDrop = Current x CableResistance`
+- route length in meters from geometry scale
+
+### Bugs Found And Fixed
+
+- TypeScript build initially rejected unsafe casts in migration tests and backup parsing. Fixed by using explicit `unknown` conversion in tests and a real `isProjectBackup` type guard in storage safety.
+
+### Limitations
+
+- Backup storage is capped to the latest 12 records in local storage.
+- Backup restore list is local-browser only.
+- Import/export uses JSON files; there is no signed checksum yet.
+- Validation warns on dangling references but does not provide an automatic repair workflow yet.
+- `updatedAt` is refreshed on store mutations, but exact disk flush timing is still handled by Zustand persist.
+
+### TODOs
+
+- Add checksum/hash to exported projects.
+- Add migration dry-run preview before importing large projects.
+- Add explicit repair tools for dangling wire terminal refs and orphan panelboard assignments.
+- Add UI for deleting individual backups.
+- Add end-to-end tests with browser localStorage fixtures.
+
+### Risks
+
+- Future schema changes may forget to add a migration step unless governance enforces it.
+- Local storage can still be manually edited by users and create unusual shapes.
+- Large future projects may exceed comfortable localStorage limits; SQLite/Tauri migration should eventually become the durable store.
+- Importing JSON from unknown sources should remain local-only and should not execute code.
+
+### Scalability Concerns
+
+- The migration engine is linear and suitable for current scale.
+- As schema grows, migrations should become append-only named functions and include fixture snapshots from each phase.
+- Future Tauri/SQLite storage should store schema version at project and database levels.
+- Multiplayer/shared-project mode will need conflict resolution beyond single-project migration.
+
+### Verification
+
+- `npm test`: 7 test files passed, 32 tests passed.
+- `npm run build`: passed.
+- Local HTTP check: `http://localhost:5173/` returned status 200.
+
+### Next Recommended Step
+
+Phase 6 should focus on repair/diagnostic tooling for migrated projects: topology graph inspector, orphan-reference repair actions, backup deletion/export management, and browser-level regression tests with old localStorage fixtures.
