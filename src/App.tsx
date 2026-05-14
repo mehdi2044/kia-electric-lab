@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { Icon } from './components/Icon';
 import { StatCard } from './components/StatCard';
 import { ApplianceLibrary } from './features/appliance-library/ApplianceLibrary';
@@ -10,11 +10,20 @@ import { generateProjectReport } from './features/report-engine/reportEngine';
 import { SafetyPanel } from './features/safety-engine/SafetyPanel';
 import { WireRoutingPanel } from './features/wire-routing/WireRoutingPanel';
 import { PanelboardPanel } from './features/panelboard/PanelboardPanel';
-import { ProjectDataPanel } from './features/project-data/ProjectDataPanel';
-import { ProjectDiagnosticsPanel } from './features/project-diagnostics/ProjectDiagnosticsPanel';
-import { LessonPanel } from './features/lesson-mode/LessonPanel';
 import { useLabStore } from './store/useLabStore';
 import { formatNumber, formatToman } from './utils/format';
+
+const LessonPanel = lazy(() => import('./features/lesson-mode/LessonPanel').then((module) => ({ default: module.LessonPanel })));
+const ProjectDataPanel = lazy(() => import('./features/project-data/ProjectDataPanel').then((module) => ({ default: module.ProjectDataPanel })));
+const ProjectDiagnosticsPanel = lazy(() => import('./features/project-diagnostics/ProjectDiagnosticsPanel').then((module) => ({ default: module.ProjectDiagnosticsPanel })));
+
+function PanelLoading({ label }: { label: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+      {label} در حال آماده‌سازی است...
+    </div>
+  );
+}
 
 export function App() {
   const project = useLabStore((state) => state.project);
@@ -82,7 +91,9 @@ export function App() {
         <div className="grid gap-5 xl:grid-cols-[290px_minmax(0,1fr)_380px]">
           <ApplianceLibrary />
           <div className="space-y-5">
-            <LessonPanel />
+            <Suspense fallback={<PanelLoading label="درس‌های کیارش" />}>
+              <LessonPanel />
+            </Suspense>
             <FloorPlan />
             <WireRoutingPanel />
             <PanelboardPanel />
@@ -90,8 +101,12 @@ export function App() {
             <ReportPanel />
           </div>
           <div className="space-y-5">
-            <ProjectDataPanel />
-            <ProjectDiagnosticsPanel />
+            <Suspense fallback={<PanelLoading label="داده‌های پروژه" />}>
+              <ProjectDataPanel />
+            </Suspense>
+            <Suspense fallback={<PanelLoading label="عیب‌یابی پروژه" />}>
+              <ProjectDiagnosticsPanel />
+            </Suspense>
             <SafetyPanel />
             <CostPanel />
           </div>

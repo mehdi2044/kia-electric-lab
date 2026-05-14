@@ -1261,3 +1261,64 @@ Example operations are pure:
 - Add example import and checksum validation.
 - Add collision-aware component placement.
 - Move saved examples to durable database storage later.
+
+## 2026-05-14 21:30 Europe/Istanbul - Phase 10 Apply Preview, Example Integrity, Layout, And Splitting Architecture
+
+### Change Type
+
+Apply-preview UX, collision-aware append layout, example artifact integrity, and frontend code splitting.
+
+### Apply Preview Architecture
+
+`createSandboxApplyPreview` returns:
+
+- apply mode
+- affected counts
+- diagnostics report
+- Persian explanation of what will happen
+- Persian risk list
+
+`LessonPanel` renders this data in an in-app RTL modal and only applies after the user presses confirm.
+
+### Collision-Aware Append Architecture
+
+Append now:
+
+- scans occupied main-project component positions
+- evaluates candidate offsets
+- chooses the first offset without nearby overlap
+- preserves relative sandbox layout
+- offsets route points by the same vector
+
+### Example Integrity Architecture
+
+Lesson examples now have a checksum envelope:
+
+```text
+{
+  format: "kia-electric-lab-lesson-example",
+  exportedAt,
+  checksumAlgorithm,
+  checksum,
+  example
+}
+```
+
+Import validates checksum and reports Persian warnings on mismatch or raw JSON import.
+
+### Code Splitting Architecture
+
+`App.tsx` lazy-loads:
+
+- `LessonPanel`
+- `ProjectDataPanel`
+- `ProjectDiagnosticsPanel`
+
+Each panel has a Persian loading fallback through `Suspense`.
+
+### Future Architecture Notes
+
+- Convert modal to reusable shared component.
+- Add focus trap and keyboard dismissal.
+- Create shared artifact envelope utilities for project/example/lesson-pack exports.
+- Add route-level splitting if a navigation shell is introduced.

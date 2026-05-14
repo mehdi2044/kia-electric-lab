@@ -1,4 +1,4 @@
-import type { ElectricalProject } from '../types/electrical';
+import type { ElectricalProject, LessonExample } from '../types/electrical';
 
 export interface ProjectExportEnvelope {
   format: 'kia-electric-lab-project';
@@ -6,6 +6,14 @@ export interface ProjectExportEnvelope {
   checksumAlgorithm: 'fnv1a32-canonical-json';
   checksum: string;
   project: ElectricalProject;
+}
+
+export interface LessonExampleExportEnvelope {
+  format: 'kia-electric-lab-lesson-example';
+  exportedAt: string;
+  checksumAlgorithm: 'fnv1a32-canonical-json';
+  checksum: string;
+  example: LessonExample;
 }
 
 type JsonLike = null | boolean | number | string | JsonLike[] | { [key: string]: JsonLike };
@@ -20,14 +28,18 @@ function canonicalize(value: unknown): string {
     .join(',')}}`;
 }
 
-export function calculateProjectChecksum(project: ElectricalProject): string {
-  const canonical = canonicalize(project as unknown as JsonLike);
+function calculateChecksum(value: unknown): string {
+  const canonical = canonicalize(value as JsonLike);
   let hash = 0x811c9dc5;
   for (let index = 0; index < canonical.length; index += 1) {
     hash ^= canonical.charCodeAt(index);
     hash = Math.imul(hash, 0x01000193);
   }
   return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+export function calculateProjectChecksum(project: ElectricalProject): string {
+  return calculateChecksum(project);
 }
 
 export function createProjectExportEnvelope(project: ElectricalProject): ProjectExportEnvelope {
@@ -57,6 +69,44 @@ export function isProjectExportEnvelope(value: unknown): value is ProjectExportE
 
 export function validateProjectExportEnvelope(envelope: ProjectExportEnvelope): { valid: boolean; expected: string; actual: string } {
   const expected = calculateProjectChecksum(envelope.project);
+  return {
+    valid: expected === envelope.checksum,
+    expected,
+    actual: envelope.checksum
+  };
+}
+
+export function calculateLessonExampleChecksum(example: LessonExample): string {
+  return calculateChecksum(example);
+}
+
+export function createLessonExampleExportEnvelope(example: LessonExample): LessonExampleExportEnvelope {
+  return {
+    format: 'kia-electric-lab-lesson-example',
+    exportedAt: new Date().toISOString(),
+    checksumAlgorithm: 'fnv1a32-canonical-json',
+    checksum: calculateLessonExampleChecksum(example),
+    example
+  };
+}
+
+export function serializeLessonExampleExport(example: LessonExample): string {
+  return JSON.stringify(createLessonExampleExportEnvelope(example), null, 2);
+}
+
+export function isLessonExampleExportEnvelope(value: unknown): value is LessonExampleExportEnvelope {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      (value as LessonExampleExportEnvelope).format === 'kia-electric-lab-lesson-example' &&
+      typeof (value as LessonExampleExportEnvelope).checksum === 'string' &&
+      typeof (value as LessonExampleExportEnvelope).example === 'object'
+  );
+}
+
+export function validateLessonExampleExportEnvelope(envelope: LessonExampleExportEnvelope): { valid: boolean; expected: string; actual: string } {
+  const expected = calculateLessonExampleChecksum(envelope.example);
   return {
     valid: expected === envelope.checksum,
     expected,

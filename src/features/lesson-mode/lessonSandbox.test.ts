@@ -3,15 +3,18 @@ import { defaultProject } from '../../data/apartment';
 import {
   addLessonExample,
   appendSandboxToMainProject,
+  createSandboxApplyPreview,
   createLessonExample,
   createLessonProjectFromTemplate,
   deleteLessonExample,
   generateLessonHighlight,
+  importLessonExampleJson,
   loadLessonExampleIntoSandbox,
   replaceMainProjectWithSandbox,
   resetLessonSandbox,
   startLessonSandbox
 } from './lessonSandbox';
+import { serializeLessonExampleExport } from '../../migrations/exportIntegrity';
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -117,6 +120,39 @@ describe('lesson sandbox', () => {
     expect(result.diagnostics).toBeDefined();
   });
 
+  it('creates modal apply summary with diagnostics', () => {
+    const sandbox = startLessonSandbox(clone(defaultProject), 'lesson-3-standard-outlet');
+    const preview = createSandboxApplyPreview(sandbox, 'append');
+
+    expect(preview.summary.circuits).toBe(1);
+    expect(preview.whatWillHappenFa).toContain('اضافه');
+    expect(preview.diagnostics).toBeDefined();
+  });
+
+  it('uses collision-aware offset and preserves wire route point offset', () => {
+    const main = clone(defaultProject);
+    const sandbox = startLessonSandbox(main, 'lesson-3-standard-outlet');
+    sandbox.sandboxProject.wires = [
+      {
+        id: 'wire-route',
+        circuitId: sandbox.sandboxProject.circuits[0].id,
+        from: { componentId: `breaker:${sandbox.sandboxProject.circuits[0].id}`, terminalId: 'load-out' },
+        to: { componentId: 'sandbox-outlet-1', terminalId: 'phase' },
+        lengthMeters: 2,
+        wireSizeMm2: 2.5,
+        kind: 'phase',
+        routePoints: [{ x: 420, y: 175 }]
+      }
+    ];
+
+    const result = appendSandboxToMainProject(sandbox);
+    const appendedComponent = result.project.components.find((component) => component.id.includes('sandbox-outlet-1'));
+    const appendedWire = result.project.wires?.find((wire) => wire.id.includes('wire-route'));
+
+    expect(appendedComponent?.x).not.toBe(420);
+    expect(appendedWire?.routePoints?.[0].x).toBe(appendedComponent?.x);
+  });
+
   it('creates, deletes, loads, and exports saved lesson examples as plain data', () => {
     const sandbox = startLessonSandbox(clone(defaultProject), 'lesson-1-one-way-lamp');
     const example = createLessonExample(sandbox, 'نمونه خوب', 'یادداشت', { technical: 80, safety: 90, cost: 70, learning: 95, final: 84 });
@@ -129,5 +165,27 @@ describe('lesson sandbox', () => {
     expect(loaded.sandboxProject).toEqual(example.projectSnapshot);
     expect(JSON.stringify(example)).toContain('نمونه خوب');
     expect(deleted.savedExamples).toHaveLength(0);
+  });
+
+  it('exports and imports lesson examples with checksum validation', () => {
+    const sandbox = startLessonSandbox(clone(defaultProject), 'lesson-1-one-way-lamp');
+    const example = createLessonExample(sandbox, 'نمونه سالم');
+    const raw = serializeLessonExampleExport(example);
+    const imported = importLessonExampleJson(raw);
+    const tampered = JSON.parse(raw);
+    tampered.example.title = 'نمونه دستکاری شده';
+    const tamperedImport = importLessonExampleJson(JSON.stringify(tampered));
+
+    expect(imported.ok).toBe(true);
+    expect(imported.example?.title).toBe('نمونه سالم');
+    expect(tamperedImport.ok).toBe(true);
+    expect(tamperedImport.warningsFa.join(' ')).toContain('checksum');
+  });
+
+  it('rejects corrupted example JSON', () => {
+    const imported = importLessonExampleJson('{not json');
+
+    expect(imported.ok).toBe(false);
+    expect(imported.errorFa).toContain('خراب');
   });
 });

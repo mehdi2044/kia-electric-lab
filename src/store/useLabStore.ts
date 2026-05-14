@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultProject } from '../data/apartment';
-import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonSandboxApplyMode, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
+import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonExample, LessonSandboxApplyMode, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
 import { createElectricalWire, validateTerminalConnection } from '../features/topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../features/validation-engine/validationEngine';
 import { terminalKey } from '../features/topology-engine/types';
@@ -17,6 +17,7 @@ import {
   deleteLessonExample,
   loadLessonExampleIntoSandbox,
   replaceMainProjectWithSandbox,
+  renameLessonExample,
   resetLessonSandbox,
   startLessonSandbox,
   type SandboxApplyResult
@@ -71,6 +72,8 @@ type LabState = {
   saveSandboxAsExample: (title?: string, notes?: string) => void;
   deleteLessonExample: (exampleId: string) => void;
   loadLessonExample: (exampleId: string) => void;
+  renameLessonExample: (exampleId: string, title: string, notes?: string) => void;
+  importLessonExample: (example: LessonExample) => void;
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
@@ -452,6 +455,17 @@ export const useLabStore = create<LabState>()(
         set((state) => ({
           lessonSandbox: state.lessonSandbox ? deleteLessonExample(state.lessonSandbox, exampleId) : state.lessonSandbox
         })),
+      renameLessonExample: (exampleId, title, notes) =>
+        set((state) => ({
+          lessonSandbox: state.lessonSandbox ? renameLessonExample(state.lessonSandbox, exampleId, title, notes) : state.lessonSandbox
+        })),
+      importLessonExample: (example) =>
+        set((state) => {
+          if (!state.lessonSandbox) return {};
+          return {
+            lessonSandbox: addLessonExample(state.lessonSandbox, example)
+          };
+        }),
       loadLessonExample: (exampleId) =>
         set((state) => {
           if (!state.lessonSandbox) return {};
