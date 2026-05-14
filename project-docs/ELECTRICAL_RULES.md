@@ -697,3 +697,62 @@ When `ElectricalProject.wires` has entries:
 When `ElectricalProject.wires` is empty:
 
 - Generated topology fallback remains for backward compatibility.
+
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 Geometry And Panelboard Rules
+
+### Geometric Wire Length
+
+Each explicit wire can now have:
+
+- start terminal coordinate
+- optional route points
+- end terminal coordinate
+- calculated route length
+- optional manual override
+
+Formula:
+
+```text
+RouteLengthPixels = sum(distance(pointN, pointN+1))
+RouteLengthMeters = RouteLengthPixels / pixelsPerMeter
+```
+
+If `manualLengthOverride` is present and greater than zero, it is used as an advanced educational override.
+
+### Panelboard Rules
+
+#### ER-026 - Circuit Without Breaker
+
+Trigger:
+
+- A circuit is not assigned to any panelboard breaker slot.
+
+Meaning:
+
+- Every circuit should have a breaker in the panel for protection and organization.
+
+#### ER-027 - Breaker Without Circuit
+
+Trigger:
+
+- A panelboard breaker slot has no circuit assignment.
+
+Meaning:
+
+- Empty breakers should be labeled or removed for a clear educational panel.
+
+#### ER-028 - Panel Breaker Overload
+
+Trigger:
+
+- Circuit current exceeds assigned panelboard breaker amp rating.
+
+#### ER-029 - Panel Breaker/Wire Incompatibility
+
+Trigger:
+
+- Assigned breaker amp rating exceeds selected circuit wire capacity.
+
+Meaning:
+
+- The breaker may fail to protect the wire before overheating.

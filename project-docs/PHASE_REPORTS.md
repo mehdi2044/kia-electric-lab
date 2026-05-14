@@ -1311,3 +1311,161 @@ Implement geometric wire routing:
 3. Calculate length from geometry.
 4. Render wire path geometry instead of node-to-node edges.
 5. Add explicit panelboard/breaker UI.
+
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 Geometric Wire Routing And Panelboard UI Report
+
+### Audience
+
+This report is for Mehdi, Project Owner and Product Architect, and Vi, Technical Project Manager and Lead System Architect.
+
+### Task Objective
+
+Make wire routing spatially meaningful on the floor plan. The simulator must draw, bend, edit, measure, and cost wires from geometry while preserving `ElectricalWire[]` as the source of truth and keeping the topology engine independent from UI.
+
+### Completed Work
+
+- Added `Point2D`.
+- Added `routePoints` to `ElectricalWire`.
+- Added `manualLengthOverride` to `ElectricalWire`.
+- Added `pixelsPerMeter` to `ElectricalProject`.
+- Added optional `Panelboard` and `PanelBreakerSlot` types.
+- Added terminal coordinate calculation.
+- Added route length calculation.
+- Added scale conversion.
+- Added bend insertion, update, deletion, snap, and reset helpers.
+- Updated topology graph construction to use calculated geometric length for explicit wires.
+- Updated current/voltage-drop simulation indirectly through geometric wire length.
+- Updated cost engine to use geometric explicit wire length.
+- Added routed SVG wire rendering on the floor plan.
+- Added selected-wire bend handles.
+- Added add/drag/remove/reset route interactions.
+- Added panelboard UI with main breaker, branch breakers, circuit assignment, load display, and warning badges.
+- Added panelboard validation engine.
+- Added tests for route length, bend operations, scale conversion, panelboard validation, and cost from geometric length.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/store/useLabStore.ts`
+- `src/App.tsx`
+- `src/features/floor-plan/FloorPlan.tsx`
+- `src/features/wire-routing/WireRoutingPanel.tsx`
+- `src/features/topology-engine/topologyEngine.ts`
+- `src/features/topology-engine/wireFactory.ts`
+- `src/features/safety-engine/safetyEngine.ts`
+- `src/features/cost-engine/costEngine.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ELECTRICAL_RULES.md`
+- `project-docs/COST_ENGINE_RULES.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Added Files
+
+- `src/features/topology-engine/terminalGeometry.ts`
+- `src/features/topology-engine/wireGeometry.ts`
+- `src/features/topology-engine/wireGeometry.test.ts`
+- `src/features/panelboard-engine/panelboardEngine.ts`
+- `src/features/panelboard-engine/panelboardEngine.test.ts`
+- `src/features/panelboard/PanelboardPanel.tsx`
+
+### Architecture Changes
+
+Before Phase 4:
+
+- Wires connected logical terminals but visual wire lines were still effectively direct connections.
+- Wire length was manually edited.
+- No panelboard UI existed.
+
+After Phase 4:
+
+- Wires have spatial route geometry.
+- Length is calculated from terminal coordinates and bend points.
+- Scale is configurable in pixels per meter.
+- Cost and voltage drop can use calculated routed length.
+- Panelboard assignment and breaker compatibility are visible and validated.
+
+### Electrical Logic Implemented
+
+- Terminal-level coordinates.
+- Route path assembly: start terminal, bend points, end terminal.
+- Route length in pixels.
+- Scale conversion to meters.
+- Geometric length used as wire length.
+- Breaker assignment validation.
+- Breaker overload validation.
+- Breaker/wire compatibility validation.
+
+### Cost Logic Implemented
+
+When explicit wires exist for a circuit:
+
+```text
+wire length = sum(calculated geometric length of circuit wires)
+wire material cost = sum(wire length x that wire size price)
+wire labor cost = wire length x laborPerMeter
+```
+
+Fallback:
+
+- If no explicit wires exist, Phase 1 `circuit.lengthMeters` remains the estimate.
+
+### Persian Educational Feedback
+
+Added explanations that:
+
+- Longer wire increases resistance, voltage drop, and cost.
+- Cleaner/shorter routing is usually more economical and easier to understand.
+- Panel organization helps identify which breaker protects each circuit.
+- Breaker and wire size must match because the breaker should protect the wire before overheating.
+
+### Tests
+
+New test coverage:
+
+- route length calculation
+- pixel-to-meter scale conversion
+- bend point insertion/deletion/update/reset
+- manual length override
+- calculated terminal-coordinate length
+- circuit without breaker validation
+- breaker without circuit validation
+- breaker/wire incompatibility validation
+- cost calculation from geometric explicit wire length
+
+Verification results:
+
+- 6 test files passed.
+- 26 tests passed.
+- Production build passed.
+- Local server responded HTTP 200.
+
+### Bugs
+
+No known runtime bugs were introduced.
+
+### Limitations
+
+- Browser visual automation timed out and did not produce a screenshot.
+- Terminal coordinates are deterministic offsets, not measured from DOM handles.
+- Route points are simple bends, not full conduit paths.
+- Wire length is geometric but still based on floor-plan coordinate scale selected by the user.
+- Panelboard is educational and does not model real panel physical constraints.
+
+### Risks
+
+- If scale is set poorly, cost and voltage drop estimates become misleading.
+- Users may interpret panelboard UI as professional panel design; disclaimer must remain clear.
+- Future geometry should include route-point persistence migrations.
+
+### Next Recommended Step
+
+Phase 5 should add:
+
+- terminal-level handle alignment/measurement improvements
+- route point editing polish
+- explicit panelboard slot add/remove controls
+- project schema version and migration for old local storage
+- UI indicator for calculated length vs manual override

@@ -126,6 +126,7 @@ export function createElectricalWire(input: WireCreationInput): { wire?: Electri
       to: input.to,
       wireSizeMm2: input.wireSizeMm2,
       lengthMeters: input.lengthMeters,
+      routePoints: [],
       kind: input.kind ?? validation.suggestedKind ?? 'phase'
     }
   };

@@ -192,3 +192,35 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add explanatory labels for generated fallback vs explicit topology.
 - [ ] Add earth/grounding lesson before enabling deeper earth simulation.
 - [ ] Add browser visual smoke test once automation runtime is stable.
+
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 TODO Update
+
+### Completed
+
+- [x] Add route points to wires.
+- [x] Calculate wire length from route geometry.
+- [x] Add scale conversion with pixels per meter.
+- [x] Render routed wires as polylines.
+- [x] Show bend handles for selected wire.
+- [x] Add bend point.
+- [x] Drag bend point.
+- [x] Remove bend point.
+- [x] Reset route.
+- [x] Snap route points to grid.
+- [x] Add educational panelboard UI.
+- [x] Add circuit-breaker assignment UI.
+- [x] Validate circuit without breaker.
+- [x] Validate breaker without circuit.
+- [x] Validate overloaded breaker.
+- [x] Validate breaker/wire incompatibility.
+- [x] Integrate geometric wire length into cost engine.
+- [x] Add geometry and panelboard tests.
+
+### New TODOs
+
+- [ ] Add project schema version and migration for `routePoints`, `pixelsPerMeter`, and `panelboard`.
+- [ ] Add terminal DOM-handle measurement or custom React Flow handles for exact visual alignment.
+- [ ] Add explicit panelboard slot add/remove controls.
+- [ ] Add UI badge for calculated length vs manual override.
+- [ ] Add route segments with right-angle routing mode.
+- [ ] Add conduit/path grouping model.

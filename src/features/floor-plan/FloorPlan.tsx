@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import ReactFlow, { Background, Controls, type Edge, type Node, type ReactFlowInstance } from 'reactflow';
 import { Icon, iconForComponent } from '../../components/Icon';
 import { useLabStore } from '../../store/useLabStore';
@@ -6,6 +6,7 @@ import type { ComponentType, ElectricalTerminalRef, ElectricalWireKind } from '.
 import { createComponentNode, createVirtualBreakerNode } from '../topology-engine/terminalCatalog';
 import { validateTerminalConnection } from '../topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../validation-engine/validationEngine';
+import { calculateWireGeometryLength, getWirePathPoints } from '../topology-engine/wireGeometry';
 
 const palette: Record<string, string> = {
   living: 'bg-teal-50 border-teal-200 dark:bg-teal-950/40 dark:border-teal-900',
@@ -73,6 +74,11 @@ export function FloorPlan() {
   const selectTerminalForWire = useLabStore((state) => state.selectTerminalForWire);
   const selectWire = useLabStore((state) => state.selectWire);
   const setWireDrawingMode = useLabStore((state) => state.setWireDrawingMode);
+  const addWireBendPoint = useLabStore((state) => state.addWireBendPoint);
+  const updateWireBendPoint = useLabStore((state) => state.updateWireBendPoint);
+  const removeWireBendPoint = useLabStore((state) => state.removeWireBendPoint);
+  const resetWireRoute = useLabStore((state) => state.resetWireRoute);
+  const [draggingBend, setDraggingBend] = useState<{ wireId: string; index: number } | undefined>();
 
   const topologyWarnings = useMemo(() => generateTopologyWarnings(project), [project]);
   const invalidWireIds = useMemo(
@@ -215,23 +221,31 @@ export function FloorPlan() {
   );
 
   const edges: Edge[] = useMemo(
+    () => [],
+    []
+  );
+
+  function eventToPlanPoint(event: React.MouseEvent | React.PointerEvent) {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0 };
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  const routedWires = useMemo(
     () =>
       (project.wires ?? []).map((wire) => {
         const validation = validateTerminalConnection(project, wire.from, wire.to);
         const invalid = !validation.valid || invalidWireIds.has(wire.id);
-        const color = invalid ? '#e11d48' : wireColors[wire.kind ?? 'phase'];
+        const points = getWirePathPoints(project, wire);
         return {
-          id: wire.id,
-          source: wire.from.componentId,
-          target: wire.to.componentId,
-          animated: wire.id === selectedWireId,
-          label: wire.kind === 'neutral' ? 'N' : wire.kind === 'earth' ? 'PE' : wire.kind === 'switched-phase' ? 'L↔' : 'L',
-          style: { stroke: color, strokeWidth: wire.id === selectedWireId ? 4 : 2, strokeDasharray: invalid ? '6 4' : undefined },
-          labelStyle: { fill: color, fontWeight: 700 },
-          data: { wire }
+          wire,
+          invalid,
+          points,
+          lengthMeters: calculateWireGeometryLength(project, wire),
+          color: invalid ? '#e11d48' : wireColors[wire.kind ?? 'phase']
         };
       }),
-    [invalidWireIds, project, selectedWireId]
+    [invalidWireIds, project]
   );
 
   return (
@@ -254,7 +268,13 @@ export function FloorPlan() {
       </div>
       <div
         ref={wrapperRef}
-        className="floor-grid h-[510px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
+        className="floor-grid relative h-[510px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
+        onPointerMove={(event) => {
+          if (!draggingBend) return;
+          updateWireBendPoint(draggingBend.wireId, draggingBend.index, eventToPlanPoint(event), true);
+        }}
+        onPointerUp={() => setDraggingBend(undefined)}
+        onPointerLeave={() => setDraggingBend(undefined)}
         onDragOver={(event) => {
           event.preventDefault();
           event.dataTransfer.dropEffect = 'move';
@@ -296,13 +316,74 @@ export function FloorPlan() {
           }}
           minZoom={0.75}
           maxZoom={1.2}
-          fitView
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          panOnDrag={false}
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          zoomOnDoubleClick={false}
           nodesDraggable={false}
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={24} color="#cbd5e1" />
           <Controls position="bottom-left" />
         </ReactFlow>
+        <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
+          {routedWires.map(({ wire, invalid, points, color, lengthMeters }) => {
+            if (points.length < 2) return null;
+            return (
+              <g key={wire.id}>
+                <polyline
+                  points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={wire.id === selectedWireId ? 5 : 3}
+                  strokeDasharray={invalid ? '8 5' : undefined}
+                  className="pointer-events-auto cursor-pointer"
+                  onClick={() => selectWire(wire.id)}
+                  onDoubleClick={(event) => {
+                    addWireBendPoint(wire.id, eventToPlanPoint(event));
+                    selectWire(wire.id);
+                  }}
+                />
+                <circle cx={points[0].x} cy={points[0].y} r={5} fill={color} />
+                <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={5} fill={color} />
+                {wire.id === selectedWireId ? (
+                  <text x={points[Math.floor(points.length / 2)].x + 8} y={points[Math.floor(points.length / 2)].y - 8} fill={color} fontSize="12" fontWeight="700">
+                    {lengthMeters.toLocaleString('fa-IR', { maximumFractionDigits: 1 })} m
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+        </svg>
+        {routedWires
+          .filter(({ wire }) => wire.id === selectedWireId)
+          .flatMap(({ wire }) =>
+            (wire.routePoints ?? []).map((point, index) => (
+              <button
+                key={`${wire.id}-${index}`}
+                className="absolute z-20 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-tealish shadow"
+                style={{ left: point.x, top: point.y }}
+                title="کشیدن برای جابه‌جایی، راست‌کلیک برای حذف"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  setDraggingBend({ wireId: wire.id, index });
+                }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  removeWireBendPoint(wire.id, index);
+                }}
+              />
+            ))
+          )}
+        {selectedWireId ? (
+          <button
+            className="absolute bottom-3 right-3 z-20 rounded-md bg-slate-950 px-3 py-2 text-xs font-bold text-white shadow"
+            onClick={() => resetWireRoute(selectedWireId)}
+          >
+            ریست مسیر سیم
+          </button>
+        ) : null}
       </div>
     </section>
   );

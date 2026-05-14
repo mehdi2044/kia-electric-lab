@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultProject } from '../data/apartment';
-import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire } from '../types/electrical';
+import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, Point2D, PanelBreakerSlot } from '../types/electrical';
 import { createElectricalWire, validateTerminalConnection } from '../features/topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../features/validation-engine/validationEngine';
 import { terminalKey } from '../features/topology-engine/types';
+import { insertBendPoint, removeBendPoint, resetWireRoute, updateBendPoint } from '../features/topology-engine/wireGeometry';
+import { getPanelBreakers } from '../features/panelboard-engine/panelboardEngine';
 
 type LabState = {
   project: ElectricalProject;
@@ -35,6 +37,13 @@ type LabState = {
   resetWiringForCircuit: (circuitId: string) => void;
   resetWiringForRoom: (roomId: string) => void;
   setWireDraft: (patch: Partial<LabState['wireDraft']>) => void;
+  addWireBendPoint: (wireId: string, point: Point2D) => void;
+  updateWireBendPoint: (wireId: string, index: number, point: Point2D, snap?: boolean) => void;
+  removeWireBendPoint: (wireId: string, index: number) => void;
+  resetWireRoute: (wireId: string) => void;
+  setPixelsPerMeter: (pixelsPerMeter: number) => void;
+  assignCircuitToBreaker: (slotId: string, circuitId?: string) => void;
+  updatePanelBreaker: (slotId: string, patch: Partial<PanelBreakerSlot>) => void;
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
@@ -223,6 +232,57 @@ export const useLabStore = create<LabState>()(
           };
         }),
       setWireDraft: (patch) => set((state) => ({ wireDraft: { ...state.wireDraft, ...patch } }))
+      ,
+      addWireBendPoint: (wireId, point) =>
+        set((state) => ({
+          project: {
+            ...state.project,
+            wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? insertBendPoint(wire, point) : wire))
+          }
+        })),
+      updateWireBendPoint: (wireId, index, point, snap) =>
+        set((state) => ({
+          project: {
+            ...state.project,
+            wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? updateBendPoint(wire, index, point, snap) : wire))
+          }
+        })),
+      removeWireBendPoint: (wireId, index) =>
+        set((state) => ({
+          project: {
+            ...state.project,
+            wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? removeBendPoint(wire, index) : wire))
+          }
+        })),
+      resetWireRoute: (wireId) =>
+        set((state) => ({
+          project: {
+            ...state.project,
+            wires: (state.project.wires ?? []).map((wire) => (wire.id === wireId ? resetWireRoute(wire) : wire))
+          }
+        })),
+      setPixelsPerMeter: (pixelsPerMeter) =>
+        set((state) => ({ project: { ...state.project, pixelsPerMeter } })),
+      assignCircuitToBreaker: (slotId, circuitId) =>
+        set((state) => ({
+          project: {
+            ...state.project,
+            panelboard: {
+              mainBreakerAmp: state.project.panelboard?.mainBreakerAmp ?? state.project.mainBreakerAmp,
+              breakers: getPanelBreakers(state.project).map((breaker) => (breaker.id === slotId ? { ...breaker, circuitId } : breaker))
+            }
+          }
+        })),
+      updatePanelBreaker: (slotId, patch) =>
+        set((state) => ({
+          project: {
+            ...state.project,
+            panelboard: {
+              mainBreakerAmp: state.project.panelboard?.mainBreakerAmp ?? state.project.mainBreakerAmp,
+              breakers: getPanelBreakers(state.project).map((breaker) => (breaker.id === slotId ? { ...breaker, ...patch } : breaker))
+            }
+          }
+        }))
     }),
     {
       name: 'kia-electric-lab-project',

@@ -4,6 +4,7 @@ import { getWire } from '../safety-engine/electricalMath';
 import { createComponentNode, createMainPanelNode, createVirtualBreakerNode } from './terminalCatalog';
 import type { ElectricalTopologyGraph, TerminalLookup, TopologyBuildIssue, TopologyWire } from './types';
 import { getLoadTerminal, terminalKey, wireWithCatalogData } from './types';
+import { calculateWireGeometryLength } from './wireGeometry';
 
 function findMainPanel(components: ElectricalComponent[]): ElectricalComponent | undefined {
   return components.find((component) => component.type === 'main-panel');
@@ -115,7 +116,8 @@ export function buildTopologyGraph(project: ElectricalProject): { graph: Electri
   const topologyWires = sourceWires
     .map(({ wire, source }) => {
       const catalogWire = wireCatalog.find((item) => item.sizeMm2 === wire.wireSizeMm2) ?? getWire(wire.wireSizeMm2);
-      return wireWithCatalogData(wire, catalogWire, source);
+      const lengthMeters = source === 'explicit' ? calculateWireGeometryLength(project, wire) : wire.lengthMeters;
+      return wireWithCatalogData({ ...wire, lengthMeters }, catalogWire, source);
     })
     .filter((wire) => {
       const fromExists = terminalLookup.has(terminalKey(wire.from));

@@ -408,3 +408,48 @@ Impact:
 Recommended fix:
 
 - Retry browser visual smoke test after automation runtime is stable.
+
+## 2026-05-14 15:00 Europe/Istanbul - Known Issues Update After Geometric Routing
+
+### KI-018 Status Update - Wire Length Geometry Implemented
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Wire length is now calculated from terminal coordinates and route points.
+
+Remaining limitation:
+
+- Scale is user-configurable and may be inaccurate.
+- Manual override still exists.
+
+### KI-021 - Terminal Coordinates Are Offset-Based
+
+Severity: Medium.
+
+Description:
+
+Terminal coordinates are deterministic offsets from component positions, not measured from actual DOM terminal button locations.
+
+Impact:
+
+- Wires are spatially meaningful but may not perfectly align with rendered button centers under every future layout change.
+
+Recommended fix:
+
+- Add custom React Flow nodes/handles or DOM measurement for exact terminal anchor points.
+
+### KI-022 - Panelboard Is Educational, Not Physical
+
+Severity: Low to Medium.
+
+Description:
+
+The panelboard UI models breaker assignment and ratings, but not physical panel constraints, DIN rails, busbars, neutral/earth bars, or real installation details.
+
+Recommended fix:
+
+- Add a panelboard lesson/profile before deeper physical panel modeling.
