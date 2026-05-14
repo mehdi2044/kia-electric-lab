@@ -845,3 +845,83 @@ Project export and example export use similar checksum envelope logic but not a 
 Recommended fix:
 
 - Create shared artifact envelope utilities before adding lesson-pack import/export.
+
+## 2026-05-14 21:43 Europe/Istanbul - Known Issues Update After Phase 11
+
+### KI-035 Status Update - Apply Modal Accessibility Hardened
+
+Status:
+
+- Mostly resolved.
+
+Resolution:
+
+- Apply preview modal now traps focus between cancel and confirm.
+- Escape closes the modal.
+- Enter confirms only when the confirm button is focused.
+- Initial focus goes to cancel for safety.
+- ARIA dialog metadata was added.
+
+Remaining limitation:
+
+- The modal is still local to `LessonPanel`; it should become a reusable shared modal primitive before more destructive flows are added.
+
+### KI-036 Status Update - Append Layout Planner Improved
+
+Status:
+
+- Improved, still partially open.
+
+Resolution:
+
+- Append layout now uses bounding-box checks and searches multiple directions/step sizes.
+- Route points remain offset with appended components.
+- Layout warnings can be returned when placement is uncertain.
+
+Remaining limitation:
+
+- The planner is not a full geometric packing solver and does not yet understand room boundaries as hard constraints.
+
+### KI-038 Status Update - Main Chunk No Longer Near Threshold
+
+Status:
+
+- Improved.
+
+Resolution:
+
+- Vite manual chunks split React/Zustand, React Flow, and icons.
+- Main app chunk is now about 330 kB in the production build.
+
+Remaining limitation:
+
+- Future feature growth can still require route-level splitting.
+
+### KI-040 - No Automated Browser QA Yet
+
+Severity: Medium.
+
+Description:
+
+Phase 11 added a manual UI QA checklist but did not add Playwright or an equivalent browser automation dependency.
+
+Reason:
+
+- The project does not yet have a selector/testing policy for stable browser tests.
+- Adding Playwright now would increase dependency and maintenance surface before the team agrees on test ownership.
+
+Recommended fix:
+
+- Add stable selectors and Playwright smoke tests in a dedicated QA phase.
+
+### KI-041 - Audit Log Has No UI Viewer
+
+Severity: Low.
+
+Description:
+
+Apply/example audit entries are persisted in project state, but there is not yet a dedicated UI panel for browsing history.
+
+Recommended fix:
+
+- Add an audit history viewer with filters by action type, lesson, and warning status.

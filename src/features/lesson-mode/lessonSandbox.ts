@@ -5,6 +5,8 @@ import type {
   ElectricalComponent,
   ElectricalProject,
   ElectricalTerminalRef,
+  ApplyAuditAction,
+  ApplyAuditEntry,
   LessonHighlight,
   LessonExample,
   LessonSandboxApplyMode,
@@ -226,6 +228,8 @@ export interface LessonExampleImportResult {
   example?: LessonExample;
   warningsFa: string[];
   errorFa?: string;
+  checksumStatus: 'valid' | 'invalid' | 'not-provided';
+  sourceCompatibility: 'current' | 'older' | 'newer' | 'unknown';
 }
 
 export interface SandboxApplyResult {
@@ -233,6 +237,19 @@ export interface SandboxApplyResult {
   diagnostics: DiagnosticReport;
   summary: SandboxApplySummary;
   warningsFa: string[];
+  layoutWarningsFa?: string[];
+}
+
+export interface SandboxApplyAuditInput {
+  action: ApplyAuditAction;
+  lessonId?: string;
+  lessonTitle?: string;
+  affectedCounts: SandboxApplySummary;
+  diagnosticsCount?: number;
+  userNotes?: string;
+  checksumStatus?: ApplyAuditEntry['checksumStatus'];
+  sourceCompatibility?: ApplyAuditEntry['sourceCompatibility'];
+  warningsFa?: string[];
 }
 
 function uniqueId(base: string, existing: Set<string>): string {
@@ -255,27 +272,52 @@ function remapRef(ref: ElectricalTerminalRef, componentIdMap: Map<string, string
   return { ...ref, componentId: componentIdMap.get(ref.componentId) ?? ref.componentId };
 }
 
-function componentOverlaps(a: Pick<ElectricalComponent, 'x' | 'y'>, b: Pick<ElectricalComponent, 'x' | 'y'>): boolean {
-  return Math.abs(a.x - b.x) < 124 && Math.abs(a.y - b.y) < 76;
+function componentBounds(component: Pick<ElectricalComponent, 'x' | 'y'>) {
+  return {
+    left: component.x - 62,
+    right: component.x + 62,
+    top: component.y - 38,
+    bottom: component.y + 38
+  };
 }
 
-function findCollisionFreeOffset(mainProject: ElectricalProject, components: ElectricalComponent[]): { x: number; y: number } {
+function boundsOverlap(a: ReturnType<typeof componentBounds>, b: ReturnType<typeof componentBounds>): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function componentOverlaps(a: Pick<ElectricalComponent, 'x' | 'y'>, b: Pick<ElectricalComponent, 'x' | 'y'>): boolean {
+  return boundsOverlap(componentBounds(a), componentBounds(b));
+}
+
+export function planAppendLayout(mainProject: ElectricalProject, components: ElectricalComponent[]): { offset: { x: number; y: number }; warningsFa: string[] } {
   const occupied = mainProject.components.filter((component) => component.type !== 'main-panel');
-  const candidates = [
-    { x: 24, y: 24 },
-    { x: 150, y: 0 },
-    { x: 0, y: 110 },
-    { x: 150, y: 110 },
-    { x: -80, y: 110 },
-    { x: 220, y: 170 },
-    { x: 0, y: 220 },
-    { x: -120, y: 220 }
+  if (!components.length || !occupied.length) return { offset: { x: 24, y: 24 }, warningsFa: [] };
+
+  const directions = [
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 1, y: 1 },
+    { x: -1, y: 1 },
+    { x: 1, y: -1 },
+    { x: -1, y: 0 },
+    { x: 0, y: -1 }
   ];
-  return (
-    candidates.find((offset) =>
-      components.every((component) => !occupied.some((existing) => componentOverlaps({ x: component.x + offset.x, y: component.y + offset.y }, existing)))
-    ) ?? { x: 260, y: 220 }
+  const candidates = [{ x: 24, y: 24 }];
+  for (const step of [1, 2, 3, 4, 5, 6]) {
+    for (const direction of directions) {
+      candidates.push({ x: direction.x * step * 150, y: direction.y * step * 110 });
+    }
+  }
+
+  const offset = candidates.find((candidate) =>
+    components.every((component) => !occupied.some((existing) => componentOverlaps({ x: component.x + candidate.x, y: component.y + candidate.y }, existing)))
   );
+
+  if (offset) return { offset, warningsFa: [] };
+  return {
+    offset: { x: 900, y: 660 },
+    warningsFa: ['برای افزودن درس، جای خالی ایده‌آل پیدا نشد. قطعه‌ها با فاصله زیاد اضافه شدند؛ بهتر است جای آن‌ها را روی نقشه بررسی کنی.']
+  };
 }
 
 function offsetRoutePoints(wires: ElectricalProject['wires'], offset: { x: number; y: number }) {
@@ -315,6 +357,29 @@ export function createSandboxApplyPreview(sandbox: LessonSandboxState, mode: Les
         ? ['ممکن است قطعه‌های اضافه‌شده در نقشه نزدیک قطعه‌های موجود قرار بگیرند.', 'بعد از افزودن، هشدارهای عیب‌یابی را بررسی کن.']
         : ['اگر نمونه‌ها زیاد شوند، فضای ذخیره‌سازی مرورگر بیشتر مصرف می‌شود.'];
   return { mode, summary, diagnostics, whatWillHappenFa, risksFa };
+}
+
+export function createApplyAuditEntry(input: SandboxApplyAuditInput): ApplyAuditEntry {
+  return {
+    id: `audit-${crypto.randomUUID?.() ?? Date.now().toString(36)}`,
+    action: input.action,
+    timestamp: createProjectTimestamp(),
+    lessonId: input.lessonId,
+    lessonTitle: input.lessonTitle,
+    affectedCounts: input.affectedCounts,
+    diagnosticsCount: input.diagnosticsCount ?? 0,
+    userNotes: input.userNotes,
+    checksumStatus: input.checksumStatus,
+    sourceCompatibility: input.sourceCompatibility,
+    warningsFa: input.warningsFa
+  };
+}
+
+export function appendApplyAudit(project: ElectricalProject, entry: ApplyAuditEntry): ElectricalProject {
+  return {
+    ...project,
+    applyAuditLog: [entry, ...(project.applyAuditLog ?? [])].slice(0, 50)
+  };
 }
 
 export function replaceMainProjectWithSandbox(sandbox: LessonSandboxState): SandboxApplyResult {
@@ -357,7 +422,8 @@ export function appendSandboxToMainProject(sandbox: LessonSandboxState): Sandbox
   });
 
   const sandboxComponents = sandboxProject.components.filter((component) => component.type !== 'main-panel');
-  const layoutOffset = findCollisionFreeOffset(mainProject, sandboxComponents);
+  const layoutPlan = planAppendLayout(mainProject, sandboxComponents);
+  const layoutOffset = layoutPlan.offset;
   const appendedComponents = sandboxComponents
     .map((component) => {
       const nextId = uniqueId(`lesson-${sandbox.activeLessonId}-${component.id}`, componentIds);
@@ -425,7 +491,8 @@ export function appendSandboxToMainProject(sandbox: LessonSandboxState): Sandbox
       components: appendedComponents.length,
       wires: appendedWires.length
     },
-    warningsFa: diagnostics.issueCount ? ['بعد از افزودن نمونه درس، چند هشدار عیب‌یابی وجود دارد. آن‌ها را بررسی کن.'] : []
+    warningsFa: diagnostics.issueCount ? ['بعد از افزودن نمونه درس، چند هشدار عیب‌یابی وجود دارد. آن‌ها را بررسی کن.'] : [],
+    layoutWarningsFa: layoutPlan.warningsFa
   };
 }
 
@@ -504,21 +571,24 @@ export function importLessonExampleJson(raw: string): LessonExampleImportResult 
     const parsed = JSON.parse(raw);
     const warningsFa: string[] = [];
     const example = isLessonExampleExportEnvelope(parsed) ? parsed.example : parsed;
+    let checksumStatus: LessonExampleImportResult['checksumStatus'] = 'not-provided';
     if (isLessonExampleExportEnvelope(parsed)) {
       const validation = validateLessonExampleExportEnvelope(parsed);
+      checksumStatus = validation.valid ? 'valid' : 'invalid';
       if (!validation.valid) warningsFa.push('checksum نمونه با محتوای فایل هماهنگ نیست. ممکن است فایل تغییر کرده یا ناقص باشد.');
     } else {
       warningsFa.push('این فایل envelope رسمی نمونه درس ندارد؛ با احتیاط وارد شد.');
     }
     if (!isLessonExample(example)) {
-      return { ok: false, warningsFa, errorFa: 'ساختار فایل نمونه درس معتبر نیست.' };
+      return { ok: false, warningsFa, errorFa: 'ساختار فایل نمونه درس معتبر نیست.', checksumStatus, sourceCompatibility: 'unknown' };
     }
     if (example.projectSnapshot.schemaVersion > CURRENT_SCHEMA_VERSION) {
-      return { ok: false, warningsFa, errorFa: 'نسخه این نمونه از نسخه فعلی برنامه جدیدتر است.' };
+      return { ok: false, warningsFa, errorFa: 'نسخه این نمونه از نسخه فعلی برنامه جدیدتر است.', checksumStatus, sourceCompatibility: 'newer' };
     }
-    return { ok: true, example, warningsFa };
+    const sourceCompatibility = example.projectSnapshot.schemaVersion === CURRENT_SCHEMA_VERSION ? 'current' : 'older';
+    return { ok: true, example, warningsFa, checksumStatus, sourceCompatibility };
   } catch {
-    return { ok: false, warningsFa: [], errorFa: 'فایل نمونه خراب است یا JSON معتبر نیست.' };
+    return { ok: false, warningsFa: [], errorFa: 'فایل نمونه خراب است یا JSON معتبر نیست.', checksumStatus: 'not-provided', sourceCompatibility: 'unknown' };
   }
 }
 

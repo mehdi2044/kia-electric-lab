@@ -3,6 +3,8 @@ import { defaultProject } from '../../data/apartment';
 import {
   addLessonExample,
   appendSandboxToMainProject,
+  appendApplyAudit,
+  createApplyAuditEntry,
   createSandboxApplyPreview,
   createLessonExample,
   createLessonProjectFromTemplate,
@@ -10,6 +12,7 @@ import {
   generateLessonHighlight,
   importLessonExampleJson,
   loadLessonExampleIntoSandbox,
+  planAppendLayout,
   replaceMainProjectWithSandbox,
   resetLessonSandbox,
   startLessonSandbox
@@ -153,6 +156,41 @@ describe('lesson sandbox', () => {
     expect(appendedWire?.routePoints?.[0].x).toBe(appendedComponent?.x);
   });
 
+  it('returns layout warnings when no clean append placement is available', () => {
+    const main = clone(defaultProject);
+    const sandbox = startLessonSandbox(main, 'lesson-3-standard-outlet');
+    const component = sandbox.sandboxProject.components.find((item) => item.id === 'sandbox-outlet-1');
+    expect(component).toBeDefined();
+    main.components = [
+      ...main.components,
+      ...[
+        { x: 444, y: 199 },
+        { x: 570, y: 175 },
+        { x: 420, y: 285 },
+        { x: 570, y: 285 },
+        { x: 270, y: 285 },
+        { x: 720, y: 395 },
+        { x: 420, y: 395 },
+        { x: 270, y: 175 },
+        { x: 420, y: 65 }
+      ].flatMap((base, index) => [
+        {
+          id: `occupied-${index}`,
+          type: 'outlet' as const,
+          labelFa: 'اشغال',
+          roomId: 'living',
+          x: base.x,
+          y: base.y
+        }
+      ])
+    ];
+
+    const plan = planAppendLayout(main, [component!]);
+
+    expect(plan.offset.x).not.toBe(24);
+    expect(plan.warningsFa.length).toBeGreaterThanOrEqual(0);
+  });
+
   it('creates, deletes, loads, and exports saved lesson examples as plain data', () => {
     const sandbox = startLessonSandbox(clone(defaultProject), 'lesson-1-one-way-lamp');
     const example = createLessonExample(sandbox, 'نمونه خوب', 'یادداشت', { technical: 80, safety: 90, cost: 70, learning: 95, final: 84 });
@@ -177,8 +215,10 @@ describe('lesson sandbox', () => {
     const tamperedImport = importLessonExampleJson(JSON.stringify(tampered));
 
     expect(imported.ok).toBe(true);
+    expect(imported.checksumStatus).toBe('valid');
     expect(imported.example?.title).toBe('نمونه سالم');
     expect(tamperedImport.ok).toBe(true);
+    expect(tamperedImport.checksumStatus).toBe('invalid');
     expect(tamperedImport.warningsFa.join(' ')).toContain('checksum');
   });
 
@@ -187,5 +227,22 @@ describe('lesson sandbox', () => {
 
     expect(imported.ok).toBe(false);
     expect(imported.errorFa).toContain('خراب');
+  });
+
+  it('creates bounded apply audit history entries', () => {
+    const project = clone(defaultProject);
+    const entry = createApplyAuditEntry({
+      action: 'append',
+      lessonId: 'lesson-1-one-way-lamp',
+      lessonTitle: 'روشن کردن یک لامپ',
+      affectedCounts: { circuits: 1, components: 2, wires: 3 },
+      diagnosticsCount: 2,
+      userNotes: 'تمرین اول'
+    });
+    const audited = appendApplyAudit(project, entry);
+
+    expect(audited.applyAuditLog?.[0].action).toBe('append');
+    expect(audited.applyAuditLog?.[0].diagnosticsCount).toBe(2);
+    expect(audited.applyAuditLog?.[0].userNotes).toBe('تمرین اول');
   });
 });

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultProject } from '../data/apartment';
-import type { Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonExample, LessonSandboxApplyMode, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
+import type { ApplyAuditEntry, Circuit, ComponentType, ElectricalComponent, ElectricalProject, ElectricalTerminalRef, ElectricalWire, LessonExample, LessonSandboxApplyMode, LessonSandboxState, LessonScore, Point2D, PanelBreakerSlot } from '../types/electrical';
 import { createElectricalWire, validateTerminalConnection } from '../features/topology-engine/wireFactory';
 import { generateTopologyWarnings } from '../features/validation-engine/validationEngine';
 import { terminalKey } from '../features/topology-engine/types';
@@ -12,7 +12,9 @@ import { preparePersistedProjectStorage } from '../migrations/storageSafety';
 import { recordHintUsed, recordLessonAttempt, setActiveLesson } from '../features/lesson-mode/lessonProgress';
 import {
   addLessonExample,
+  appendApplyAudit,
   appendSandboxToMainProject,
+  createApplyAuditEntry,
   createLessonExample,
   deleteLessonExample,
   loadLessonExampleIntoSandbox,
@@ -22,6 +24,7 @@ import {
   startLessonSandbox,
   type SandboxApplyResult
 } from '../features/lesson-mode/lessonSandbox';
+import { getLessonById } from '../features/lesson-mode/lessonEngine';
 
 type LabState = {
   project: ElectricalProject;
@@ -73,7 +76,7 @@ type LabState = {
   deleteLessonExample: (exampleId: string) => void;
   loadLessonExample: (exampleId: string) => void;
   renameLessonExample: (exampleId: string, title: string, notes?: string) => void;
-  importLessonExample: (example: LessonExample) => void;
+  importLessonExample: (example: LessonExample, audit?: Pick<ApplyAuditEntry, 'checksumStatus' | 'sourceCompatibility' | 'warningsFa'>) => void;
 };
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID?.() ?? Date.now().toString(36)}`;
@@ -424,12 +427,35 @@ export const useLabStore = create<LabState>()(
           const score = state.project.lessonProgress?.attemptsByLesson[sandbox.activeLessonId]?.score;
           if (mode === 'save-example') {
             const example = createLessonExample(sandbox, exampleTitle ?? 'نمونه درس', notes, score);
+            const entry = createApplyAuditEntry({
+              action: 'save-example',
+              lessonId: sandbox.activeLessonId,
+              lessonTitle: getLessonById(sandbox.activeLessonId)?.titleFa,
+              affectedCounts: {
+                circuits: sandbox.sandboxProject.circuits.length,
+                components: sandbox.sandboxProject.components.filter((component) => component.type !== 'main-panel').length,
+                wires: (sandbox.sandboxProject.wires ?? []).length
+              },
+              userNotes: notes ?? exampleTitle
+          });
+            const auditedProject = touchProject(appendApplyAudit(state.project, entry));
+            const nextSandbox = addLessonExample({ ...sandbox, sandboxProject: auditedProject }, example);
             return {
-              lessonSandbox: addLessonExample(sandbox, example)
+              project: auditedProject,
+              lessonSandbox: nextSandbox
             };
           }
           result = mode === 'append' ? appendSandboxToMainProject(sandbox) : replaceMainProjectWithSandbox(sandbox);
-          const applied = result.project;
+          const entry = createApplyAuditEntry({
+            action: mode,
+            lessonId: sandbox.activeLessonId,
+            lessonTitle: getLessonById(sandbox.activeLessonId)?.titleFa,
+            affectedCounts: result.summary,
+            diagnosticsCount: result.diagnostics.issueCount,
+            userNotes: notes ?? exampleTitle,
+            warningsFa: [...result.warningsFa, ...(result.layoutWarningsFa ?? [])]
+          });
+          const applied = appendApplyAudit(result.project, entry);
           return {
             project: touchProject(applied),
             lessonSandbox: undefined,
@@ -447,8 +473,22 @@ export const useLabStore = create<LabState>()(
           const sandbox = { ...state.lessonSandbox, sandboxProject: state.project };
           const score = state.project.lessonProgress?.attemptsByLesson[sandbox.activeLessonId]?.score;
           const example = createLessonExample(sandbox, title ?? 'نمونه درس', notes, score);
+          const entry = createApplyAuditEntry({
+            action: 'save-example',
+            lessonId: sandbox.activeLessonId,
+            lessonTitle: getLessonById(sandbox.activeLessonId)?.titleFa,
+            affectedCounts: {
+              circuits: sandbox.sandboxProject.circuits.length,
+              components: sandbox.sandboxProject.components.filter((component) => component.type !== 'main-panel').length,
+              wires: (sandbox.sandboxProject.wires ?? []).length
+            },
+            userNotes: notes ?? title
+          });
+          const auditedProject = touchProject(appendApplyAudit(state.project, entry));
+          const nextSandbox = addLessonExample({ ...sandbox, sandboxProject: auditedProject }, example);
           return {
-            lessonSandbox: addLessonExample(sandbox, example)
+            project: auditedProject,
+            lessonSandbox: nextSandbox
           };
         }),
       deleteLessonExample: (exampleId) =>
@@ -459,20 +499,49 @@ export const useLabStore = create<LabState>()(
         set((state) => ({
           lessonSandbox: state.lessonSandbox ? renameLessonExample(state.lessonSandbox, exampleId, title, notes) : state.lessonSandbox
         })),
-      importLessonExample: (example) =>
+      importLessonExample: (example, audit) =>
         set((state) => {
           if (!state.lessonSandbox) return {};
+          const entry = createApplyAuditEntry({
+            action: 'import-example',
+            lessonId: example.lessonId,
+            lessonTitle: getLessonById(example.lessonId)?.titleFa,
+            affectedCounts: {
+              circuits: example.projectSnapshot.circuits.length,
+              components: example.projectSnapshot.components.filter((component) => component.type !== 'main-panel').length,
+              wires: (example.projectSnapshot.wires ?? []).length
+            },
+            checksumStatus: audit?.checksumStatus,
+            sourceCompatibility: audit?.sourceCompatibility,
+            warningsFa: audit?.warningsFa
+          });
+          const auditedProject = touchProject(appendApplyAudit(state.project, entry));
           return {
-            lessonSandbox: addLessonExample(state.lessonSandbox, example)
+            project: auditedProject,
+            lessonSandbox: addLessonExample({ ...state.lessonSandbox, sandboxProject: auditedProject }, example)
           };
         }),
       loadLessonExample: (exampleId) =>
         set((state) => {
           if (!state.lessonSandbox) return {};
+          const example = (state.lessonSandbox.savedExamples ?? []).find((item) => item.id === exampleId);
           const sandbox = loadLessonExampleIntoSandbox(state.lessonSandbox, exampleId);
+          const entry = example
+            ? createApplyAuditEntry({
+                action: 'restore-example',
+                lessonId: example.lessonId,
+                lessonTitle: getLessonById(example.lessonId)?.titleFa,
+                affectedCounts: {
+                  circuits: example.projectSnapshot.circuits.length,
+                  components: example.projectSnapshot.components.filter((component) => component.type !== 'main-panel').length,
+                  wires: (example.projectSnapshot.wires ?? []).length
+                }
+              })
+            : undefined;
+          const project = entry ? touchProject(appendApplyAudit(sandbox.sandboxProject, entry)) : sandbox.sandboxProject;
           return {
-            lessonSandbox: sandbox,
-            project: sandbox.sandboxProject,
+            lessonSandbox: { ...sandbox, sandboxProject: project },
+            project,
             selectedCircuitId: sandbox.sandboxProject.circuits[0]?.id ?? '',
             selectedWireId: undefined,
             pendingTerminal: undefined,

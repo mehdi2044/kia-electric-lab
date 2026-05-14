@@ -104,9 +104,11 @@ export function App() {
             <Suspense fallback={<PanelLoading label="داده‌های پروژه" />}>
               <ProjectDataPanel />
             </Suspense>
-            <Suspense fallback={<PanelLoading label="عیب‌یابی پروژه" />}>
-              <ProjectDiagnosticsPanel />
-            </Suspense>
+            <div id="project-diagnostics-panel">
+              <Suspense fallback={<PanelLoading label="عیب‌یابی پروژه" />}>
+                <ProjectDiagnosticsPanel />
+              </Suspense>
+            </div>
             <SafetyPanel />
             <CostPanel />
           </div>
