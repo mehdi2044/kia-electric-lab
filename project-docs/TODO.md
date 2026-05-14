@@ -526,3 +526,38 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add shared modal usage for delete/restore/reset confirmations.
 - [ ] Add audit viewer search and date range filter.
 - [ ] Add CI caching guidance for Playwright browsers.
+
+## 2026-05-14 22:11 Europe/Istanbul - Phase 13 TODO Update
+
+### Completed
+
+- [x] Add Playwright test for Escape closing apply modal.
+- [x] Add Playwright test for Tab cycling inside apply modal.
+- [x] Add Playwright test for initial focus on cancel.
+- [x] Add Playwright test for Enter safety.
+- [x] Add Playwright test for backdrop cancel.
+- [x] Add Playwright test for confirmed append.
+- [x] Add Playwright test for audit creation after append.
+- [x] Add Playwright test for apply result summary.
+- [x] Add Playwright test for valid example envelope import.
+- [x] Add Playwright test for corrupted checksum import.
+- [x] Add Playwright test for import audit creation.
+- [x] Add `AccessibleModal` variants.
+- [x] Add optional modal details.
+- [x] Add optional modal diagnostics summary.
+- [x] Migrate delete saved example confirmation.
+- [x] Migrate reset sandbox confirmation.
+- [x] Migrate exit sandbox confirmation.
+- [x] Migrate reset project confirmation.
+- [x] Migrate restore backup confirmation.
+- [x] Migrate delete selected wire confirmation.
+
+### New TODOs
+
+- [ ] Add e2e fixture helper for creating backups.
+- [ ] Add e2e fixture helper for creating explicit wires.
+- [ ] Add e2e coverage for replace mode.
+- [ ] Add e2e coverage for backup restore modal.
+- [ ] Add e2e coverage for wire delete modal.
+- [ ] Replace example rename `window.prompt` with edit modal.
+- [ ] Replace example notes `window.prompt` with edit modal.

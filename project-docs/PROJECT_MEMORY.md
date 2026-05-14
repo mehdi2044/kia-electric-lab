@@ -696,3 +696,46 @@ Browser tests use `data-testid` selectors instead of Persian text selectors. Per
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed in Phase 12. The phase is strictly UI infrastructure, audit visibility, and test coverage.
+
+## 2026-05-14 22:11 Europe/Istanbul - Phase 13 Advanced E2E Coverage And Confirmation Modal Unification
+
+### Change Summary
+
+Phase 13 deepened browser-level coverage and expanded shared confirmation safety. The app now tests modal keyboard behavior, append confirmation, audit creation, apply result visibility, valid example import, corrupted checksum import warnings, and import audit creation through Playwright. Remaining risky confirmation flows were migrated toward `AccessibleModal`.
+
+### New Completed Systems
+
+- Advanced Playwright coverage for:
+  - Escape close
+  - Tab focus cycling
+  - initial cancel focus
+  - backdrop cancel
+  - Enter applying only through confirm focus
+  - append confirmation
+  - audit creation after append
+  - apply result summary
+  - valid lesson example import
+  - corrupted checksum lesson example import warning
+  - import audit creation
+- `AccessibleModal` now supports:
+  - `variant`: danger, warning, info, success
+  - optional details section
+  - optional diagnostics summary
+  - deterministic test ids for cancel/confirm/details/diagnostics
+- Confirmation modal unification for:
+  - delete saved example
+  - reset sandbox
+  - exit sandbox
+  - reset project from header
+  - reset project from project data panel
+  - restore backup
+  - start safe after corrupted data
+  - delete selected wire
+- More stable test metadata:
+  - audit entries expose `data-action`
+  - example import input/message expose test ids
+  - apply result summary exposes test id
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed. This phase only strengthened UI safety, confirmation consistency, and test coverage.

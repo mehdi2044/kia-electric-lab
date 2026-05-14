@@ -161,3 +161,63 @@ Manual visual checks are still useful for:
 - Add confirmed append test that verifies audit entry creation.
 - Add import-corrupted-example test.
 - Add screenshot comparison only after visual layout stabilizes.
+
+## 2026-05-14 22:11 Europe/Istanbul - Phase 13 Automated QA Expansion
+
+### Automated Coverage Added
+
+Phase 13 expands Playwright coverage beyond smoke tests.
+
+Covered:
+
+- Escape closes apply modal.
+- Tab cycles inside modal.
+- Initial focus starts on cancel.
+- Backdrop click cancels safely.
+- Enter does not create append audit unless confirm is focused.
+- Confirm append applies changes.
+- Append creates an audit record.
+- Apply result summary appears.
+- Valid example envelope imports.
+- Corrupted checksum example imports with warning metadata.
+- Import action creates audit record.
+
+### Current Command
+
+```text
+npm run test:e2e
+```
+
+Current expected result:
+
+```text
+6 passed
+```
+
+### Selector Additions
+
+- `apply-result-summary`
+- `example-import-input`
+- `example-import-message`
+- `data-warning` on example import message
+- `data-action` on audit entries
+- `lesson-confirmation-modal`
+- `project-data-confirmation-modal`
+- `delete-wire-modal`
+
+### Manual QA Still Recommended
+
+Manually verify:
+
+- modal wording remains friendly and clear in Persian
+- warning/danger colors are not visually overwhelming
+- reset/restore/delete confirmations feel safe but not exhausting
+- dark mode modal contrast
+- mobile layout for modal content
+
+### Next Automated QA Expansion
+
+- Backup restore fixture and test.
+- Explicit wire fixture and delete-wire confirmation test.
+- Replace-mode confirmation and audit test.
+- Example rename/notes modal tests after prompts are removed.

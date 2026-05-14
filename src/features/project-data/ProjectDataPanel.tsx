@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { AccessibleModal } from '../../components/AccessibleModal';
 import { Icon } from '../../components/Icon';
 import { useLabStore } from '../../store/useLabStore';
 import {
@@ -13,6 +14,11 @@ import {
   serializeProjectForExport
 } from '../../migrations/storageSafety';
 import type { ProjectBackup } from '../../migrations/projectMigration';
+
+type ProjectDataConfirmation =
+  | { type: 'reset-project' }
+  | { type: 'restore-backup'; backupId: string }
+  | { type: 'start-safe' };
 
 function formatDateFa(value?: string) {
   if (!value) return 'نامشخص';
@@ -29,6 +35,7 @@ export function ProjectDataPanel() {
   const [messageFa, setMessageFa] = useState<string>();
   const [backups, setBackups] = useState<ProjectBackup[]>(() => readProjectBackups());
   const [corruptedRaw, setCorruptedRaw] = useState<string | undefined>(() => getMigrationErrorRaw());
+  const [confirmation, setConfirmation] = useState<ProjectDataConfirmation>();
 
   const refreshBackups = () => {
     setBackups(readProjectBackups());
@@ -69,6 +76,25 @@ export function ProjectDataPanel() {
     }
     refreshBackups();
   };
+
+  const runConfirmation = () => {
+    if (!confirmation) return;
+    if (confirmation.type === 'restore-backup') restoreBackup(confirmation.backupId);
+    if (confirmation.type === 'reset-project' || confirmation.type === 'start-safe') resetProject();
+    setConfirmation(undefined);
+  };
+
+  const confirmationTitle =
+    confirmation?.type === 'restore-backup'
+      ? 'بازیابی پشتیبان'
+      : confirmation?.type === 'start-safe'
+        ? 'شروع امن'
+        : 'بازنشانی پروژه آموزشی';
+
+  const confirmationDescription =
+    confirmation?.type === 'restore-backup'
+      ? 'پروژه فعلی با پشتیبان انتخاب‌شده جایگزین می‌شود.'
+      : 'پروژه فعلی به حالت آموزشی اولیه برمی‌گردد.';
 
   const deleteBackup = (backupId: string) => {
     deleteProjectBackup(backupId);
@@ -130,7 +156,7 @@ export function ProjectDataPanel() {
           <Icon name="Upload" className="h-4 w-4" />
           ورود
         </button>
-        <button onClick={resetProject} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
+        <button onClick={() => setConfirmation({ type: 'reset-project' })} data-testid="project-data-reset-button" className="col-span-2 inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
           <Icon name="RefreshCcw" className="h-4 w-4" />
           بازنشانی پروژه آموزشی
         </button>
@@ -151,7 +177,7 @@ export function ProjectDataPanel() {
             <Icon name="FileJson" className="h-4 w-4" />
             خروجی داده خراب
           </button>
-          <button onClick={resetProject} className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-amber-700 px-3 py-2">
+          <button onClick={() => setConfirmation({ type: 'start-safe' })} className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-amber-700 px-3 py-2">
             <Icon name="RefreshCcw" className="h-4 w-4" />
             شروع امن
           </button>
@@ -174,7 +200,7 @@ export function ProjectDataPanel() {
                 <div className="mt-1 text-slate-500 dark:text-slate-400">{formatDateFa(backup.createdAt)}</div>
                 <div className="mt-1 text-slate-500 dark:text-slate-400">Schema: {backup.schemaVersion?.toLocaleString('fa-IR') ?? 'نامشخص'}</div>
                 <div className="mt-2 grid grid-cols-3 gap-1">
-                  <button onClick={() => restoreBackup(backup.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">بازیابی</button>
+                  <button onClick={() => setConfirmation({ type: 'restore-backup', backupId: backup.id })} data-testid={`restore-backup-${backup.id}`} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">بازیابی</button>
                   <button onClick={() => exportBackup(backup.id)} className="rounded-md border border-slate-300 px-2 py-1 dark:border-slate-700">خروجی</button>
                   <button onClick={() => deleteBackup(backup.id)} className="rounded-md border border-rose-200 px-2 py-1 text-rose-700 dark:border-rose-900 dark:text-rose-200">حذف</button>
                 </div>
@@ -183,6 +209,19 @@ export function ProjectDataPanel() {
           )}
         </div>
       </div>
+      <AccessibleModal
+        open={Boolean(confirmation)}
+        title={confirmationTitle}
+        description={confirmationDescription}
+        variant={confirmation?.type === 'restore-backup' ? 'warning' : 'danger'}
+        confirmTone={confirmation?.type === 'restore-backup' ? 'primary' : 'danger'}
+        confirmLabel={confirmation?.type === 'restore-backup' ? 'بازیابی' : 'بازنشانی'}
+        onCancel={() => setConfirmation(undefined)}
+        onConfirm={runConfirmation}
+        testId="project-data-confirmation-modal"
+      >
+        <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">این کار فقط بعد از تایید انجام می‌شود. قبل از تایید مطمئن شو خروجی یا پشتیبان لازم را داری.</p>
+      </AccessibleModal>
     </section>
   );
 }
