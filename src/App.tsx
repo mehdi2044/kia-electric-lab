@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { AccessibleModal } from './components/AccessibleModal';
 import { Icon } from './components/Icon';
 import { StatCard } from './components/StatCard';
 import { ApplianceLibrary } from './features/appliance-library/ApplianceLibrary';
@@ -8,14 +9,30 @@ import { FloorPlan } from './features/floor-plan/FloorPlan';
 import { ReportPanel } from './features/report-engine/ReportPanel';
 import { generateProjectReport } from './features/report-engine/reportEngine';
 import { SafetyPanel } from './features/safety-engine/SafetyPanel';
+import { WireRoutingPanel } from './features/wire-routing/WireRoutingPanel';
+import { PanelboardPanel } from './features/panelboard/PanelboardPanel';
 import { useLabStore } from './store/useLabStore';
 import { formatNumber, formatToman } from './utils/format';
+
+const LessonPanel = lazy(() => import('./features/lesson-mode/LessonPanel').then((module) => ({ default: module.LessonPanel })));
+const ProjectDataPanel = lazy(() => import('./features/project-data/ProjectDataPanel').then((module) => ({ default: module.ProjectDataPanel })));
+const ProjectDiagnosticsPanel = lazy(() => import('./features/project-diagnostics/ProjectDiagnosticsPanel').then((module) => ({ default: module.ProjectDiagnosticsPanel })));
+const AuditViewerPanel = lazy(() => import('./features/audit-viewer/AuditViewerPanel').then((module) => ({ default: module.AuditViewerPanel })));
+
+function PanelLoading({ label }: { label: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+      {label} در حال آماده‌سازی است...
+    </div>
+  );
+}
 
 export function App() {
   const project = useLabStore((state) => state.project);
   const darkMode = useLabStore((state) => state.darkMode);
   const setDarkMode = useLabStore((state) => state.setDarkMode);
   const resetProject = useLabStore((state) => state.resetProject);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
   const report = useMemo(() => generateProjectReport(project), [project]);
 
   useEffect(() => {
@@ -51,9 +68,10 @@ export function App() {
               {darkMode ? 'روشن' : 'تاریک'}
             </button>
             <button
-              onClick={resetProject}
+              onClick={() => setResetModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               title="بازنشانی پروژه نمونه"
+              data-testid="header-reset-project-button"
             >
               <Icon name="RefreshCcw" className="h-4 w-4" />
               بازنشانی
@@ -77,16 +95,48 @@ export function App() {
         <div className="grid gap-5 xl:grid-cols-[290px_minmax(0,1fr)_380px]">
           <ApplianceLibrary />
           <div className="space-y-5">
+            <Suspense fallback={<PanelLoading label="درس‌های کیارش" />}>
+              <LessonPanel />
+            </Suspense>
             <FloorPlan />
+            <WireRoutingPanel />
+            <PanelboardPanel />
             <CircuitBuilder />
             <ReportPanel />
           </div>
           <div className="space-y-5">
+            <Suspense fallback={<PanelLoading label="داده‌های پروژه" />}>
+              <ProjectDataPanel />
+            </Suspense>
+            <Suspense fallback={<PanelLoading label="تاریخچه اعمال" />}>
+              <AuditViewerPanel />
+            </Suspense>
+            <div id="project-diagnostics-panel">
+              <Suspense fallback={<PanelLoading label="عیب‌یابی پروژه" />}>
+                <ProjectDiagnosticsPanel />
+              </Suspense>
+            </div>
             <SafetyPanel />
             <CostPanel />
           </div>
         </div>
       </div>
+      <AccessibleModal
+        open={resetModalOpen}
+        title="بازنشانی پروژه آموزشی"
+        description="این کار پروژه فعلی را به نمونه اولیه برمی‌گرداند."
+        variant="danger"
+        confirmTone="danger"
+        confirmLabel="بازنشانی"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={() => {
+          resetProject();
+          setResetModalOpen(false);
+        }}
+        testId="reset-project-modal"
+      >
+        <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">اگر در sandbox یا پروژه اصلی تغییر ذخیره‌نشده داری، قبل از تایید مطمئن شو که لازم نیست نگهش داری.</p>
+      </AccessibleModal>
     </main>
   );
 }

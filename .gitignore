@@ -5,6 +5,8 @@ node_modules/
 dist/
 build/
 coverage/
+test-results/
+playwright-report/
 
 # Vite and test caches
 .vite/
@@ -42,4 +44,3 @@ Desktop.ini
 # Generated declaration/build artifacts from local TypeScript config emit
 vite.config.js
 vite.config.d.ts
-

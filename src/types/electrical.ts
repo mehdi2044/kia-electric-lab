@@ -20,6 +20,21 @@ export type ComponentType =
 
 export type WarningSeverity = 'info' | 'warning' | 'danger';
 
+export type ElectricalTerminalRole =
+  | 'phase-source'
+  | 'neutral-source'
+  | 'earth-source'
+  | 'breaker-line'
+  | 'breaker-load'
+  | 'switch-line'
+  | 'switch-load'
+  | 'phase'
+  | 'neutral'
+  | 'earth'
+  | 'junction';
+
+export type ElectricalWireKind = 'phase' | 'neutral' | 'earth' | 'switched-phase';
+
 export interface Appliance {
   id: string;
   nameFa: string;
@@ -78,6 +93,41 @@ export interface Circuit {
   kind: 'lighting' | 'outlet' | 'heavy' | 'mixed';
 }
 
+export interface ElectricalTerminalRef {
+  componentId: string;
+  terminalId: string;
+}
+
+export interface Point2D {
+  x: number;
+  y: number;
+}
+
+export interface ElectricalWire {
+  id: string;
+  circuitId: string;
+  from: ElectricalTerminalRef;
+  to: ElectricalTerminalRef;
+  lengthMeters: number;
+  wireSizeMm2: number;
+  kind?: ElectricalWireKind;
+  routePoints?: Point2D[];
+  manualLengthOverride?: number;
+  labelFa?: string;
+}
+
+export interface PanelBreakerSlot {
+  id: string;
+  labelFa: string;
+  amp: number;
+  circuitId?: string;
+}
+
+export interface Panelboard {
+  mainBreakerAmp: number;
+  breakers: PanelBreakerSlot[];
+}
+
 export interface CostItem {
   labelFa: string;
   quantity: number;
@@ -116,10 +166,123 @@ export interface ProjectReport {
   };
 }
 
+export interface LessonScore {
+  technical: number;
+  safety: number;
+  cost: number;
+  learning: number;
+  final: number;
+}
+
+export interface LessonAttempt {
+  lessonId: string;
+  attemptsCount: number;
+  hintsUsed: number;
+  completed: boolean;
+  score?: LessonScore;
+  completedAt?: string;
+  lastFeedbackFa?: string;
+}
+
+export interface LessonProgress {
+  completedLessonIds: string[];
+  attemptsByLesson: Record<string, LessonAttempt>;
+  lastActiveLessonId?: string;
+}
+
+export type LessonStepActionType =
+  | 'select-circuit'
+  | 'place-component'
+  | 'connect-terminal'
+  | 'select-wire'
+  | 'edit-wire'
+  | 'assign-breaker'
+  | 'validate';
+
+export interface LessonStepGuidance {
+  expectedActionType: LessonStepActionType;
+  targetRoomId?: string;
+  targetComponentId?: string;
+  targetTerminalId?: string;
+  targetTerminalRef?: ElectricalTerminalRef;
+  expectedWireKind?: ElectricalWireKind;
+  validationHintFa: string;
+}
+
+export interface LessonHighlight {
+  roomIds: string[];
+  componentIds: string[];
+  terminalRefs: ElectricalTerminalRef[];
+  invalidWireIds: string[];
+  ghostWire?: {
+    from: ElectricalTerminalRef;
+    to: ElectricalTerminalRef;
+    kind: ElectricalWireKind;
+    labelFa: string;
+  };
+  messageFa: string;
+}
+
+export type LessonSandboxApplyMode = 'replace' | 'append' | 'save-example';
+
+export type ApplyAuditAction =
+  | LessonSandboxApplyMode
+  | 'import-example'
+  | 'restore-example';
+
+export interface ApplyAuditEntry {
+  id: string;
+  action: ApplyAuditAction;
+  timestamp: string;
+  lessonId?: string;
+  lessonTitle?: string;
+  affectedCounts: {
+    circuits: number;
+    components: number;
+    wires: number;
+  };
+  diagnosticsCount: number;
+  userNotes?: string;
+  checksumStatus?: 'valid' | 'invalid' | 'not-provided';
+  sourceCompatibility?: 'current' | 'older' | 'newer' | 'unknown';
+  warningsFa?: string[];
+}
+
+export interface LessonExample {
+  id: string;
+  lessonId: string;
+  title: string;
+  projectSnapshot: ElectricalProject;
+  score?: LessonScore;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface LessonSandboxState {
+  activeLessonId: string;
+  mainProject: ElectricalProject;
+  sandboxProject: ElectricalProject;
+  sandboxProgress: LessonProgress;
+  attemptsCount: number;
+  startedAt: string;
+  savedExamples?: LessonExample[];
+  pendingApplyConfirmation?: boolean;
+}
+
 export interface ElectricalProject {
+  schemaVersion: number;
+  appVersion: string;
+  createdAt: string;
+  updatedAt: string;
   voltage: number;
   mainBreakerAmp: number;
+  pixelsPerMeter?: number;
   rooms: Room[];
   components: ElectricalComponent[];
   circuits: Circuit[];
+  wires?: ElectricalWire[];
+  panelboard?: Panelboard;
+  lessonProgress?: LessonProgress;
+  applyAuditLog?: ApplyAuditEntry[];
+  useExplicitWiresOnly?: boolean;
 }

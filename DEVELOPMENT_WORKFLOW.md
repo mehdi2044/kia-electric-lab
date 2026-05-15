@@ -116,6 +116,84 @@ For Phase 1, the baseline tag is:
 v0.1-phase1-baseline
 ```
 
+Current Phase 18 release baseline tag:
+
+```text
+v0.18-phase18-github-baseline
+```
+
+## GitHub Remote Setup
+
+No Git remote should be guessed. If this local repository has no `origin`, Mehdi should first create a GitHub repository named:
+
+```text
+kia-electric-lab
+```
+
+Then use the real repository URL provided by GitHub.
+
+HTTPS pattern:
+
+```bash
+git remote add origin https://github.com/<owner>/kia-electric-lab.git
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+SSH pattern:
+
+```bash
+git remote add origin git@github.com:<owner>/kia-electric-lab.git
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+After remote setup:
+
+1. Confirm CI starts on GitHub Actions.
+2. Review uploaded artifacts if the first run fails.
+3. Add the real CI badge to `README.md`.
+4. Configure branch protection for `develop`.
+
+## Feature Branch And Pull Request Flow
+
+Create feature work from `develop`:
+
+```bash
+git checkout develop
+git pull --ff-only origin develop
+git checkout -b feature/short-feature-name
+```
+
+Before opening a pull request:
+
+```bash
+npm run verify:ci
+```
+
+Push the feature branch:
+
+```bash
+git push -u origin feature/short-feature-name
+```
+
+Open a pull request targeting:
+
+```text
+develop
+```
+
+Merge policy:
+
+- CI must pass before merge.
+- Phase documentation must be updated.
+- Electrical logic changes must include unit tests.
+- Browser-facing UX changes should include Playwright coverage when practical.
+- Visual snapshot changes require Mehdi or Vi review.
+- Merge to `develop` with a clear merge message.
+
 ## Recovery Strategy
 
 ### Recover Current Work
@@ -230,6 +308,130 @@ Cost model changes must update `project-docs/COST_ENGINE_RULES.md`.
 
 Known issues must be added to `project-docs/KNOWN_ISSUES.md`.
 
+## Snapshot Review Policy
+
+Visual snapshots are project evidence, not disposable test output.
+
+Snapshots may be updated only when:
+
+- the UI change is intentional
+- the affected surface was manually inspected
+- the phase report explains why the visual baseline changed
+- Mehdi or Vi accepts the changed behavior or layout
+
+Do not update snapshots only to make a failing test pass. First inspect the visual diff and decide whether the changed pixels represent an intended product change or a regression.
+
+Normal visual verification:
+
+```bash
+npm run test:e2e
+```
+
+Intentional snapshot update:
+
+```bash
+npm run test:e2e:update
+```
+
+Headed debugging when visual behavior is unclear:
+
+```bash
+npm run test:e2e:headed
+```
+
+After updating snapshots:
+
+1. Inspect changed images in the relevant `*-snapshots/` folder.
+2. Inspect Playwright failure artifacts if the update came after a failed run.
+3. Run `npm run test:e2e` again without update mode.
+4. Mention the changed visual surfaces in `project-docs/PHASE_REPORTS.md`.
+
+Avoid accidental snapshot churn:
+
+- keep deterministic seeded fixtures
+- avoid dynamic timestamps in screenshots
+- do not rename Playwright projects unless snapshot file churn is intentional
+- keep desktop and mobile snapshots in separate projects
+- keep visual coverage targeted to high-risk UI surfaces
+
+## CI Readiness Plan
+
+The root GitHub Actions workflow lives at:
+
+```text
+.github/workflows/ci.yml
+```
+
+It runs on:
+
+- pushes to `develop`
+- pull requests targeting `develop`
+- manual `workflow_dispatch`
+
+CI command sequence:
+
+```bash
+npm ci
+npm test
+npm run build
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+Current CI runner:
+
+```text
+windows-latest
+```
+
+Reason: the committed visual baselines are Chromium/Windows snapshots. Moving to Linux should be handled as an intentional visual baseline migration.
+
+Local CI-style simulation:
+
+```bash
+npm run verify:ci
+```
+
+Use `npm ci` manually first when you need to reproduce a completely clean CI install. The local `verify:ci` script intentionally avoids reinstalling dependencies so everyday verification stays fast.
+
+CI cache strategy:
+
+- cache the npm package cache through `actions/setup-node`
+- install Playwright Chromium in each run with `npx playwright install --with-deps chromium`
+- defer Playwright browser binary caching until CI runtime behavior is proven stable
+- keep `node_modules` out of version control and prefer `npm ci` for clean installs
+
+CI artifacts:
+
+- `test-results/`
+- `playwright-report/`
+- `dist/` on failure when available
+
+Playwright CI behavior:
+
+- retry count is `2` only under `CI`
+- trace is captured on first retry
+- screenshots are captured only on failure
+- video is retained only on failure
+- tests run against the dedicated strict server on `127.0.0.1:5174`
+
+Snapshot enforcement:
+
+- CI must run `npm run test:e2e`, not `npm run test:e2e:update`.
+- CI must fail when committed screenshots do not match rendered output.
+- Snapshot updates are local/manual only and require Mehdi or Vi review.
+- The current desktop visual tolerance allows small rasterization drift but should still catch meaningful layout changes.
+
+Branch strategy enforcement:
+
+- `feature/*` branches hold isolated implementation work.
+- `develop` is the active integration branch.
+- Pull requests into `develop` should merge only after CI passes.
+- `main` remains the stable release branch.
+- If CI fails, inspect uploaded artifacts before retrying or updating snapshots.
+
+Desktop and mobile projects are currently Chromium-only. Firefox, WebKit, and additional mobile viewports should be enabled after CI runtime stability and artifact review are proven.
+
 ## Future Scaling Strategy
 
 As the project grows, the workflow should evolve toward:
@@ -242,4 +444,3 @@ As the project grows, the workflow should evolve toward:
 - Automated report generation for releases.
 - Protected `main` branch.
 - Separate packages if simulator engines need reuse by Tauri, tests, or AI tutor services.
-

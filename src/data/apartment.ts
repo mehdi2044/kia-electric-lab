@@ -1,4 +1,5 @@
 import type { ElectricalComponent, ElectricalProject, Room } from '../types/electrical';
+import { CURRENT_APP_VERSION, CURRENT_SCHEMA_VERSION, createProjectTimestamp } from '../migrations/projectMigration';
 
 export const rooms: Room[] = [
   { id: 'panel', nameFa: 'تابلو برق', type: 'panel', x: 20, y: 20, width: 120, height: 90 },
@@ -21,8 +22,13 @@ export const initialComponents: ElectricalComponent[] = [
 ];
 
 export const defaultProject: ElectricalProject = {
+  schemaVersion: CURRENT_SCHEMA_VERSION,
+  appVersion: CURRENT_APP_VERSION,
+  createdAt: createProjectTimestamp(),
+  updatedAt: createProjectTimestamp(),
   voltage: 220,
   mainBreakerAmp: 25,
+  pixelsPerMeter: 24,
   rooms,
   components: initialComponents,
   circuits: [
@@ -59,5 +65,20 @@ export const defaultProject: ElectricalProject = {
       lengthMeters: 22,
       kind: 'outlet'
     }
-  ]
+  ],
+  wires: [],
+  panelboard: {
+    mainBreakerAmp: 25,
+    breakers: [
+      { id: 'slot-1', labelFa: 'فیوز ۱', amp: 10, circuitId: 'c-lighting' },
+      { id: 'slot-2', labelFa: 'فیوز ۲', amp: 16, circuitId: 'c-kitchen' },
+      { id: 'slot-3', labelFa: 'فیوز ۳', amp: 16, circuitId: 'c-living-outlet' }
+    ]
+  },
+  lessonProgress: {
+    completedLessonIds: [],
+    attemptsByLesson: {},
+    lastActiveLessonId: 'lesson-1-one-way-lamp'
+  },
+  useExplicitWiresOnly: false
 };

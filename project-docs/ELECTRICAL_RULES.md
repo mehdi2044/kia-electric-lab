@@ -441,3 +441,374 @@ All scores are clamped to 0-100.
 - Add rule-profile abstraction.
 - Add clear UI labels that every rule is educational and simplified.
 
+## 2026-05-14 13:40 Europe/Istanbul - Phase 2 Topology Electrical Rules
+
+### New Electrical Concept
+
+The simulator now models electrical connectivity as a graph of terminals and wires.
+
+### Terminal Model
+
+Implemented terminal roles:
+
+- `phase-source`
+- `neutral-source`
+- `breaker-line`
+- `breaker-load`
+- `switch-line`
+- `switch-load`
+- `phase`
+- `neutral`
+- `junction`
+
+### Wire Model
+
+Each wire now has:
+
+- ID
+- Circuit ID
+- From terminal
+- To terminal
+- Length in meters
+- Wire size in mm2
+- Resistance from wire table
+- Educational ampacity from wire table
+
+### New Topology Rules
+
+#### ER-013 - Breaker Must Receive Phase
+
+Trigger:
+
+- Panel phase cannot reach breaker line input for a circuit.
+
+Educational explanation:
+
+- The breaker must sit in the phase path before loads.
+
+#### ER-014 - Load Phase Must Be Connected
+
+Trigger:
+
+- Breaker load output cannot reach a load phase terminal.
+
+Educational explanation:
+
+- A consumer cannot operate if phase never reaches it.
+
+#### ER-015 - Load Neutral Must Be Connected
+
+Trigger:
+
+- Panel neutral cannot reach a load neutral terminal.
+
+Educational explanation:
+
+- Current needs a return path; without neutral, the loop is incomplete.
+
+#### ER-016 - Incomplete Loop
+
+Trigger:
+
+- A load is missing phase or neutral connectivity.
+
+Educational explanation:
+
+- A circuit needs a complete path out and back.
+
+#### ER-017 - Invalid Switch Wiring
+
+Trigger:
+
+- In a lighting circuit, switch output does not reach lamp phase.
+
+Educational explanation:
+
+- A switch should control the phase feeding the lamp.
+
+#### ER-018 - Direct Phase-Neutral Short Circuit
+
+Trigger:
+
+- A wire directly connects terminals classified as phase and neutral roles.
+
+Educational explanation:
+
+- This creates a short circuit and is dangerous.
+
+#### ER-019 - Topology Breaker Overload
+
+Trigger:
+
+- Sum of connected graph load currents exceeds breaker rating.
+
+Educational explanation:
+
+- The actual connected branches demand more current than the breaker rating.
+
+#### ER-020 - Topology Wire Overload
+
+Trigger:
+
+- Propagated current through a wire exceeds that wire's educational ampacity.
+
+Educational explanation:
+
+- That wire segment may overheat under sustained load.
+
+### Current Propagation Rule
+
+For each connected load:
+
+```text
+LoadCurrent = LoadWatts / ProjectVoltage
+```
+
+For each circuit:
+
+```text
+CircuitCurrent = sum(connected load currents)
+```
+
+For each wire:
+
+```text
+WireCurrent = sum(downstream connected load currents)
+```
+
+For each wire voltage drop:
+
+```text
+WireVoltageDrop = WireCurrent x WireResistancePerMeter x WireLengthMeters
+```
+
+### Important Limitation
+
+The current propagation is deterministic and graph-based, but still educational. It assumes simplified radial/branch behavior and does not solve arbitrary analog electrical networks.
+
+## 2026-05-14 14:20 Europe/Istanbul - Phase 3 Terminal Wire Rules
+
+### New Wire Types
+
+Implemented educational wire kinds:
+
+- `phase`: فاز
+- `neutral`: نول
+- `earth`: ارت آموزشی
+- `switched-phase`: فاز برگشتی
+
+### Earth Placeholder
+
+Phase 3 introduces earth/PE terminals as placeholders:
+
+- Panel has `earth-source`.
+- Outlet has `earth`.
+
+Important:
+
+- This is not a full grounding simulation.
+- It is a teaching placeholder for future protective earth lessons.
+
+### Terminal Connection Rules
+
+#### ER-021 - Unknown Terminal Ref
+
+Trigger:
+
+- Wire endpoint references a terminal not present in the terminal catalog/graph.
+
+Result:
+
+- Wire creation rejected.
+
+#### ER-022 - Same Terminal Wire
+
+Trigger:
+
+- Wire `from` and `to` are the same terminal.
+
+Result:
+
+- Wire creation rejected.
+
+#### ER-023 - Direct Phase-Neutral UI Rejection
+
+Trigger:
+
+- User attempts to connect phase-class terminal directly to neutral-class terminal.
+
+Result:
+
+- Wire creation rejected.
+
+Persian explanation:
+
+```text
+این اتصال کوتاه است. فاز و نول نباید مستقیم با یک سیم به هم وصل شوند.
+```
+
+#### ER-024 - Phase-Earth UI Rejection
+
+Trigger:
+
+- User attempts to connect phase-class terminal directly to earth-class terminal.
+
+Result:
+
+- Wire creation rejected.
+
+#### ER-025 - Neutral-Earth Educational Separation
+
+Trigger:
+
+- User attempts to connect neutral-class terminal to earth-class terminal.
+
+Result:
+
+- Rejected/warned in the simplified model.
+
+Reason:
+
+- The simulator keeps neutral and earth separate for beginner clarity until a real grounding model exists.
+
+### Wire Inspection Rules
+
+The wire inspector displays:
+
+- from component/terminal
+- to component/terminal
+- wire kind
+- size
+- length
+- approximate resistance
+- voltage drop
+- current
+- safety status
+- cost
+
+### Explicit Wires As Source Of Truth
+
+When `ElectricalProject.wires` has entries:
+
+- Topology graph uses explicit wires.
+- Generated topology is bypassed.
+- Partial wiring can produce open-circuit warnings.
+
+When `ElectricalProject.wires` is empty:
+
+- Generated topology fallback remains for backward compatibility.
+
+## 2026-05-14 15:00 Europe/Istanbul - Phase 4 Geometry And Panelboard Rules
+
+### Geometric Wire Length
+
+Each explicit wire can now have:
+
+- start terminal coordinate
+- optional route points
+- end terminal coordinate
+- calculated route length
+- optional manual override
+
+Formula:
+
+```text
+RouteLengthPixels = sum(distance(pointN, pointN+1))
+RouteLengthMeters = RouteLengthPixels / pixelsPerMeter
+```
+
+If `manualLengthOverride` is present and greater than zero, it is used as an advanced educational override.
+
+### Panelboard Rules
+
+#### ER-026 - Circuit Without Breaker
+
+Trigger:
+
+- A circuit is not assigned to any panelboard breaker slot.
+
+Meaning:
+
+- Every circuit should have a breaker in the panel for protection and organization.
+
+#### ER-027 - Breaker Without Circuit
+
+Trigger:
+
+- A panelboard breaker slot has no circuit assignment.
+
+Meaning:
+
+- Empty breakers should be labeled or removed for a clear educational panel.
+
+#### ER-028 - Panel Breaker Overload
+
+Trigger:
+
+- Circuit current exceeds assigned panelboard breaker amp rating.
+
+#### ER-029 - Panel Breaker/Wire Incompatibility
+
+Trigger:
+
+- Assigned breaker amp rating exceeds selected circuit wire capacity.
+
+Meaning:
+
+- The breaker may fail to protect the wire before overheating.
+
+## 2026-05-14 15:25 Europe/Istanbul - Phase 5 Electrical Data Integrity Rules
+
+### Change Summary
+
+Phase 5 did not add new electrical physics. It added persistence validation for electrical data so old or corrupted saved projects do not silently damage the educational simulation.
+
+### ER-030 - Project Schema Must Be Known
+
+Trigger:
+
+- Project data has no recognizable structure or cannot be migrated to the current schema.
+
+Meaning:
+
+- The simulator cannot safely reason about circuits, wires, breakers, and terminals if the project shape is unknown.
+
+Handling:
+
+- Back up raw data.
+- Quarantine corrupted data.
+- Load a safe default educational project.
+- Allow export of corrupted data for engineering debugging.
+
+### ER-031 - Electrical References Should Resolve
+
+Trigger:
+
+- A wire references a missing component.
+- A wire references a missing circuit.
+- A panelboard breaker references a missing circuit.
+- A circuit references a missing component.
+
+Meaning:
+
+- The project can still be loaded for correction, but topology or panelboard results may be incomplete.
+
+Handling:
+
+- Treat as migration validation warning, not fatal error, when the core project can still load.
+- Future repair tooling should help users remove or reconnect orphan references.
+
+### ER-032 - Geometry Scale Must Be Valid
+
+Trigger:
+
+- `pixelsPerMeter` is missing, non-numeric, or too small for stable educational geometry.
+
+Meaning:
+
+- Route length, wire cost, and voltage drop estimates depend on scale. A bad scale can make the simulation misleading.
+
+Handling:
+
+- Migration normalizes missing scale to the educational default.
+- Validation rejects structurally invalid scale.

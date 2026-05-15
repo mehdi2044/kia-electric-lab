@@ -285,3 +285,1018 @@ Resolution:
 Remaining risk:
 
 - If future tooling generates new local artifacts, `.gitignore` must be updated.
+
+## 2026-05-14 13:40 Europe/Istanbul - Known Issues Update After Topology Engine
+
+### KI-015 - Wire Routing UI Not Implemented
+
+Severity: High for Phase 2 completion.
+
+Description:
+
+The electrical graph engine supports explicit `ElectricalWire[]`, but the UI does not yet allow users to draw or edit those wires.
+
+Impact:
+
+- Existing user projects rely on generated topology from circuit membership.
+- Users cannot yet author malformed or custom topology from the visual interface.
+
+Recommended fix:
+
+- Add terminal-aware wire drawing UI.
+- Persist wires in Zustand state.
+- Render visual wires from the topology source of truth.
+
+### KI-016 - Generated Topology Is A Compatibility Bridge
+
+Severity: Medium.
+
+Description:
+
+When `project.wires` is empty, the topology engine generates deterministic educational wires from circuit/component membership.
+
+Impact:
+
+- This allows real graph validation now, but it is not the same as user-drawn route geometry.
+
+Recommended fix:
+
+- Add visible UI indicator for generated topology mode.
+- Prefer explicit wires once wire-routing UI exists.
+
+### KI-017 - Current Engine Is Educational, Not A Full Circuit Solver
+
+Severity: Medium.
+
+Description:
+
+The current engine propagates simplified branch load current through a graph. It does not solve arbitrary analog networks.
+
+Impact:
+
+- It is suitable for residential educational radial/branch examples.
+- It is not suitable for complex electrical network analysis.
+
+Recommended fix:
+
+- Keep educational scope explicit.
+- Add more advanced solver only if Vi approves the architecture and product need.
+
+## 2026-05-14 14:20 Europe/Istanbul - Known Issues Update After Wire Routing UI
+
+### KI-015 Status Update - Wire Routing UI Implemented At Logical Level
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Users can now create explicit `ElectricalWire[]` by clicking terminals.
+- Wires are persisted in Zustand.
+- Topology engine validates explicit wires.
+
+Remaining limitation:
+
+- Wire visuals connect component nodes rather than exact terminal coordinates.
+- Wires do not yet have route points or measured geometry.
+
+### KI-018 - Wire Length Still Manual
+
+Severity: Medium.
+
+Description:
+
+Wire length can be edited, but it is not calculated from route geometry.
+
+Impact:
+
+- Voltage drop and cost depend on manual input.
+
+Recommended fix:
+
+- Add route points and geometry-based length calculation.
+
+### KI-019 - Earth Is Placeholder Only
+
+Severity: Medium.
+
+Description:
+
+Earth terminals are visible for education, but grounding behavior is not simulated.
+
+Impact:
+
+- Learners see the earth concept, but the engine does not model protective earth current, fault clearing, or bonding.
+
+Recommended fix:
+
+- Add a grounding lesson/profile before deeper earth simulation.
+
+### KI-020 - Browser Visual Automation Timed Out
+
+Severity: Low.
+
+Description:
+
+The in-app browser automation timed out during Phase 3 visual verification.
+
+Impact:
+
+- Tests/build/local HTTP check passed, but no automated browser screenshot was recorded.
+
+Recommended fix:
+
+- Retry browser visual smoke test after automation runtime is stable.
+
+## 2026-05-14 15:00 Europe/Istanbul - Known Issues Update After Geometric Routing
+
+### KI-018 Status Update - Wire Length Geometry Implemented
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Wire length is now calculated from terminal coordinates and route points.
+
+Remaining limitation:
+
+- Scale is user-configurable and may be inaccurate.
+- Manual override still exists.
+
+### KI-021 - Terminal Coordinates Are Offset-Based
+
+Severity: Medium.
+
+Description:
+
+Terminal coordinates are deterministic offsets from component positions, not measured from actual DOM terminal button locations.
+
+Impact:
+
+- Wires are spatially meaningful but may not perfectly align with rendered button centers under every future layout change.
+
+Recommended fix:
+
+- Add custom React Flow nodes/handles or DOM measurement for exact terminal anchor points.
+
+### KI-022 - Panelboard Is Educational, Not Physical
+
+Severity: Low to Medium.
+
+Description:
+
+The panelboard UI models breaker assignment and ratings, but not physical panel constraints, DIN rails, busbars, neutral/earth bars, or real installation details.
+
+Recommended fix:
+
+- Add a panelboard lesson/profile before deeper physical panel modeling.
+
+## 2026-05-14 15:25 Europe/Istanbul - Known Issues Update After Schema Migration System
+
+### KI-023 - Exported Project JSON Has No Checksum
+
+Severity: Low to Medium.
+
+Description:
+
+Project export/import now works, but exported JSON does not include an integrity checksum, signature, or hash.
+
+Impact:
+
+- Manual edits or partial downloads may only be detected through schema validation after import.
+- Future shared project files may need stronger integrity guarantees.
+
+Recommended fix:
+
+- Add a project-level hash/checksum for exported files and verify it before import.
+
+### KI-024 - Migration Repairs Are Warning-Only
+
+Severity: Medium.
+
+Description:
+
+Migration validation warns about dangling component, terminal, circuit, or panelboard references, but it does not yet offer automatic repair actions.
+
+Impact:
+
+- A migrated project may load safely but still require manual correction by the user or engineer.
+
+Recommended fix:
+
+- Add a Project Repair panel with actions to remove orphan wires, reassign breaker slots, and reconnect terminal refs.
+
+### KI-025 - Backup Storage Is Browser-Local
+
+Severity: Low.
+
+Description:
+
+Automatic backups are stored in the browser localStorage backup key and limited to recent records.
+
+Impact:
+
+- Backups are not durable across browser profile deletion, manual localStorage clearing, or device migration.
+
+Recommended fix:
+
+- When Tauri is introduced, store backups as project files or SQLite backup rows.
+
+### KI-026 - No Browser Fixture Regression Test Yet
+
+Severity: Low to Medium.
+
+Description:
+
+Unit tests cover migration functions, but no browser automation test currently seeds old localStorage shapes and confirms UI recovery.
+
+Impact:
+
+- Hydration behavior is covered by production build and code structure, but not by an automated browser fixture.
+
+Recommended fix:
+
+- Add Playwright or Browser-plugin fixture tests for Phase 1-4 stored projects and corrupted storage.
+
+## 2026-05-14 15:45 Europe/Istanbul - Known Issues Update After Diagnostics And Repair
+
+### KI-023 Status Update - Export Checksum Implemented
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Project exports now include a deterministic checksum envelope.
+- Import warns in Persian when checksum mismatch is detected.
+
+Remaining limitation:
+
+- The checksum is not cryptographic and should not be treated as a security signature.
+
+### KI-024 Status Update - Safe Repairs Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Safe repairs now handle orphan wires, missing circuit assignments in panelboard, invalid scale, missing schema metadata, and some duplicate id cases.
+
+Remaining limitation:
+
+- No per-issue repair selection UI yet.
+- No undo history yet.
+
+### KI-026 Status Update - Storage Migration Fixtures Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Unit-level browser-storage fixtures now seed Phase 1-4 localStorage shapes and verify preflight migration.
+
+Remaining limitation:
+
+- No visual browser automation flow yet.
+
+### KI-027 - Repair UI Repairs All Safe Issues At Once
+
+Severity: Low to Medium.
+
+Description:
+
+The diagnostics UI has a single "repair safe issues" button. It does not yet allow selecting individual safe issues.
+
+Impact:
+
+- Users cannot apply only one safe repair when several are present.
+
+Recommended fix:
+
+- Add per-issue selection and a repair preview.
+
+### KI-028 - Diagnostic Scan Is Full-Project Only
+
+Severity: Low.
+
+Description:
+
+Diagnostics currently scan the full project on every relevant render.
+
+Impact:
+
+- Fine for MVP scale, but very large future projects may need incremental diagnostics.
+
+Recommended fix:
+
+- Add memoized/incremental diagnostics once project size grows.
+
+## 2026-05-14 16:10 Europe/Istanbul - Known Issues Update After Guided Lessons
+
+### KI-029 - Switch Internal State Is Not Modeled
+
+Severity: Medium.
+
+Description:
+
+The topology engine has switch terminals, but it does not yet model a switch as an internal conductive state between input and output when closed.
+
+Impact:
+
+- Lesson validation for switch lessons must check breaker-to-switch and switch-output-to-lamp paths explicitly.
+- Current-flow simulation may still flag open phase in switch-controlled lamp circuits until switch state is modeled.
+
+Recommended fix:
+
+- Add switch state and internal connectivity rules to the topology engine.
+
+### KI-030 - Lesson Reset Is Circuit-Based, Not Sandbox-Based
+
+Severity: Low to Medium.
+
+Description:
+
+The lesson reset action clears explicit wires from the currently selected circuit. It does not restore a lesson-specific starter scene.
+
+Impact:
+
+- If the learner has selected a different circuit, the reset may not affect the intended lesson circuit.
+
+Recommended fix:
+
+- Add lesson-specific sandbox templates and reset only that lesson workspace.
+
+### KI-031 - Bundle Size Warning After Lesson Mode
+
+Severity: Low.
+
+Description:
+
+Vite reports a chunk-size warning above 500 kB after adding lesson UI and validation modules.
+
+Impact:
+
+- Build succeeds and local app works, but long-term app growth may need code splitting.
+
+Recommended fix:
+
+- Introduce route-level or feature-level dynamic imports for lesson, diagnostics, and report panels if bundle growth continues.
+
+## 2026-05-14 18:35 Europe/Istanbul - Known Issues Update After Lesson Sandbox
+
+### KI-030 Status Update - Lesson Reset Improved
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- A true lesson sandbox reset now recreates the sandbox from the lesson template.
+
+Remaining limitation:
+
+- The older current-circuit wiring reset still exists as a quick practice tool.
+
+### KI-032 - Sandbox Apply Replaces Main Project
+
+Severity: Medium.
+
+Description:
+
+Applying sandbox result currently replaces the active main project with the sandbox project. It does not yet offer append/merge strategies.
+
+Impact:
+
+- Useful for lessons, but advanced users may expect only the lesson circuit to be copied into the apartment project.
+
+Recommended fix:
+
+- Add apply modes: replace, append circuit, save named example.
+
+### KI-033 - Ghost Wire Suggestions Are Geometric Hints Only
+
+Severity: Low.
+
+Description:
+
+Ghost wire suggestions show a simple terminal-to-terminal hint and do not yet compute an optimal route with bends.
+
+Impact:
+
+- Helpful for learning the next connection, but not a routing optimization tool.
+
+Recommended fix:
+
+- Generate route-aware ghost wires using floor-plan geometry and lesson step metadata.
+
+### KI-034 - Saved Sandbox Examples Have No Management UI
+
+Severity: Low.
+
+Description:
+
+Sandbox examples can be saved in state, but there is no list/export/delete UI yet.
+
+Recommended fix:
+
+- Add saved examples panel under lesson mode.
+
+## 2026-05-14 20:35 Europe/Istanbul - Known Issues Update After Apply Modes
+
+### KI-032 Status Update - Apply Modes Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Replace, append, and save-example modes now exist.
+- Append mode preserves main project and copies lesson artifacts with remapped ids.
+
+Remaining limitation:
+
+- Append placement uses a simple coordinate offset and is not collision-aware.
+
+### KI-034 Status Update - Example Management Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Saved examples can be listed, loaded, deleted, and exported.
+
+Remaining limitation:
+
+- No example import or checksum envelope yet.
+
+### KI-035 - Apply Confirmation Uses Browser Confirm
+
+Severity: Low.
+
+Description:
+
+Apply confirmation currently uses `window.confirm`, which is safe but not as polished or detailed as a custom in-app Persian modal.
+
+Recommended fix:
+
+- Add a custom apply preview modal with affected objects and diagnostics summary.
+
+### KI-036 - Append Layout Can Become Crowded
+
+Severity: Medium.
+
+Description:
+
+Append mode offsets copied components slightly but does not calculate free space in the floor plan.
+
+Impact:
+
+- Appended lesson components may overlap existing components in dense rooms.
+
+Recommended fix:
+
+- Add collision-aware placement or append into a dedicated example area.
+
+### KI-037 - Bundle Size Increased Again
+
+Severity: Low.
+
+Description:
+
+Production JS chunk is now about 522 kB minified and Vite warns about chunk size.
+
+Recommended fix:
+
+- Add dynamic imports/code splitting for lesson mode, diagnostics, and report panels.
+
+## 2026-05-14 21:30 Europe/Istanbul - Known Issues Update After Phase 10
+
+### KI-035 Status Update - Apply Preview Modal Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- `window.confirm` was replaced for apply flow with an in-app Persian preview modal.
+
+Remaining limitation:
+
+- Modal does not yet trap focus or support Escape key close.
+
+### KI-036 Status Update - Collision-Aware Append Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Append mode now searches candidate offsets to reduce overlap and offsets route points consistently.
+
+Remaining limitation:
+
+- This is not a full packing/layout solver.
+
+### KI-037 Status Update - Code Splitting Added
+
+Status:
+
+- Resolved for current build.
+
+Resolution:
+
+- Lesson, project data, and diagnostics panels are lazy-loaded.
+- Vite build no longer reports chunk-size warning.
+
+### KI-038 - Main Chunk Still Near Threshold
+
+Severity: Low.
+
+Description:
+
+The main production chunk is below the Vite warning threshold but still close to 500 kB.
+
+Recommended fix:
+
+- Continue feature-level splitting as the app grows.
+
+### KI-039 - Example Envelope Is Separate From Project Envelope
+
+Severity: Low.
+
+Description:
+
+Project export and example export use similar checksum envelope logic but not a shared generic artifact helper.
+
+Recommended fix:
+
+- Create shared artifact envelope utilities before adding lesson-pack import/export.
+
+## 2026-05-14 21:43 Europe/Istanbul - Known Issues Update After Phase 11
+
+### KI-035 Status Update - Apply Modal Accessibility Hardened
+
+Status:
+
+- Mostly resolved.
+
+Resolution:
+
+- Apply preview modal now traps focus between cancel and confirm.
+- Escape closes the modal.
+- Enter confirms only when the confirm button is focused.
+- Initial focus goes to cancel for safety.
+- ARIA dialog metadata was added.
+
+Remaining limitation:
+
+- The modal is still local to `LessonPanel`; it should become a reusable shared modal primitive before more destructive flows are added.
+
+### KI-036 Status Update - Append Layout Planner Improved
+
+Status:
+
+- Improved, still partially open.
+
+Resolution:
+
+- Append layout now uses bounding-box checks and searches multiple directions/step sizes.
+- Route points remain offset with appended components.
+- Layout warnings can be returned when placement is uncertain.
+
+Remaining limitation:
+
+- The planner is not a full geometric packing solver and does not yet understand room boundaries as hard constraints.
+
+### KI-038 Status Update - Main Chunk No Longer Near Threshold
+
+Status:
+
+- Improved.
+
+Resolution:
+
+- Vite manual chunks split React/Zustand, React Flow, and icons.
+- Main app chunk is now about 330 kB in the production build.
+
+Remaining limitation:
+
+- Future feature growth can still require route-level splitting.
+
+### KI-040 - No Automated Browser QA Yet
+
+Severity: Medium.
+
+Description:
+
+Phase 11 added a manual UI QA checklist but did not add Playwright or an equivalent browser automation dependency.
+
+Reason:
+
+- The project does not yet have a selector/testing policy for stable browser tests.
+- Adding Playwright now would increase dependency and maintenance surface before the team agrees on test ownership.
+
+Recommended fix:
+
+- Add stable selectors and Playwright smoke tests in a dedicated QA phase.
+
+### KI-041 - Audit Log Has No UI Viewer
+
+Severity: Low.
+
+Description:
+
+Apply/example audit entries are persisted in project state, but there is not yet a dedicated UI panel for browsing history.
+
+Recommended fix:
+
+- Add an audit history viewer with filters by action type, lesson, and warning status.
+
+## 2026-05-14 22:00 Europe/Istanbul - Known Issues Update After Phase 12
+
+### KI-035 Status Update - Shared Accessible Modal Added
+
+Status:
+
+- Resolved for apply preview.
+
+Resolution:
+
+- `AccessibleModal` is now shared infrastructure.
+- Apply preview uses the shared modal.
+- Modal behavior remains safer than before.
+
+Remaining limitation:
+
+- Other destructive flows still need to migrate to `AccessibleModal`.
+
+### KI-040 Status Update - Automated Browser QA Started
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Playwright was added.
+- Three Chromium smoke tests pass.
+- Stable `data-testid` selectors were added for core flows.
+
+Remaining limitation:
+
+- Coverage is still smoke-level, not full workflow-level.
+
+### KI-041 Status Update - Audit Viewer Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Audit viewer now lists and filters audit records and exports JSON.
+
+Remaining limitation:
+
+- Viewer is read-only and does not yet support search/date filters.
+
+### KI-042 - Browser Tests Cover Only Chromium
+
+Severity: Low.
+
+Description:
+
+Current Playwright setup runs only Chromium.
+
+Recommended fix:
+
+- Add Firefox/WebKit projects after baseline tests stabilize and CI runtime is acceptable.
+
+### KI-043 - Test IDs Are Now Compatibility Surface
+
+Severity: Low.
+
+Description:
+
+Critical UI elements now expose `data-testid` values used by Playwright. Removing or renaming these ids without updating tests will break e2e coverage.
+
+Recommended fix:
+
+- Treat test ids as part of UI engineering contract and document selector changes in phase reports.
+
+## 2026-05-14 22:11 Europe/Istanbul - Known Issues Update After Phase 13
+
+### KI-035 Status Update - Confirmation Modal Unification Expanded
+
+Status:
+
+- Mostly resolved.
+
+Resolution:
+
+- Shared modal now covers apply, saved example delete, sandbox reset/exit, project reset, backup restore, corrupted-data safe start, and wire delete.
+
+Remaining limitation:
+
+- Rename and notes still use `window.prompt`; they should become accessible edit modals.
+
+### KI-040 Status Update - Browser QA Deepened
+
+Status:
+
+- Improved, still open.
+
+Resolution:
+
+- Playwright now covers modal keyboard behavior, append confirmation, audit creation, result summary, valid example import, corrupted checksum warning, and import audit creation.
+
+Remaining limitation:
+
+- Browser coverage is still Chromium-only and does not yet cover backup/wire fixture flows.
+
+### KI-044 - E2E Fixture Utilities Missing
+
+Severity: Medium.
+
+Description:
+
+Advanced browser tests now need stable ways to create project states such as saved backups, explicit wires, and saved examples without long UI setup.
+
+Recommended fix:
+
+- Add e2e fixture utilities that seed localStorage with migrated project shapes or import prepared project JSON.
+
+### KI-045 - Prompt-Based Example Editing Remains
+
+Severity: Low.
+
+Description:
+
+Saved example rename and notes editing still use `window.prompt`.
+
+Recommended fix:
+
+- Replace with shared accessible edit modal.
+
+## 2026-05-15 00:57 Europe/Istanbul - Known Issues Update After Phase 14
+
+### KI-044 Status Update - E2E Fixture Utilities Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- Playwright helper fixtures now seed project, sandbox, saved example, backup, explicit wire, corrupted storage, and diagnostics issue states.
+
+Remaining limitation:
+
+- Fixtures are minimal hand-authored object literals and should become typed builders as the project schema evolves.
+
+### KI-045 Status Update - Prompt-Based Example Editing Removed
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- Saved example rename and notes editing now use `EditTextModal`.
+
+### KI-046 - E2E Fixtures Must Track Schema Version
+
+Severity: Medium.
+
+Description:
+
+Direct localStorage seeding is stable for browser tests, but fixture objects must remain compatible with the current project schema.
+
+Recommended fix:
+
+- Add typed fixture builders or generate fixtures from app factories during future schema changes.
+
+### KI-047 - E2E Runs Only Chromium
+
+Severity: Low.
+
+Description:
+
+The browser suite still runs only Chromium.
+
+Recommended fix:
+
+- Add Firefox and WebKit projects after CI caching/runtime is prepared.
+
+## 2026-05-15 01:13 Europe/Istanbul - Known Issues Update After Phase 15
+
+### KI-046 Status Update - Typed Fixture Builders Added
+
+Status:
+
+- Improved.
+
+Resolution:
+
+- E2E fixtures now use typed builders with app type imports and override support.
+
+Remaining limitation:
+
+- Builders still live in the e2e folder and should become more modular as fixture count grows.
+
+### KI-047 Status Update - Chromium-Only Still Applies
+
+Status:
+
+- Open.
+
+Resolution:
+
+- Cross-browser planning is documented, but Firefox/WebKit are not enabled yet.
+
+### KI-048 - Visual Snapshots Are OS/Browser Specific
+
+Severity: Medium.
+
+Description:
+
+The committed visual baselines are Chromium/Windows snapshots.
+
+Recommended fix:
+
+- Keep visual tests targeted and document platform expectations before adding more browsers.
+
+### KI-049 - Visual Snapshot Review Policy Needed
+
+Severity: Low.
+
+Description:
+
+The project now has committed visual baselines, but `DEVELOPMENT_WORKFLOW.md` does not yet define review/update rules.
+
+Recommended fix:
+
+- Add snapshot update/review policy to development workflow documentation.
+
+## 2026-05-15 01:37 Europe/Istanbul - Known Issues Update After Phase 16
+
+### KI-049 Status Update - Snapshot Review Policy Added
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- `DEVELOPMENT_WORKFLOW.md` and `UI_QA_CHECKLIST.md` now document when snapshots may be updated, who must approve changes, how to inspect diffs, and which commands are used for normal verification versus intentional snapshot updates.
+
+### KI-050 - CI Workflow File Not Yet Created
+
+Severity: Low.
+
+Description:
+
+Phase 16 documents CI readiness and configures Playwright for CI-friendly execution, but it does not add a concrete GitHub Actions, GitLab CI, or other provider workflow file.
+
+Recommended fix:
+
+- Add the CI workflow after Mehdi and Vi select the hosting provider and artifact retention policy.
+
+### KI-051 - Mobile Visual Baselines Are Chromium/Windows Specific
+
+Severity: Medium.
+
+Description:
+
+Mobile visual baselines currently run through Chromium device emulation on the Windows development machine. Rendering can differ on Linux CI due to font rasterization and browser build differences.
+
+Recommended fix:
+
+- Establish the CI environment as the source of truth before treating mobile snapshots as release-blocking artifacts.
+- Regenerate approved snapshots on the selected CI-compatible environment if needed.
+
+### KI-052 - Firefox And WebKit Coverage Still Planned
+
+Severity: Low.
+
+Description:
+
+The test architecture now separates desktop and mobile Chromium lanes, but Firefox and WebKit projects remain disabled.
+
+Recommended fix:
+
+- Trial Firefox and WebKit in CI after browser caching and snapshot review rules are stable.
+
+## 2026-05-15 12:48 Europe/Istanbul - Known Issues Update After Phase 17
+
+### KI-050 Status Update - CI Workflow Added
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- `.github/workflows/ci.yml` now defines a GitHub Actions workflow for pushes to `develop`, pull requests targeting `develop`, and manual dispatch.
+
+### KI-053 - README CI Badge Requires GitHub Remote
+
+Severity: Low.
+
+Description:
+
+The repository currently has no configured Git remote, so the exact GitHub owner/repository URL is unknown. Adding a badge with a guessed URL would create a misleading or broken README badge.
+
+Recommended fix:
+
+- After the GitHub repository remote is configured, add the workflow badge using the real repository path.
+
+### KI-054 - Playwright Browser Cache Deferred
+
+Severity: Low.
+
+Description:
+
+CI currently uses npm caching and installs Playwright Chromium on each run. This is deterministic but slower than a tuned browser cache.
+
+Recommended fix:
+
+- After first CI runs are stable, evaluate caching Playwright browser binaries with a cache key tied to OS and Playwright version.
+
+### KI-054A - CI Snapshot Platform Is Windows
+
+Severity: Low.
+
+Description:
+
+The CI workflow runs on `windows-latest` because current committed visual snapshots use Chromium/Windows filenames and rendering. This is intentional for the first CI baseline.
+
+Recommended fix:
+
+- If the team wants Linux CI later, migrate visual snapshots deliberately and regenerate approved Linux baselines in a dedicated phase.
+
+### KI-055 - CI Has Single Job Only
+
+Severity: Low.
+
+Description:
+
+The initial CI workflow uses one job for dependency install, unit tests, build, browser install, and e2e tests. This is simple and maintainable, but it does not parallelize the pipeline.
+
+Recommended fix:
+
+- Split into separate jobs only if runtime becomes a bottleneck.
+
+## 2026-05-15 13:39 Europe/Istanbul - Known Issues Update After Phase 18
+
+### KI-053 Status Update - README Badge Placeholder Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- README now includes a CI badge placeholder and explains that the real badge should be added after the GitHub remote URL is configured.
+
+Remaining limitation:
+
+- No actual badge URL exists yet because no Git remote is configured locally.
+
+### KI-056 - GitHub Remote Not Configured
+
+Severity: Medium.
+
+Description:
+
+The local repository has no `origin` remote. GitHub Actions workflow and README documentation are ready, but CI cannot run until the repository is created and pushed.
+
+Recommended fix:
+
+- Mehdi should create the GitHub repository `kia-electric-lab`, provide the final URL, then run the documented `git remote add origin` and push commands.
+
+### KI-057 - Phase 18 Tag Is Local Until Pushed
+
+Severity: Low.
+
+Description:
+
+The release baseline tag exists locally but will not appear on GitHub until tags are pushed.
+
+Recommended fix:
+
+- After configuring `origin`, run `git push origin --tags`.
