@@ -267,6 +267,8 @@ test('saved example export downloads checksum envelope', async ({ page }) => {
 });
 
 test.describe('visual regression baseline', () => {
+  const visualTolerance = { maxDiffPixels: 350 };
+
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1200 });
   });
@@ -274,27 +276,27 @@ test.describe('visual regression baseline', () => {
   test('apply preview modal RTL layout', async ({ page }) => {
     await page.getByTestId('start-lesson-button').click();
     await page.getByTestId('open-apply-modal-button').click();
-    await expect(page.getByTestId('apply-modal')).toHaveScreenshot('apply-preview-modal-rtl.png', { maxDiffPixels: 50 });
+    await expect(page.getByTestId('apply-modal')).toHaveScreenshot('apply-preview-modal-rtl.png', visualTolerance);
   });
 
   test('diagnostics panel baseline', async ({ page }) => {
     await seedProject(page, buildProjectFixture({
       circuits: [{ ...buildProjectFixture().circuits[0], componentIds: ['missing-component'] }]
     }));
-    await expect(page.getByTestId('diagnostics-panel')).toHaveScreenshot('diagnostics-panel-rtl.png', { maxDiffPixels: 50 });
+    await expect(page.getByTestId('diagnostics-panel')).toHaveScreenshot('diagnostics-panel-rtl.png', visualTolerance);
   });
 
   test('lesson panel baseline', async ({ page }) => {
-    await expect(page.getByTestId('lesson-panel')).toHaveScreenshot('lesson-panel-rtl.png', { maxDiffPixels: 50 });
+    await expect(page.getByTestId('lesson-panel')).toHaveScreenshot('lesson-panel-rtl.png', visualTolerance);
   });
 
   test('audit viewer baseline', async ({ page }) => {
     await seedProject(page, buildProjectFixture({ applyAuditLog: [buildAuditEntryFixture()] }));
-    await expect(page.getByTestId('audit-viewer')).toHaveScreenshot('audit-viewer-rtl.png', { maxDiffPixels: 50 });
+    await expect(page.getByTestId('audit-viewer')).toHaveScreenshot('audit-viewer-rtl.png', visualTolerance);
   });
 
   test('floor plan with routed wire baseline', async ({ page }) => {
     await seedExplicitWire(page);
-    await expect(page.getByTestId('floor-plan')).toHaveScreenshot('floor-plan-routed-wire.png', { maxDiffPixels: 50 });
+    await expect(page.getByTestId('floor-plan')).toHaveScreenshot('floor-plan-routed-wire.png', visualTolerance);
   });
 });

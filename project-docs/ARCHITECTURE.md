@@ -1852,3 +1852,103 @@ Recommended cache targets:
 - Playwright browser cache
 
 Firefox, WebKit, and mobile browser expansion should remain planned work until CI runtime stability and snapshot review ownership are formalized.
+
+## 2026-05-15 12:48 Europe/Istanbul - Phase 17 GitHub Actions CI Architecture
+
+### Change Type
+
+GitHub Actions workflow, artifact reporting, branch verification, and local CI simulation.
+
+### Workflow Location
+
+```text
+.github/workflows/ci.yml
+```
+
+### Trigger Architecture
+
+The workflow runs on:
+
+- `push` to `develop`
+- `pull_request` targeting `develop`
+- manual `workflow_dispatch`
+
+This matches the branch strategy where `develop` is the integration branch and `main` remains the stable release branch.
+
+### CI Job Architecture
+
+Initial CI has a single job:
+
+```text
+verify
+```
+
+The job runs on `windows-latest` and executes:
+
+1. checkout
+2. setup Node.js 22
+3. install dependencies with `npm ci`
+4. run Vitest unit tests
+5. build production bundle
+6. install Playwright Chromium with the standard Playwright install command
+7. run Playwright e2e and visual tests
+8. upload browser-test artifacts
+
+### Cache Architecture
+
+Current safe cache:
+
+- npm cache through `actions/setup-node`
+
+Deferred cache:
+
+- Playwright browser binary cache
+
+Reason:
+
+Playwright browser caching can save time, but it can also introduce version mismatch and invalid-cache troubleshooting. For the first CI baseline, deterministic browser installation is preferred.
+
+### Artifact Architecture
+
+Artifacts uploaded:
+
+- `playwright-report/` always, if present
+- `test-results/` always, if present
+- `dist/` on failure, if present
+
+Artifact retention:
+
+- browser reports: 14 days
+- build output on failure: 7 days
+
+### Snapshot Enforcement Architecture
+
+CI uses:
+
+```text
+npm run test:e2e
+```
+
+CI does not use:
+
+```text
+npm run test:e2e:update
+```
+
+This makes screenshot drift fail the build and preserves the manual snapshot approval policy established in Phase 16.
+
+### Local CI Simulation
+
+The local script:
+
+```text
+npm run verify:ci
+```
+
+runs:
+
+1. unit tests
+2. production build
+3. Playwright e2e and visual tests
+
+It does not call `npm ci` automatically, because local reinstalling is slow and can be disruptive. Developers should run `npm ci` manually when reproducing a clean CI environment.

@@ -54,6 +54,22 @@ http://localhost:5173
 npm test
 ```
 
+## CI Verification
+
+GitHub Actions runs unit tests, production build, and Playwright browser tests for pushes to `develop` and pull requests targeting `develop`.
+
+Local CI-style verification:
+
+```bash
+npm run verify:ci
+```
+
+Visual snapshots are never updated in CI. Snapshot updates must be reviewed and run locally with:
+
+```bash
+npm run test:e2e:update
+```
+
 ## Build
 
 ```bash

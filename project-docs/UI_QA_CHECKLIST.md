@@ -447,3 +447,64 @@ CI should cache:
 - Verify mobile floor-plan scrolling still feels understandable for a teenager.
 - Check dark mode mobile contrast for diagnostics and audit panels.
 - Review whether mobile screenshots should become release-blocking after CI is selected.
+
+## 2026-05-15 12:48 Europe/Istanbul - Phase 17 CI Artifact Review Checklist
+
+### CI Visual Snapshot Rule
+
+CI must never update snapshots.
+
+Allowed in CI:
+
+```text
+npm run test:e2e
+```
+
+Not allowed in CI:
+
+```text
+npm run test:e2e:update
+```
+
+If CI fails because of a screenshot mismatch, treat it as a review event:
+
+- inspect the Playwright report artifact
+- inspect `test-results/`
+- decide whether the difference is an intentional UI change
+- update snapshots locally only after Mehdi or Vi approval
+- rerun `npm run test:e2e` before committing updated snapshots
+
+Current CI visual baseline platform:
+
+```text
+windows-latest with Chromium
+```
+
+Reason:
+
+- existing desktop and mobile snapshots were created as Chromium/Windows baselines
+- Linux visual baselines should be introduced only through a reviewed migration
+
+### GitHub Actions Artifacts
+
+The CI workflow uploads:
+
+- `playwright-report/`
+- `test-results/`
+- `dist/` on failure when available
+
+Review artifacts when:
+
+- a Playwright test fails
+- a visual snapshot differs
+- a build passes locally but fails in CI
+- mobile and desktop screenshots disagree with expected RTL layout
+
+### Branch QA Rule
+
+Before merging into `develop`:
+
+- CI should pass.
+- Snapshot diffs should be reviewed.
+- Phase report should mention any changed visual surfaces.
+- Known issues should be updated if CI exposes environment-specific behavior.

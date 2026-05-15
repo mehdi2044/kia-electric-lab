@@ -655,3 +655,29 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Add mobile viewport visual coverage for wire inspector.
 - [ ] Add mobile viewport visual coverage for panelboard.
 - [ ] Decide whether visual tests should run on every pull request or only on release candidates.
+
+## 2026-05-15 12:48 Europe/Istanbul - Phase 17 TODO Update
+
+### Completed
+
+- [x] Add root GitHub Actions workflow.
+- [x] Run CI on push to `develop`.
+- [x] Run CI on pull requests targeting `develop`.
+- [x] Add manual `workflow_dispatch`.
+- [x] Add CI job with checkout, setup Node, `npm ci`, unit tests, build, Playwright install, and e2e tests.
+- [x] Upload Playwright report artifacts.
+- [x] Upload Playwright test result artifacts.
+- [x] Upload build output on failure when present.
+- [x] Enforce snapshot read-only behavior in CI.
+- [x] Add npm cache through `actions/setup-node`.
+- [x] Add local `npm run verify:ci` script.
+- [x] Document branch strategy and CI merge policy.
+- [x] Document artifact review rules.
+
+### New TODOs
+
+- [ ] Add CI badge to README after the GitHub remote owner/repository path is configured.
+- [ ] Evaluate Playwright browser cache after first CI runs are stable.
+- [ ] Consider splitting CI into separate unit/build/e2e jobs if runtime grows.
+- [ ] Add branch protection rules in GitHub requiring the CI workflow before merging to `develop`.
+- [ ] Decide whether release branches should run an expanded browser matrix.

@@ -278,7 +278,19 @@ Avoid accidental snapshot churn:
 
 ## CI Readiness Plan
 
-Recommended CI command sequence:
+The root GitHub Actions workflow lives at:
+
+```text
+.github/workflows/ci.yml
+```
+
+It runs on:
+
+- pushes to `develop`
+- pull requests targeting `develop`
+- manual `workflow_dispatch`
+
+CI command sequence:
 
 ```bash
 npm ci
@@ -288,16 +300,34 @@ npx playwright install --with-deps chromium
 npm run test:e2e
 ```
 
-Recommended CI cache strategy:
+Current CI runner:
 
-- cache the npm package cache
-- cache Playwright browser binaries when supported by the CI provider
+```text
+windows-latest
+```
+
+Reason: the committed visual baselines are Chromium/Windows snapshots. Moving to Linux should be handled as an intentional visual baseline migration.
+
+Local CI-style simulation:
+
+```bash
+npm run verify:ci
+```
+
+Use `npm ci` manually first when you need to reproduce a completely clean CI install. The local `verify:ci` script intentionally avoids reinstalling dependencies so everyday verification stays fast.
+
+CI cache strategy:
+
+- cache the npm package cache through `actions/setup-node`
+- install Playwright Chromium in each run with `npx playwright install --with-deps chromium`
+- defer Playwright browser binary caching until CI runtime behavior is proven stable
 - keep `node_modules` out of version control and prefer `npm ci` for clean installs
 
-Recommended CI artifacts:
+CI artifacts:
 
 - `test-results/`
 - `playwright-report/`
+- `dist/` on failure when available
 
 Playwright CI behavior:
 
@@ -306,6 +336,21 @@ Playwright CI behavior:
 - screenshots are captured only on failure
 - video is retained only on failure
 - tests run against the dedicated strict server on `127.0.0.1:5174`
+
+Snapshot enforcement:
+
+- CI must run `npm run test:e2e`, not `npm run test:e2e:update`.
+- CI must fail when committed screenshots do not match rendered output.
+- Snapshot updates are local/manual only and require Mehdi or Vi review.
+- The current desktop visual tolerance allows small rasterization drift but should still catch meaningful layout changes.
+
+Branch strategy enforcement:
+
+- `feature/*` branches hold isolated implementation work.
+- `develop` is the active integration branch.
+- Pull requests into `develop` should merge only after CI passes.
+- `main` remains the stable release branch.
+- If CI fails, inspect uploaded artifacts before retrying or updating snapshots.
 
 Desktop and mobile projects are currently Chromium-only. Firefox, WebKit, and additional mobile viewports should be enabled after CI runtime stability and artifact review are proven.
 
