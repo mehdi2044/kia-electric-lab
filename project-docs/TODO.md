@@ -681,3 +681,27 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Consider splitting CI into separate unit/build/e2e jobs if runtime grows.
 - [ ] Add branch protection rules in GitHub requiring the CI workflow before merging to `develop`.
 - [ ] Decide whether release branches should run an expanded browser matrix.
+
+## 2026-05-15 13:39 Europe/Istanbul - Phase 18 TODO Update
+
+### Completed
+
+- [x] Check whether a Git remote exists.
+- [x] Document GitHub repository creation instructions for `kia-electric-lab`.
+- [x] Document safe remote setup commands without guessing the URL.
+- [x] Upgrade README onboarding documentation.
+- [x] Add CI badge placeholder.
+- [x] Add `RELEASE_NOTES.md`.
+- [x] Summarize completed phases 1-18.
+- [x] Update package version to `0.18.0`.
+- [x] Update app version marker to `0.18-phase18-github-baseline`.
+- [x] Regenerate approved apply modal dialog visual baseline after metadata update.
+- [x] Create local release baseline tag `v0.18-phase18-github-baseline`.
+
+### New TODOs
+
+- [ ] Add actual README CI badge after `origin` is configured.
+- [ ] Push `develop`, `main`, and tags to the real GitHub remote.
+- [ ] Review the first GitHub Actions run after pushing.
+- [ ] Configure branch protection on `develop`.
+- [ ] Decide whether `main` should receive the Phase 18 baseline immediately or after first remote CI pass.

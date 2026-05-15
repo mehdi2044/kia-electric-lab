@@ -116,6 +116,84 @@ For Phase 1, the baseline tag is:
 v0.1-phase1-baseline
 ```
 
+Current Phase 18 release baseline tag:
+
+```text
+v0.18-phase18-github-baseline
+```
+
+## GitHub Remote Setup
+
+No Git remote should be guessed. If this local repository has no `origin`, Mehdi should first create a GitHub repository named:
+
+```text
+kia-electric-lab
+```
+
+Then use the real repository URL provided by GitHub.
+
+HTTPS pattern:
+
+```bash
+git remote add origin https://github.com/<owner>/kia-electric-lab.git
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+SSH pattern:
+
+```bash
+git remote add origin git@github.com:<owner>/kia-electric-lab.git
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+After remote setup:
+
+1. Confirm CI starts on GitHub Actions.
+2. Review uploaded artifacts if the first run fails.
+3. Add the real CI badge to `README.md`.
+4. Configure branch protection for `develop`.
+
+## Feature Branch And Pull Request Flow
+
+Create feature work from `develop`:
+
+```bash
+git checkout develop
+git pull --ff-only origin develop
+git checkout -b feature/short-feature-name
+```
+
+Before opening a pull request:
+
+```bash
+npm run verify:ci
+```
+
+Push the feature branch:
+
+```bash
+git push -u origin feature/short-feature-name
+```
+
+Open a pull request targeting:
+
+```text
+develop
+```
+
+Merge policy:
+
+- CI must pass before merge.
+- Phase documentation must be updated.
+- Electrical logic changes must include unit tests.
+- Browser-facing UX changes should include Playwright coverage when practical.
+- Visual snapshot changes require Mehdi or Vi review.
+- Merge to `develop` with a clear merge message.
+
 ## Recovery Strategy
 
 ### Recover Current Work
