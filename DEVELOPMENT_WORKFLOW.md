@@ -432,6 +432,148 @@ Branch strategy enforcement:
 
 Desktop and mobile projects are currently Chromium-only. Firefox, WebKit, and additional mobile viewports should be enabled after CI runtime stability and artifact review are proven.
 
+## Phase 19 Branch Protection Policy
+
+### Automation Status
+
+Branch protection could not be configured automatically from the local environment.
+
+Checked:
+
+- GitHub CLI: not installed.
+- `GITHUB_TOKEN`: not available.
+- `GH_TOKEN`: not available.
+- unauthenticated GitHub branch-protection API: returned `401 Unauthorized`.
+
+Therefore Mehdi must configure protection manually in the GitHub UI, or provide an authenticated GitHub token with repository administration permission for a future automation step.
+
+### Manual GitHub UI Steps For Mehdi
+
+Open:
+
+```text
+https://github.com/mehdi2044/kia-electric-lab/settings/branches
+```
+
+Then:
+
+1. Select **Add branch ruleset** or **Add rule**.
+2. Target branch:
+
+```text
+develop
+```
+
+3. Enable **Require a pull request before merging**.
+4. Enable **Require status checks to pass before merging**.
+5. Enable **Require branches to be up to date before merging** if available.
+6. Select required status check:
+
+```text
+Unit, build, and browser verification
+```
+
+or, if GitHub shows the workflow-level check:
+
+```text
+Kia Electric Lab CI
+```
+
+7. Enable **Block force pushes**.
+8. Enable **Block deletions**.
+9. Save the rule.
+
+Recommended optional settings:
+
+- require at least one approval before merging
+- require conversation resolution before merging
+- restrict direct pushes to maintainers only
+
+### Feature Branch Policy
+
+- New work starts from `develop`.
+- Branch names should use:
+  - `feature/*` for normal implementation
+  - `fix/*` for narrow bug fixes
+  - `docs/*` for documentation-only changes
+  - `experimental/*` for risky prototypes
+- Feature branches should be pushed to GitHub and merged through pull requests.
+- Long-running feature branches should regularly rebase or merge from `develop` after CI passes.
+
+### Pull Request Policy
+
+Pull requests into `develop` must include:
+
+- clear summary of completed work
+- changed files or modules
+- testing performed
+- documentation updates
+- risk notes
+- screenshot/snapshot explanation if visual baselines changed
+
+Before merge:
+
+- GitHub Actions CI must pass.
+- Required status check must be green.
+- The branch should be up to date with `develop`.
+- Snapshot changes must be explicitly reviewed by Mehdi or Vi.
+- Electrical logic changes must include or update tests.
+- Architecture changes must be documented in `project-docs/ARCHITECTURE.md`.
+
+### Snapshot Update Approval Rule
+
+Snapshots may be updated only when:
+
+- the UI change is intentional
+- the affected screenshot is manually inspected
+- the phase report explains why the snapshot changed
+- Mehdi or Vi approves the visual change
+
+CI must never run:
+
+```bash
+npm run test:e2e:update
+```
+
+CI must only run:
+
+```bash
+npm run test:e2e
+```
+
+### Release Tagging Rule
+
+Release tags are created from `main` after `develop` has passed CI and has been intentionally merged into `main`.
+
+Tag format:
+
+```text
+v<major>.<minor>-<phase-or-release-name>
+```
+
+Current release baseline:
+
+```text
+v0.18-phase18-github-baseline
+```
+
+Release checklist:
+
+1. `develop` CI is green.
+2. `DEVELOPMENT_WORKFLOW.md`, `README.md`, and release notes are current.
+3. Merge `develop` into `main`.
+4. Create an annotated tag from `main`.
+5. Push `main` and tags.
+6. Confirm GitHub Actions and release artifacts if applicable.
+
+### Main Vs Develop Strategy
+
+- `develop` is active integration and must be protected.
+- `main` is stable release history.
+- Feature work does not target `main` directly.
+- Emergency release fixes should branch from `main`, then be merged back into `develop`.
+- Tags should point to stable `main` commits, not feature branches.
+
 ## Future Scaling Strategy
 
 As the project grows, the workflow should evolve toward:

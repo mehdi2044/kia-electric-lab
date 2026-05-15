@@ -722,3 +722,26 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Confirm the first GitHub Actions run result in the GitHub UI.
 - [ ] Configure GitHub branch protection requiring CI before merging to `develop`.
 - [ ] Add repository description/topics on GitHub if desired.
+
+## 2026-05-15 14:25 Europe/Istanbul - Phase 19 TODO Update
+
+### Completed
+
+- [x] Check whether branch protection can be configured from the local environment.
+- [x] Verify GitHub CLI availability.
+- [x] Verify GitHub token availability.
+- [x] Check GitHub branch protection API access.
+- [x] Document exact manual GitHub UI steps for protecting `develop`.
+- [x] Update feature branch policy.
+- [x] Update pull request policy.
+- [x] Update required CI passing rule.
+- [x] Update snapshot approval rule.
+- [x] Update release tagging rule.
+- [x] Update `main` versus `develop` strategy.
+
+### New TODOs
+
+- [ ] Mehdi should enable the `develop` branch protection rule in GitHub settings.
+- [ ] Confirm the required status check name shown by GitHub after branch protection is enabled.
+- [ ] Consider requiring one approval before merging into `develop`.
+- [ ] Consider protecting `main` after the `develop` rule is confirmed.
