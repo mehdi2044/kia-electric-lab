@@ -745,3 +745,31 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Confirm the required status check name shown by GitHub after branch protection is enabled.
 - [ ] Consider requiring one approval before merging into `develop`.
 - [ ] Consider protecting `main` after the `develop` rule is confirmed.
+
+## 2026-05-15 19:04 Europe/Istanbul - Phase 20 TODO Update
+
+### Completed
+
+- [x] Add persisted one-way switch state.
+- [x] Add persisted two-gang switch output state.
+- [x] Add persisted breaker runtime state.
+- [x] Add persisted appliance/load active state.
+- [x] Add schema migration to version 8.
+- [x] Add pure live-flow engine.
+- [x] Detect powered lamp state.
+- [x] Detect energized outlet/appliance state.
+- [x] Detect breaker disabled behavior.
+- [x] Detect current-carrying wires.
+- [x] Render pulsing current flow markers.
+- [x] Render lamp glow.
+- [x] Render switch/breaker/load state badges.
+- [x] Add unit tests for live behavior.
+- [x] Add Playwright tests for live switch, breaker, unsafe wire, and sandbox continuity.
+
+### New TODOs
+
+- [ ] Add automatic educational breaker tripping simulation as an optional mode.
+- [ ] Add a dedicated live-flow explanation panel.
+- [ ] Add visual direction arrows for phase and neutral separately.
+- [ ] Integrate powered-state validation into more lessons.
+- [ ] Add panelboard live current indicators.

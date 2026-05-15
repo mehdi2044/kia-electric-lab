@@ -80,5 +80,8 @@ export const defaultProject: ElectricalProject = {
     attemptsByLesson: {},
     lastActiveLessonId: 'lesson-1-one-way-lamp'
   },
-  useExplicitWiresOnly: false
+  useExplicitWiresOnly: false,
+  switchStates: {},
+  breakerStates: {},
+  loadStates: {}
 };

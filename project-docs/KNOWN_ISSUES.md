@@ -1381,3 +1381,41 @@ GitHub may display either the job name `Unit, build, and browser verification` o
 Recommended fix:
 
 - When configuring branch protection, select the exact check name shown by GitHub after the successful CI run.
+
+## 2026-05-15 19:04 Europe/Istanbul - Known Issues Update After Phase 20
+
+### KI-061 - Live Flow Is Educational, Not Protective Automation
+
+Severity: Medium.
+
+Description:
+
+Phase 20 detects overloaded breakers and unsafe wires visually, but it does not automatically trip breakers or simulate protective device timing.
+
+Recommended fix:
+
+- Add optional educational breaker-trip behavior in a future phase, with clear Persian explanation that it remains a simplified model.
+
+### KI-062 - Direction Visualization Is Simplified
+
+Severity: Low.
+
+Description:
+
+Current flow animation uses pulsing markers on current-carrying wires. It does not yet distinguish detailed electron/conventional-current direction per conductor.
+
+Recommended fix:
+
+- Add explicit direction arrows and separate phase/neutral flow explanations later.
+
+### KI-063 - Lesson Powered-State Integration Is Partial
+
+Severity: Low.
+
+Description:
+
+Lessons benefit from the live UI immediately, but most lesson validation rules still focus on topology and wiring rather than powered-state assertions.
+
+Recommended fix:
+
+- Extend lesson validation rules to require powered lamp/outlet states where educationally useful.

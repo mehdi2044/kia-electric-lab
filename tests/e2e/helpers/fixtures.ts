@@ -86,8 +86,8 @@ export function buildPanelboardFixture(overrides: Partial<Panelboard> = {}): Pan
 
 export function buildProjectFixture(overrides: DeepPartial<ElectricalProject> = {}): ElectricalProject {
   const project: ElectricalProject = {
-    schemaVersion: 7,
-    appVersion: '0.8-phase8-lesson-sandbox',
+    schemaVersion: 8,
+    appVersion: '0.18-phase18-github-baseline',
     createdAt: FIXTURE_NOW,
     updatedAt: FIXTURE_NOW,
     voltage: 220,
@@ -106,7 +106,10 @@ export function buildProjectFixture(overrides: DeepPartial<ElectricalProject> = 
     wires: [],
     panelboard: buildPanelboardFixture(),
     lessonProgress: { completedLessonIds: [], attemptsByLesson: {}, lastActiveLessonId: 'lesson-1-one-way-lamp' },
-    useExplicitWiresOnly: false
+    useExplicitWiresOnly: false,
+    switchStates: {},
+    breakerStates: {},
+    loadStates: {}
   };
   return {
     ...project,
@@ -125,6 +128,49 @@ export function buildDiagnosticsFixture(): ElectricalProject {
 
 export function buildProjectWithExplicitWireFixture(): ElectricalProject {
   return buildProjectFixture({ wires: [buildWireFixture()] });
+}
+
+export function buildLiveSwitchProjectFixture(overrides: DeepPartial<ElectricalProject> = {}): ElectricalProject {
+  return buildProjectFixture({
+    rooms: [
+      buildRoomFixture({ id: 'panel', nameFa: 'تابلو برق', type: 'panel', x: 20, y: 20, width: 120, height: 90 }),
+      buildRoomFixture({ id: 'living', nameFa: 'پذیرایی', type: 'living', x: 150, y: 20, width: 360, height: 210 })
+    ],
+    components: [
+      buildComponentFixture({ id: 'main-panel', type: 'main-panel', labelFa: 'تابلو اصلی', roomId: 'panel', x: 58, y: 55, applianceId: undefined, costPointType: undefined }),
+      buildComponentFixture({ id: 'switch-live', type: 'one-way-switch', labelFa: 'کلید تست', roomId: 'living', x: 245, y: 145, circuitId: 'c-live', applianceId: undefined, costPointType: 'switch' }),
+      buildComponentFixture({ id: 'lamp-live', type: 'lamp', labelFa: 'لامپ تست', roomId: 'living', x: 380, y: 145, circuitId: 'c-live', applianceId: 'led-lamp', costPointType: 'lamp' })
+    ],
+    circuits: [buildCircuitFixture({ id: 'c-live', nameFa: 'مدار تست زنده', componentIds: ['switch-live', 'lamp-live'], applianceIds: ['led-lamp'], wireSizeMm2: 1.5, breakerAmp: 10, kind: 'lighting' })],
+    wires: [
+      buildWireFixture({ id: 'live-panel-breaker', circuitId: 'c-live', from: { componentId: 'main-panel', terminalId: 'phase-source' }, to: { componentId: 'breaker:c-live', terminalId: 'line-in' }, kind: 'phase', routePoints: [{ x: 82, y: 75 }, { x: 84, y: 145 }] }),
+      buildWireFixture({ id: 'live-breaker-switch', circuitId: 'c-live', from: { componentId: 'breaker:c-live', terminalId: 'load-out' }, to: { componentId: 'switch-live', terminalId: 'line-in' }, kind: 'phase', routePoints: [{ x: 84, y: 145 }, { x: 245, y: 145 }] }),
+      buildWireFixture({ id: 'live-switch-lamp', circuitId: 'c-live', from: { componentId: 'switch-live', terminalId: 'line-out' }, to: { componentId: 'lamp-live', terminalId: 'phase' }, kind: 'switched-phase', routePoints: [{ x: 245, y: 145 }, { x: 380, y: 145 }] }),
+      buildWireFixture({ id: 'live-lamp-neutral', circuitId: 'c-live', from: { componentId: 'lamp-live', terminalId: 'neutral' }, to: { componentId: 'main-panel', terminalId: 'neutral-source' }, kind: 'neutral', routePoints: [{ x: 380, y: 165 }, { x: 82, y: 95 }] })
+    ],
+    panelboard: buildPanelboardFixture({ breakers: [{ id: 'slot-1', labelFa: 'فیوز تست', amp: 10, circuitId: 'c-live' }] }),
+    useExplicitWiresOnly: true,
+    switchStates: {},
+    breakerStates: {},
+    loadStates: {},
+    ...overrides
+  });
+}
+
+export function buildUnsafeWireProjectFixture(): ElectricalProject {
+  return buildProjectFixture({
+    wires: [
+      buildWireFixture({
+        id: 'unsafe-short-wire',
+        circuitId: 'c-living-outlet',
+        from: { componentId: 'main-panel', terminalId: 'phase-source' },
+        to: { componentId: 'main-panel', terminalId: 'neutral-source' },
+        kind: 'phase',
+        routePoints: [{ x: 72, y: 62 }, { x: 112, y: 92 }]
+      })
+    ],
+    useExplicitWiresOnly: true
+  });
 }
 
 export function buildLessonProjectFixture(): ElectricalProject {
@@ -169,8 +215,8 @@ export function buildBackupFixture(overrides: Partial<{ id: string; createdAt: s
     id: 'backup-e2e',
     createdAt: FIXTURE_NOW,
     reasonFa: 'پشتیبان تست',
-    raw: JSON.stringify({ state: { project: buildDiagnosticsFixture() }, version: 7 }),
-    schemaVersion: 7
+    raw: JSON.stringify({ state: { project: buildDiagnosticsFixture() }, version: 8 }),
+    schemaVersion: 8
   }, overrides);
 }
 
@@ -197,7 +243,7 @@ function persistedState(project: ElectricalProject = buildProjectFixture(), extr
       darkMode: false,
       ...extra
     },
-    version: 7
+    version: 8
   };
 }
 

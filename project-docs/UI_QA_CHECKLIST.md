@@ -508,3 +508,23 @@ Before merging into `develop`:
 - Snapshot diffs should be reviewed.
 - Phase report should mention any changed visual surfaces.
 - Known issues should be updated if CI exposes environment-specific behavior.
+
+## 2026-05-15 19:04 Europe/Istanbul - Phase 20 Live Flow UI QA
+
+### Automated Coverage Added
+
+- Switch toggle changes lamp visual state.
+- Breaker toggle disables powered lamp.
+- Unsafe explicit wire shows warning state.
+- Lesson sandbox flow still opens and cancels safely.
+- Desktop and mobile floor-plan visual baselines updated for live state rendering.
+
+### Manual QA Checklist
+
+- Toggle a one-way switch and confirm the lamp changes between `خاموش` and `روشن`.
+- Toggle a breaker and confirm downstream loads turn off.
+- Toggle an appliance and confirm active/inactive state feels understandable.
+- Inspect a short-circuit wire and confirm the warning is visible.
+- Check that current pulse animation does not distract from terminal selection.
+- Verify dark mode contrast for live badges.
+- Verify mobile floor-plan baseline still shows routed wire clearly.

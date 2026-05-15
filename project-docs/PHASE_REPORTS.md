@@ -3836,3 +3836,175 @@ No runtime test suite was run for Phase 19 because the changes are documentation
 ### Next Recommended Step
 
 Mehdi should configure the documented `develop` branch protection rule in GitHub settings, then try a small test pull request to confirm GitHub blocks merge until `Kia Electric Lab CI` passes.
+
+## 2026-05-15 19:04 Europe/Istanbul - Phase 20 Engineering Report: Live Electrical Flow Animation And Interactive Circuit Behavior
+
+### Completed Work
+
+Phase 20 made the simulator feel alive for Kiarash by adding persisted switch state, breaker state, load state, a pure live-flow engine, live floor-plan rendering, switch/breaker/appliance interaction, pulsing current-flow markers, powered lamp detection, energized outlet/appliance detection, and unsafe wire visualization.
+
+The implementation keeps the topology engine as the structural graph source of truth. A new live-flow engine overlays runtime behavior such as switch closure and breaker enablement without rewriting topology traversal.
+
+### Modified Files
+
+- `src/types/electrical.ts`
+- `src/migrations/projectMigration.ts`
+- `src/data/apartment.ts`
+- `src/store/useLabStore.ts`
+- `src/features/live-flow-engine/liveFlowEngine.ts`
+- `src/features/live-flow-engine/liveFlowEngine.test.ts`
+- `src/features/floor-plan/FloorPlan.tsx`
+- `tests/e2e/helpers/fixtures.ts`
+- `tests/e2e/phase13-advanced.spec.ts`
+- `tests/e2e/phase13-advanced.spec.ts-snapshots/floor-plan-routed-wire-chromium-win32.png`
+- `tests/e2e/phase16-mobile-visual.mobile.spec.ts-snapshots/mobile-floor-plan-routed-wire-chromium-mobile-win32.png`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/ELECTRICAL_RULES.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+- `project-docs/UI_QA_CHECKLIST.md`
+
+### Dependencies Added
+
+No dependencies were added.
+
+### Architecture Changes
+
+#### Schema Version
+
+Schema version changed from `7` to `8`.
+
+Reason:
+
+- `switchStates`
+- `breakerStates`
+- `loadStates`
+
+are persisted project fields and need migration support.
+
+#### Live Flow Engine
+
+New pure module:
+
+```text
+src/features/live-flow-engine/liveFlowEngine.ts
+```
+
+Responsibilities:
+
+- build live adjacency from existing topology graph wires
+- add breaker internal bridges only when enabled
+- add switch internal bridges only when on
+- calculate powered component state
+- calculate current-carrying wire state
+- detect unsafe wire state
+- provide Persian explanations
+
+#### Zustand Runtime Actions
+
+New store actions:
+
+- `toggleSwitch`
+- `toggleBreaker`
+- `toggleLoad`
+
+These update persisted project runtime state through `touchProject`.
+
+#### UI Rendering
+
+`FloorPlan` now renders live engine output:
+
+- lamp glow
+- switch state labels
+- two-gang independent output buttons
+- outlet/appliance live labels
+- breaker normal/off/overload labels
+- pulsing current markers
+- unsafe wire warning text
+
+### Engineering Decisions
+
+- Did not rewrite the topology engine.
+- Kept live behavior as a pure TypeScript layer.
+- Kept React as rendering/interaction only.
+- Did not automatically trip breakers in Phase 20 because protective timing would need its own educational model.
+- Updated visual baselines only for floor-plan surfaces affected by intentional live-state UI changes.
+
+### Electrical Logic Implemented
+
+Implemented educational runtime rules:
+
+- one-way switch connects `line-in` to `line-out` only when on
+- two-gang switch connects `line-in` independently to enabled output terminals
+- breaker connects `line-in` to `load-out` only when enabled and not tripped
+- load is powered only when phase and neutral paths are complete and load is active
+- wire carries current when it is on a path to a powered load
+- wire is unsafe when it is direct phase-neutral short or above educational current capacity
+
+### Formulas Implemented
+
+No new electrical formulas were added.
+
+Existing current formula is reused:
+
+```text
+I = P / V
+```
+
+The live-flow engine uses that current value to annotate current-carrying and overloaded wire states.
+
+### Persian Educational Feedback
+
+Examples added in live engine output:
+
+- `لامپ روشن است چون فاز از مسیر کنترل‌شده می‌رسد و نول هم مسیر برگشت را کامل کرده است.`
+- `فاز به این قطعه نمی‌رسد؛ کلید، فیوز یا مسیر فاز قطع است.`
+- `نول وصل نیست؛ بدون مسیر برگشت، وسیله روشن نمی‌شود.`
+- `فیوز در شبیه‌سازی خاموش است و خروجی فاز مدار را قطع کرده است.`
+
+### Bugs Found And Fixed
+
+- Initial breaker-disabled simulation still allowed traversal from breaker output. Fixed by returning an empty phase reach set when breaker state is disabled or tripped.
+- Floor-plan visual baselines changed intentionally because live badges and flow state are now rendered. Desktop and mobile routed-wire baselines were regenerated.
+
+### Limitations
+
+- Breakers show overload but do not automatically trip.
+- Direction animation is simplified and does not yet separately explain phase versus neutral return direction.
+- Most lesson validation still uses topology rules; powered-state validation is ready but not broadly integrated.
+- Generated fallback wires are still less visually rich than explicit user-authored wires.
+
+### TODOs
+
+- Add optional educational breaker trip simulation.
+- Add a live-flow explanation panel.
+- Add explicit arrows for phase and neutral flow direction.
+- Integrate powered-state checks into lamp/outlet lessons.
+- Add panelboard live current indicators.
+
+### Risks
+
+- Live-flow behavior depends on terminal IDs staying consistent.
+- More runtime state means future migrations must preserve interactive lesson state.
+- Visual animation can distract if overused; keep it subtle and educational.
+
+### Scalability Concerns
+
+- Future three-phase/grounding/solar behavior should extend the live-flow engine rather than overload topology builder responsibilities.
+- If auto-trip behavior is added, it should be modeled as a separate simulation mode with reset controls.
+- Lesson validation should share live-flow results instead of recalculating powered states.
+
+### Verification
+
+- `npm test`: passed, 13 test files and 64 tests.
+- `npm run build`: passed.
+- `npm run test:e2e`: passed, 29 Playwright tests.
+- Snapshot updates:
+  - desktop floor-plan routed wire baseline regenerated
+  - mobile floor-plan routed wire baseline regenerated
+
+### Next Recommended Step
+
+Phase 21 should add a dedicated Persian live explanation panel that explains the selected component or wire: فاز کجاست، نول کجاست، کلید چه کاری کرده، فیوز وصل است یا قطع، و چرا قطعه روشن یا خاموش است.

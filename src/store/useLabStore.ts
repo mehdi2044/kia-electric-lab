@@ -64,6 +64,9 @@ type LabState = {
   setPixelsPerMeter: (pixelsPerMeter: number) => void;
   assignCircuitToBreaker: (slotId: string, circuitId?: string) => void;
   updatePanelBreaker: (slotId: string, patch: Partial<PanelBreakerSlot>) => void;
+  toggleSwitch: (componentId: string, outputTerminalId?: string) => void;
+  toggleBreaker: (circuitId: string) => void;
+  toggleLoad: (componentId: string) => void;
   setActiveLesson: (lessonId: string) => void;
   useLessonHint: (lessonId: string) => void;
   recordLessonValidation: (lessonId: string, passed: boolean, score: LessonScore, feedbackFa: string) => void;
@@ -331,6 +334,49 @@ export const useLabStore = create<LabState>()(
             panelboard: {
               mainBreakerAmp: state.project.panelboard?.mainBreakerAmp ?? state.project.mainBreakerAmp,
               breakers: getPanelBreakers(state.project).map((breaker) => (breaker.id === slotId ? { ...breaker, ...patch } : breaker))
+            }
+          })
+        })),
+      toggleSwitch: (componentId, outputTerminalId) =>
+        set((state) => {
+          const current = state.project.switchStates?.[componentId] ?? {};
+          const component = state.project.components.find((item) => item.id === componentId);
+          const nextState = component?.type === 'two-gang-switch' && outputTerminalId
+            ? {
+                ...current,
+                outputs: {
+                  ...(current.outputs ?? {}),
+                  [outputTerminalId]: !(current.outputs?.[outputTerminalId] ?? false)
+                }
+              }
+            : { ...current, on: !current.on };
+          return {
+            project: touchProject({
+              ...state.project,
+              switchStates: { ...(state.project.switchStates ?? {}), [componentId]: nextState }
+            })
+          };
+        }),
+      toggleBreaker: (circuitId) =>
+        set((state) => {
+          const current = state.project.breakerStates?.[circuitId] ?? { enabled: true };
+          return {
+            project: touchProject({
+              ...state.project,
+              breakerStates: {
+                ...(state.project.breakerStates ?? {}),
+                [circuitId]: { ...current, enabled: !current.enabled, tripped: false }
+              }
+            })
+          };
+        }),
+      toggleLoad: (componentId) =>
+        set((state) => ({
+          project: touchProject({
+            ...state.project,
+            loadStates: {
+              ...(state.project.loadStates ?? {}),
+              [componentId]: !(state.project.loadStates?.[componentId] ?? true)
             }
           })
         })),

@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 import {
   buildAuditEntryFixture,
+  buildLiveSwitchProjectFixture,
   buildProjectFixture,
+  buildUnsafeWireProjectFixture,
   corruptedProjectJson,
   seedActiveSandbox,
   seedBackup,
@@ -65,6 +67,29 @@ test('app loads core panels', async ({ page }) => {
   await expect(page.getByTestId('project-data-panel')).toBeVisible();
   await expect(page.getByTestId('diagnostics-panel')).toBeVisible();
   await expect(page.getByTestId('audit-viewer')).toBeVisible();
+});
+
+test('live switch toggle changes lamp visual state', async ({ page }) => {
+  await seedProject(page, buildLiveSwitchProjectFixture());
+  await expect(page.getByTestId('live-state-lamp-live')).toContainText('خاموش');
+  await page.getByTestId('component-switch-live').click();
+  await expect(page.getByTestId('switch-state-switch-live')).toContainText('وصل');
+  await expect(page.getByTestId('live-state-lamp-live')).toContainText('روشن');
+  await expect(page.getByTestId('wire-flow-live-switch-lamp')).toBeVisible();
+});
+
+test('breaker toggle disables powered lamp', async ({ page }) => {
+  await seedProject(page, buildLiveSwitchProjectFixture({
+    switchStates: { 'switch-live': { on: true } }
+  }));
+  await expect(page.getByTestId('live-state-lamp-live')).toContainText('روشن');
+  await page.getByTestId('breaker-toggle-c-live').click();
+  await expect(page.getByTestId('live-state-lamp-live')).toContainText('خاموش');
+});
+
+test('unsafe explicit wire shows warning state', async ({ page }) => {
+  await seedProject(page, buildUnsafeWireProjectFixture());
+  await expect(page.getByTestId('wire-warning-unsafe-short-wire')).toBeVisible();
 });
 
 test('lesson sandbox apply modal can be opened and cancelled safely', async ({ page }) => {

@@ -993,3 +993,46 @@ Conclusion:
 ### Electrical Simulation Note
 
 No runtime behavior changed. No electrical simulation behavior changed. No formulas changed.
+
+## 2026-05-15 19:04 Europe/Istanbul - Phase 20 Live Electrical Flow Animation And Interactive Circuit Behavior
+
+### Change Summary
+
+Phase 20 returns focus from governance to the learner experience. Kia Electric Lab now has a pure live-flow engine that interprets switch state, breaker state, load state, energized loads, current-carrying wires, and unsafe wires without rewriting the topology engine. The floor plan now reacts visually: switches toggle, lamps glow, outlets/appliances show live state, breakers can be enabled/disabled, and current-carrying wires pulse.
+
+### New Completed Systems
+
+- Project schema version `8`.
+- Runtime state fields:
+  - `switchStates`
+  - `breakerStates`
+  - `loadStates`
+- Pure live-flow engine:
+  - `src/features/live-flow-engine/liveFlowEngine.ts`
+- Live behavior:
+  - one-way switch on/off
+  - two-gang switch independent outputs
+  - breaker enable/disable
+  - appliance active/inactive toggling
+  - powered lamp detection
+  - energized outlet/appliance detection
+  - current-carrying wire detection
+  - unsafe wire state detection
+- UI:
+  - lamp glow
+  - live state badges
+  - switch state badges
+  - breaker state badges
+  - pulsing current markers on energized current paths
+  - warning label on unsafe wires
+
+### Important Decisions
+
+- The topology engine remains the structural graph builder.
+- The live-flow engine overlays controlled internal bridges for switch and breaker behavior.
+- React renders live state but does not calculate electrical truth.
+- Schema version changed because persisted project state now includes runtime electrical interaction state.
+
+### Electrical Simulation Note
+
+Electrical formulas did not change. Phase 20 adds live state interpretation on top of existing terminal-aware topology and current assumptions.

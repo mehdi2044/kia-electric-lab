@@ -1,6 +1,6 @@
-import type { ElectricalProject, ElectricalWire, LessonAttempt, LessonProgress, PanelBreakerSlot, Point2D } from '../types/electrical';
+import type { BreakerRuntimeState, ElectricalProject, ElectricalWire, LessonAttempt, LessonProgress, PanelBreakerSlot, Point2D, SwitchState } from '../types/electrical';
 
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 export const CURRENT_APP_VERSION = '0.18-phase18-github-baseline';
 export const PROJECT_STORAGE_KEY = 'kia-electric-lab-project';
 export const BACKUP_STORAGE_KEY = 'kia-electric-lab-project-backups';
@@ -223,6 +223,46 @@ function migrateToV7(project: UnknownRecord): ElectricalProject {
   };
 }
 
+function normalizeSwitchStates(value: unknown): Record<string, SwitchState> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([componentId, state]) => {
+      if (!isRecord(state)) return [];
+      const outputs = isRecord(state.outputs)
+        ? Object.fromEntries(Object.entries(state.outputs).map(([terminalId, enabled]) => [terminalId, Boolean(enabled)]))
+        : undefined;
+      return [[componentId, { on: Boolean(state.on), outputs } satisfies SwitchState]];
+    })
+  );
+}
+
+function normalizeBreakerStates(value: unknown): Record<string, BreakerRuntimeState> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([circuitId, state]) => {
+      if (!isRecord(state)) return [];
+      return [[circuitId, { enabled: state.enabled !== false, tripped: Boolean(state.tripped) } satisfies BreakerRuntimeState]];
+    })
+  );
+}
+
+function normalizeLoadStates(value: unknown): Record<string, boolean> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(Object.entries(value).map(([componentId, enabled]) => [componentId, enabled !== false]));
+}
+
+function migrateToV8(project: UnknownRecord): ElectricalProject {
+  const migrated = migrateToV7(project);
+  return {
+    ...migrated,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    appVersion: CURRENT_APP_VERSION,
+    switchStates: normalizeSwitchStates(project.switchStates),
+    breakerStates: normalizeBreakerStates(project.breakerStates),
+    loadStates: normalizeLoadStates(project.loadStates)
+  };
+}
+
 export function migrateProject(project: unknown): MigrationResult {
   if (!isRecord(project)) {
     throw new Error('Project is not an object');
@@ -237,7 +277,8 @@ export function migrateProject(project: unknown): MigrationResult {
   if (fromVersion < 5) working = migrateToV5(working) as unknown as UnknownRecord;
   if (fromVersion < 6) working = migrateToV6(working) as unknown as UnknownRecord;
   if (fromVersion < 7) working = migrateToV7(working) as unknown as UnknownRecord;
-  if (fromVersion >= 7) working = migrateToV7(working) as unknown as UnknownRecord;
+  if (fromVersion < 8) working = migrateToV8(working) as unknown as UnknownRecord;
+  if (fromVersion >= 8) working = migrateToV8(working) as unknown as UnknownRecord;
 
   const migrated = working as unknown as ElectricalProject;
   const validation = validateMigratedProject(migrated);
@@ -267,6 +308,8 @@ export function validateMigratedProject(project: ElectricalProject): ValidationR
   if (!Array.isArray(project.circuits)) errorsFa.push('لیست مدارها معتبر نیست.');
   if (!Number.isFinite(project.pixelsPerMeter) || (project.pixelsPerMeter ?? 0) < 6) errorsFa.push('مقیاس نقشه معتبر نیست.');
   if (!project.lessonProgress || !Array.isArray(project.lessonProgress.completedLessonIds)) errorsFa.push('پیشرفت درس‌ها معتبر نیست.');
+  if (!project.switchStates || typeof project.switchStates !== 'object') errorsFa.push('وضعیت کلیدها معتبر نیست.');
+  if (!project.breakerStates || typeof project.breakerStates !== 'object') errorsFa.push('وضعیت فیوزها معتبر نیست.');
 
   project.circuits.forEach((circuit) => {
     if (!circuit.id) errorsFa.push('یک مدار بدون شناسه پیدا شد.');

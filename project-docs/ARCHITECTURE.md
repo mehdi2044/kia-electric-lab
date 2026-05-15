@@ -1953,6 +1953,85 @@ runs:
 
 It does not call `npm ci` automatically, because local reinstalling is slow and can be disruptive. Developers should run `npm ci` manually when reproducing a clean CI environment.
 
+## 2026-05-15 19:04 Europe/Istanbul - Phase 20 Live Flow Engine Architecture
+
+### Change Type
+
+Interactive electrical runtime state, pure live-flow simulation, and animated floor-plan rendering.
+
+### Runtime State Additions
+
+`ElectricalProject` now includes:
+
+- `switchStates`
+- `breakerStates`
+- `loadStates`
+
+These fields are persisted because user interaction should survive reloads and lesson sandbox sessions.
+
+### Schema Version
+
+Current schema version:
+
+```text
+8
+```
+
+Reason:
+
+Phase 20 adds persisted runtime fields for live circuit behavior.
+
+### Live Flow Engine
+
+New module:
+
+```text
+src/features/live-flow-engine/liveFlowEngine.ts
+```
+
+Responsibilities:
+
+- build live adjacency from topology graph wires
+- add internal breaker bridges only when the breaker is enabled
+- add internal switch bridges only when switch outputs are on
+- determine powered loads
+- determine energized components
+- determine current-carrying wires
+- determine unsafe wire states
+- generate teenager-friendly Persian explanations
+
+### Separation Of Concerns
+
+- `topology-engine`: structural terminals and wires.
+- `live-flow-engine`: runtime switch/breaker/load interpretation.
+- `floor-plan`: visual rendering and user interaction only.
+- Zustand store: persisted state mutation actions.
+
+React UI does not calculate electrical truth. It calls the pure live-flow engine and renders the returned state.
+
+### UI Architecture
+
+Floor-plan components now render live state:
+
+- lamps glow when powered
+- switches show `وصل` or `قطع`
+- two-gang switch outputs can be toggled independently
+- outlets/appliances show `روشن`, `برقدار`, or `خاموش`
+- breakers show `وصل`, `قطع`, or `اضافه‌بار`
+- wires pulse when carrying current
+- unsafe wires show warning text
+
+### Test Architecture
+
+Added:
+
+- unit tests for switch state behavior
+- powered lamp detection
+- breaker disabled behavior
+- current-flow state generation
+- unsafe wire state
+- Playwright tests for switch toggling, breaker toggling, unsafe wire UI, and preserved sandbox behavior
+
 ## 2026-05-15 13:39 Europe/Istanbul - Phase 18 Release Baseline And GitHub Onboarding Architecture
 
 ### Change Type

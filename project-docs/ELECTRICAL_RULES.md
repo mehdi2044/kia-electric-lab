@@ -812,3 +812,60 @@ Handling:
 
 - Migration normalizes missing scale to the educational default.
 - Validation rejects structurally invalid scale.
+## 2026-05-15 19:04 Europe/Istanbul - Phase 20 Live Circuit Behavior Rules
+
+### Educational Runtime Assumption
+
+Phase 20 adds interactive circuit behavior for teaching. It is still an educational approximation, not a professional electrical design model.
+
+### Switch Behavior
+
+- A one-way switch connects `line-in` to `line-out` only when the switch state is on.
+- A two-gang switch has independent output states:
+  - `line-out-1`
+  - `line-out-2`
+- When a switch output is off, the phase path through that output is open.
+
+### Breaker Behavior
+
+- A breaker connects `line-in` to `load-out` only when enabled and not tripped.
+- When a breaker is disabled, the live-flow engine treats the circuit phase output as disconnected.
+- Overload is educational and visual; Phase 20 does not automatically trip breakers.
+
+### Powered Load Behavior
+
+A lamp, outlet, or appliance is considered energized when:
+
+- phase reaches its phase terminal
+- neutral reaches its neutral terminal
+
+A load is considered powered when:
+
+- it is energized
+- the load is active
+- for appliances, `loadStates[componentId] !== false`
+
+### Wire Flow Behavior
+
+A wire is considered carrying current when it lies on a path to at least one powered load.
+
+Unsafe wire state is shown when:
+
+- the wire is part of a direct phase-neutral short
+- calculated current exceeds the educational wire capacity
+
+### Persian Educational Explanations
+
+Live feedback must explain simply:
+
+- whether phase reaches the component
+- whether neutral returns to the panel
+- whether the switch opened or closed the path
+- whether the breaker has disconnected the circuit
+- whether the wire is unsafe
+
+Typical explanation style:
+
+```text
+لامپ روشن است چون فاز از مسیر کنترل‌شده می‌رسد و نول هم مسیر برگشت را کامل کرده است.
+```

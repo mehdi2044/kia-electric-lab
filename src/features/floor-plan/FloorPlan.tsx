@@ -9,6 +9,7 @@ import { generateTopologyWarnings } from '../validation-engine/validationEngine'
 import { calculateWireGeometryLength, getWirePathPoints } from '../topology-engine/wireGeometry';
 import { generateLessonHighlight } from '../lesson-mode/lessonSandbox';
 import { validateLesson } from '../lesson-mode/lessonValidation';
+import { simulateLiveCircuitState } from '../live-flow-engine/liveFlowEngine';
 
 const palette: Record<string, string> = {
   living: 'bg-teal-50 border-teal-200 dark:bg-teal-950/40 dark:border-teal-900',
@@ -83,7 +84,14 @@ export function FloorPlan() {
   const updateWireBendPoint = useLabStore((state) => state.updateWireBendPoint);
   const removeWireBendPoint = useLabStore((state) => state.removeWireBendPoint);
   const resetWireRoute = useLabStore((state) => state.resetWireRoute);
+  const toggleSwitch = useLabStore((state) => state.toggleSwitch);
+  const toggleBreaker = useLabStore((state) => state.toggleBreaker);
+  const toggleLoad = useLabStore((state) => state.toggleLoad);
   const [draggingBend, setDraggingBend] = useState<{ wireId: string; index: number } | undefined>();
+  const liveState = useMemo(() => simulateLiveCircuitState(project), [project]);
+  const liveComponents = useMemo(() => new Map(liveState.components.map((component) => [component.componentId, component])), [liveState]);
+  const liveWires = useMemo(() => new Map(liveState.wires.map((wire) => [wire.wireId, wire])), [liveState]);
+  const liveBreakers = useMemo(() => new Map(liveState.breakers.map((breaker) => [breaker.circuitId, breaker])), [liveState]);
   const lessonHighlight = useMemo(() => {
     if (!lessonSandbox) return undefined;
     const preview = validateLesson(project, lessonSandbox.activeLessonId, 0);
@@ -154,6 +162,18 @@ export function FloorPlan() {
     () =>
       project.components.map((component) => {
         const topologyNode = createComponentNode(component);
+        const live = liveComponents.get(component.id);
+        const isSwitch = component.type === 'one-way-switch' || component.type === 'two-gang-switch';
+        const isLampPowered = component.type === 'lamp' && live?.powered;
+        const isEnergizedLoad = live?.energized;
+        const switchState = project.switchStates?.[component.id];
+        const background = component.type === 'main-panel'
+          ? '#111827'
+          : isLampPowered
+            ? '#fef9c3'
+            : isEnergizedLoad
+              ? '#ecfeff'
+              : '#ffffff';
         return {
         id: component.id,
         position: { x: component.x, y: component.y },
@@ -162,21 +182,60 @@ export function FloorPlan() {
           width: 112,
           border: lessonHighlight?.componentIds.includes(component.id) ? '3px solid #14b8a6' : component.circuitId === selectedCircuitId ? '2px solid #0f766e' : '1px solid #cbd5e1',
           borderRadius: 8,
-          background: component.type === 'main-panel' ? '#111827' : '#ffffff',
+          background,
           color: component.type === 'main-panel' ? '#ffffff' : '#0f172a',
-          boxShadow: '0 8px 22px rgba(15, 23, 42, 0.12)'
+          boxShadow: isLampPowered ? '0 0 28px rgba(250, 204, 21, 0.65)' : '0 8px 22px rgba(15, 23, 42, 0.12)'
         },
         data: {
           label: (
             <div className="flex w-full flex-col items-center gap-1 p-2 text-center text-[11px]">
               <button
                 className="flex flex-col items-center gap-1"
-                onClick={() => component.type !== 'main-panel' && assignComponentToCircuit(selectedCircuitId, component.id)}
-                title="افزودن به مدار انتخاب‌شده"
+                data-testid={`component-${component.id}`}
+                onClick={() => {
+                  if (component.type === 'main-panel') return;
+                  if (component.type === 'one-way-switch') {
+                    toggleSwitch(component.id);
+                    return;
+                  }
+                  if (component.type === 'appliance') {
+                    toggleLoad(component.id);
+                    return;
+                  }
+                  assignComponentToCircuit(selectedCircuitId, component.id);
+                }}
+                title={isSwitch ? 'تغییر وضعیت کلید' : component.type === 'appliance' ? 'روشن/خاموش کردن مصرف‌کننده' : 'افزودن به مدار انتخاب‌شده'}
               >
-                <Icon name={iconForComponent(component.type)} className="h-4 w-4" />
+                <Icon name={iconForComponent(component.type)} className={`h-4 w-4 ${isLampPowered ? 'text-amber-500' : ''}`} />
                 <span>{component.labelFa}</span>
               </button>
+              {component.type === 'one-way-switch' ? (
+                <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${switchState?.on ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`} data-testid={`switch-state-${component.id}`}>
+                  {switchState?.on ? 'وصل' : 'قطع'}
+                </span>
+              ) : null}
+              {component.type === 'two-gang-switch' ? (
+                <div className="flex gap-1">
+                  {['line-out-1', 'line-out-2'].map((terminalId, index) => (
+                    <button
+                      key={terminalId}
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${switchState?.outputs?.[terminalId] ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}
+                      data-testid={`switch-state-${component.id}-${terminalId}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleSwitch(component.id, terminalId);
+                      }}
+                    >
+                      {index + 1}: {switchState?.outputs?.[terminalId] ? 'وصل' : 'قطع'}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {live && component.type !== 'one-way-switch' && component.type !== 'two-gang-switch' ? (
+                <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${live.powered ? 'bg-amber-100 text-amber-800' : live.energized ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-500'}`} data-testid={`live-state-${component.id}`} title={live.explanationFa}>
+                  {live.powered ? 'روشن' : live.energized ? 'برقدار' : 'خاموش'}
+                </span>
+              ) : null}
               <div className="mt-1 flex flex-wrap justify-center gap-1">
                 {topologyNode.terminals.map((terminal) => {
                   const ref: ElectricalTerminalRef = { componentId: component.id, terminalId: terminal.id };
@@ -196,12 +255,14 @@ export function FloorPlan() {
         }
       };
     }),
-    [assignComponentToCircuit, highlightedTerminalKeys, lessonHighlight, pendingTerminal, project.components, selectTerminalForWire, selectedCircuitId]
+    [assignComponentToCircuit, highlightedTerminalKeys, lessonHighlight, liveComponents, pendingTerminal, project.components, project.switchStates, selectTerminalForWire, selectedCircuitId, toggleLoad, toggleSwitch]
   );
 
   const breakerNodes: Node[] = useMemo(
     () =>
-      virtualBreakerNodes.map(({ node, x, y }) => ({
+      virtualBreakerNodes.map(({ node, x, y }) => {
+        const live = node.circuitId ? liveBreakers.get(node.circuitId) : undefined;
+        return {
         id: node.id,
         position: { x, y },
         draggable: false,
@@ -209,15 +270,25 @@ export function FloorPlan() {
           width: 112,
           border: node.circuitId === selectedCircuitId ? '2px solid #0f766e' : '1px solid #cbd5e1',
           borderRadius: 8,
-          background: '#fff7ed',
-          color: '#7c2d12',
+          background: live?.enabled === false ? '#f1f5f9' : live?.overloaded ? '#fee2e2' : '#fff7ed',
+          color: live?.enabled === false ? '#475569' : live?.overloaded ? '#991b1b' : '#7c2d12',
           boxShadow: '0 8px 22px rgba(15, 23, 42, 0.10)'
         },
         data: {
           label: (
             <div className="flex w-full flex-col items-center gap-1 p-2 text-center text-[11px]">
-              <Icon name="CircleGauge" className="h-4 w-4" />
-              <span>{node.labelFa}</span>
+              <button
+                className="flex flex-col items-center gap-1"
+                data-testid={`breaker-toggle-${node.circuitId}`}
+                onClick={() => node.circuitId && toggleBreaker(node.circuitId)}
+                title={live?.explanationFa ?? 'تغییر وضعیت فیوز'}
+              >
+                <Icon name="CircleGauge" className="h-4 w-4" />
+                <span>{node.labelFa}</span>
+                <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${live?.enabled === false ? 'bg-slate-200 text-slate-600' : live?.overloaded ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                  {live?.enabled === false ? 'قطع' : live?.overloaded ? 'اضافه‌بار' : 'وصل'}
+                </span>
+              </button>
               <div className="mt-1 flex gap-1">
                 {node.terminals.map((terminal) => {
                   const ref: ElectricalTerminalRef = { componentId: node.id, terminalId: terminal.id };
@@ -234,8 +305,9 @@ export function FloorPlan() {
             </div>
           )
         }
-      })),
-    [pendingTerminal, selectTerminalForWire, selectedCircuitId, virtualBreakerNodes]
+      };
+      }),
+    [liveBreakers, pendingTerminal, selectTerminalForWire, selectedCircuitId, toggleBreaker, virtualBreakerNodes]
   );
 
   const edges: Edge[] = useMemo(
@@ -253,6 +325,7 @@ export function FloorPlan() {
     () =>
       (project.wires ?? []).map((wire) => {
         const validation = validateTerminalConnection(project, wire.from, wire.to);
+        const live = liveWires.get(wire.id);
         const invalid = !validation.valid || invalidWireIds.has(wire.id);
         const points = getWirePathPoints(project, wire);
         return {
@@ -260,10 +333,11 @@ export function FloorPlan() {
           invalid,
           points,
           lengthMeters: calculateWireGeometryLength(project, wire),
-          color: invalid ? '#e11d48' : wireColors[wire.kind ?? 'phase']
+          live,
+          color: invalid || live?.unsafe ? '#e11d48' : wireColors[wire.kind ?? 'phase']
         };
       }),
-    [invalidWireIds, project]
+    [invalidWireIds, liveWires, project]
   );
 
   const ghostWirePoints = useMemo(() => {
@@ -375,8 +449,10 @@ export function FloorPlan() {
               </text>
             </g>
           ) : null}
-          {routedWires.map(({ wire, invalid, points, color, lengthMeters }) => {
+          {routedWires.map(({ wire, invalid, points, color, lengthMeters, live }) => {
             if (points.length < 2) return null;
+            const middle = points[Math.floor(points.length / 2)];
+            const next = points[Math.min(points.length - 1, Math.floor(points.length / 2) + 1)];
             return (
               <g key={wire.id}>
                 <polyline
@@ -384,7 +460,8 @@ export function FloorPlan() {
                   fill="none"
                   stroke={color}
                   strokeWidth={wire.id === selectedWireId ? 5 : 3}
-                  strokeDasharray={invalid ? '8 5' : undefined}
+                  strokeDasharray={invalid || live?.unsafe ? '8 5' : live?.carryingCurrent ? '10 6' : undefined}
+                  opacity={live?.energized || live?.carryingCurrent ? 1 : 0.55}
                   className="pointer-events-auto cursor-pointer"
                   onClick={() => selectWire(wire.id)}
                   onDoubleClick={(event) => {
@@ -392,6 +469,21 @@ export function FloorPlan() {
                     selectWire(wire.id);
                   }}
                 />
+                {live?.carryingCurrent ? (
+                  <circle r={5} fill={color} className="animate-pulse" data-testid={`wire-flow-${wire.id}`}>
+                    <animateMotion dur="1.4s" repeatCount="indefinite" path={`M ${points.map((point) => `${point.x} ${point.y}`).join(' L ')}`} />
+                  </circle>
+                ) : null}
+                {live?.unsafe ? (
+                  <text x={middle.x + 8} y={middle.y + 14} fill="#e11d48" fontSize="11" fontWeight="700" data-testid={`wire-warning-${wire.id}`}>
+                    هشدار
+                  </text>
+                ) : null}
+                {live?.carryingCurrent && wire.id === selectedWireId ? (
+                  <text x={next.x + 8} y={next.y + 14} fill={color} fontSize="11" fontWeight="700">
+                    {live.currentAmp.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}A
+                  </text>
+                ) : null}
                 <circle cx={points[0].x} cy={points[0].y} r={5} fill={color} />
                 <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={5} fill={color} />
                 {wire.id === selectedWireId ? (

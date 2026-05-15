@@ -67,6 +67,16 @@ export interface ElectricalComponent {
   costPointType?: 'outlet' | 'switch' | 'lamp' | 'junction';
 }
 
+export interface SwitchState {
+  on?: boolean;
+  outputs?: Record<string, boolean>;
+}
+
+export interface BreakerRuntimeState {
+  enabled: boolean;
+  tripped?: boolean;
+}
+
 export interface Wire {
   sizeMm2: number;
   maxAmp: number;
@@ -285,4 +295,7 @@ export interface ElectricalProject {
   lessonProgress?: LessonProgress;
   applyAuditLog?: ApplyAuditEntry[];
   useExplicitWiresOnly?: boolean;
+  switchStates?: Record<string, SwitchState>;
+  breakerStates?: Record<string, BreakerRuntimeState>;
+  loadStates?: Record<string, boolean>;
 }
