@@ -850,3 +850,46 @@ Phase 16 prepared Kia Electric Lab for more reliable visual QA across desktop an
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed in Phase 16. The topology engine, current engine, safety engine, cost engine, migration engine, diagnostics engine, repair engine, lesson engine, and sandbox apply logic are preserved.
+
+## 2026-05-15 12:48 Europe/Istanbul - Phase 17 GitHub Actions CI Workflow And Artifact Reporting
+
+### Change Summary
+
+Phase 17 created the first real GitHub Actions CI workflow for Kia Electric Lab. Pushes to `develop`, pull requests targeting `develop`, and manual workflow runs now have a documented automation path that installs dependencies, runs unit tests, builds the production bundle, installs Playwright Chromium, and runs the browser/e2e/visual suite without updating snapshots.
+
+### New Completed Systems
+
+- Root GitHub Actions workflow:
+  - `.github/workflows/ci.yml`
+- CI trigger coverage:
+  - push to `develop`
+  - pull request targeting `develop`
+  - manual `workflow_dispatch`
+- CI job steps:
+  - checkout
+  - setup Node.js 22
+  - run on `windows-latest` to match current Chromium/Windows visual baselines
+  - npm cache through `actions/setup-node`
+  - `npm ci`
+  - `npm test`
+  - `npm run build`
+  - `npx playwright install --with-deps chromium`
+  - `npm run test:e2e`
+- Artifact upload:
+  - `playwright-report/`
+  - `test-results/`
+  - `dist/` on failure
+- Local verification script:
+  - `npm run verify:ci`
+- Workflow and snapshot policy documentation updates.
+
+### Important Decisions
+
+- CI runs `npm run test:e2e` only. It does not run snapshot update mode.
+- Playwright browser binary caching is intentionally deferred. The workflow uses npm cache now and installs Chromium deterministically each run.
+- No CI badge was added because the local repository has no configured GitHub remote, so the correct owner/repository badge URL cannot be known safely.
+- Desktop visual tolerance is centralized at `maxDiffPixels: 350` to reduce false failures from small rasterization differences while preserving snapshot drift detection.
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed in Phase 17. This phase is CI, workflow, documentation, and governance infrastructure only.

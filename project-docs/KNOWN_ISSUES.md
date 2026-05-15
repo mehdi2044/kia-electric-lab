@@ -1200,3 +1200,63 @@ The test architecture now separates desktop and mobile Chromium lanes, but Firef
 Recommended fix:
 
 - Trial Firefox and WebKit in CI after browser caching and snapshot review rules are stable.
+
+## 2026-05-15 12:48 Europe/Istanbul - Known Issues Update After Phase 17
+
+### KI-050 Status Update - CI Workflow Added
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- `.github/workflows/ci.yml` now defines a GitHub Actions workflow for pushes to `develop`, pull requests targeting `develop`, and manual dispatch.
+
+### KI-053 - README CI Badge Requires GitHub Remote
+
+Severity: Low.
+
+Description:
+
+The repository currently has no configured Git remote, so the exact GitHub owner/repository URL is unknown. Adding a badge with a guessed URL would create a misleading or broken README badge.
+
+Recommended fix:
+
+- After the GitHub repository remote is configured, add the workflow badge using the real repository path.
+
+### KI-054 - Playwright Browser Cache Deferred
+
+Severity: Low.
+
+Description:
+
+CI currently uses npm caching and installs Playwright Chromium on each run. This is deterministic but slower than a tuned browser cache.
+
+Recommended fix:
+
+- After first CI runs are stable, evaluate caching Playwright browser binaries with a cache key tied to OS and Playwright version.
+
+### KI-054A - CI Snapshot Platform Is Windows
+
+Severity: Low.
+
+Description:
+
+The CI workflow runs on `windows-latest` because current committed visual snapshots use Chromium/Windows filenames and rendering. This is intentional for the first CI baseline.
+
+Recommended fix:
+
+- If the team wants Linux CI later, migrate visual snapshots deliberately and regenerate approved Linux baselines in a dedicated phase.
+
+### KI-055 - CI Has Single Job Only
+
+Severity: Low.
+
+Description:
+
+The initial CI workflow uses one job for dependency install, unit tests, build, browser install, and e2e tests. This is simple and maintainable, but it does not parallelize the pipeline.
+
+Recommended fix:
+
+- Split into separate jobs only if runtime becomes a bottleneck.
