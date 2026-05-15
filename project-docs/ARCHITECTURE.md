@@ -1952,3 +1952,64 @@ runs:
 3. Playwright e2e and visual tests
 
 It does not call `npm ci` automatically, because local reinstalling is slow and can be disruptive. Developers should run `npm ci` manually when reproducing a clean CI environment.
+
+## 2026-05-15 13:39 Europe/Istanbul - Phase 18 Release Baseline And GitHub Onboarding Architecture
+
+### Change Type
+
+Release baseline documentation, version metadata, remote setup workflow, and onboarding architecture.
+
+### Version Metadata
+
+Project metadata now identifies the Phase 18 baseline:
+
+- package version: `0.18.0`
+- app version marker: `0.18-phase18-github-baseline`
+- release tag: `v0.18-phase18-github-baseline`
+
+The schema version remains:
+
+```text
+7
+```
+
+Reason:
+
+Phase 18 does not change persisted project shape. Only product/release metadata changed.
+
+### GitHub Remote Architecture
+
+No remote is configured locally. The architecture therefore documents remote setup as a handoff procedure rather than hardcoding a repository URL.
+
+Expected repository name:
+
+```text
+kia-electric-lab
+```
+
+Supported remote patterns:
+
+- HTTPS: `https://github.com/<owner>/kia-electric-lab.git`
+- SSH: `git@github.com:<owner>/kia-electric-lab.git`
+
+The actual `<owner>` must come from Mehdi's GitHub repository URL.
+
+### Release Documentation Architecture
+
+Release-level onboarding now lives in:
+
+- `README.md`
+- `RELEASE_NOTES.md`
+- `DEVELOPMENT_WORKFLOW.md`
+
+Detailed project continuity remains in:
+
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Badge Strategy
+
+README currently contains a CI badge placeholder. The actual badge should be added after `origin` is configured, because the badge URL requires the real GitHub owner/repository path.

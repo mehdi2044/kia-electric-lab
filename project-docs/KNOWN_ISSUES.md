@@ -1260,3 +1260,43 @@ The initial CI workflow uses one job for dependency install, unit tests, build, 
 Recommended fix:
 
 - Split into separate jobs only if runtime becomes a bottleneck.
+
+## 2026-05-15 13:39 Europe/Istanbul - Known Issues Update After Phase 18
+
+### KI-053 Status Update - README Badge Placeholder Added
+
+Status:
+
+- Partially resolved.
+
+Resolution:
+
+- README now includes a CI badge placeholder and explains that the real badge should be added after the GitHub remote URL is configured.
+
+Remaining limitation:
+
+- No actual badge URL exists yet because no Git remote is configured locally.
+
+### KI-056 - GitHub Remote Not Configured
+
+Severity: Medium.
+
+Description:
+
+The local repository has no `origin` remote. GitHub Actions workflow and README documentation are ready, but CI cannot run until the repository is created and pushed.
+
+Recommended fix:
+
+- Mehdi should create the GitHub repository `kia-electric-lab`, provide the final URL, then run the documented `git remote add origin` and push commands.
+
+### KI-057 - Phase 18 Tag Is Local Until Pushed
+
+Severity: Low.
+
+Description:
+
+The release baseline tag exists locally but will not appear on GitHub until tags are pushed.
+
+Recommended fix:
+
+- After configuring `origin`, run `git push origin --tags`.

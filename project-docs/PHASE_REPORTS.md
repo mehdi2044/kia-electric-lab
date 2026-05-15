@@ -3291,3 +3291,238 @@ The GitHub Actions workflow itself cannot be executed locally without pushing to
 ### Next Recommended Step
 
 After pushing to GitHub, Phase 18 should review the first CI artifact output, add the real CI badge once the repository URL is known, and configure branch protection on `develop`. A later dedicated phase can decide whether Linux should become the canonical snapshot environment.
+
+## 2026-05-15 13:39 Europe/Istanbul - Phase 18 Engineering Report: GitHub Remote, Release Baseline, README Badges, And Version Tagging
+
+### Completed Work
+
+Phase 18 converted the project from an internally documented engineering workspace into a GitHub-ready release baseline. The work checked the remote state, avoided inventing a repository URL, upgraded README onboarding, created release notes, updated version metadata, documented GitHub remote setup commands, and prepared the local version tag `v0.18-phase18-github-baseline`.
+
+This phase is release governance and project onboarding work. It does not change simulator runtime behavior, electrical calculations, topology validation, cost logic, lesson logic, or storage schema shape.
+
+### Modified Files
+
+- `README.md`
+- `RELEASE_NOTES.md`
+- `DEVELOPMENT_WORKFLOW.md`
+- `package.json`
+- `package-lock.json`
+- `src/migrations/projectMigration.ts`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/ARCHITECTURE.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Dependencies Added
+
+No dependency was added.
+
+### Architecture Changes
+
+#### Release Metadata
+
+Package metadata changed from:
+
+```text
+0.1.0
+```
+
+to:
+
+```text
+0.18.0
+```
+
+App version marker changed from:
+
+```text
+0.8-phase8-lesson-sandbox
+```
+
+to:
+
+```text
+0.18-phase18-github-baseline
+```
+
+The schema version remains:
+
+```text
+7
+```
+
+Reason:
+
+Phase 18 does not add or remove persisted project fields. Updating `schemaVersion` would incorrectly imply a data-shape migration.
+
+#### README Onboarding
+
+README now covers:
+
+- project vision
+- educational safety disclaimer
+- current phase status
+- implemented capabilities
+- tech stack
+- local run commands
+- verification commands
+- GitHub CI behavior
+- remote setup instructions
+- screenshots and visual baseline notes
+- project structure
+- contribution workflow
+- governance roles
+
+#### Release Notes
+
+`RELEASE_NOTES.md` now summarizes:
+
+- Phases 1-18
+- current capabilities
+- known limitations
+- recommended next phase
+
+#### GitHub Remote Guidance
+
+No remote exists locally. The documentation provides exact command patterns but keeps `<owner>` as a required real value from GitHub.
+
+Required repository name:
+
+```text
+kia-electric-lab
+```
+
+Commands prepared:
+
+```text
+git remote add origin <repo-url>
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+### Engineering Decisions
+
+- Did not add `origin` because the final GitHub URL is not available.
+- Did not guess GitHub owner/repository URL.
+- Used a README badge placeholder instead of a broken guessed badge.
+- Chose `v0.18-phase18-github-baseline` because Phase 18 includes release documentation and metadata changes.
+- Updated app version marker without changing schema version.
+- Kept release notes high-level enough for product onboarding while leaving detailed engineering history in `project-docs/PHASE_REPORTS.md`.
+
+### Electrical Logic Implemented
+
+No electrical logic was implemented or changed.
+
+Preserved systems:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- migration engine
+- diagnostics engine
+- repair engine
+- lesson engine
+- lesson sandbox apply logic
+
+### Formulas Implemented
+
+No new formulas were implemented.
+
+Existing formulas remain unchanged:
+
+- `I = P / V`
+- `P = V * I`
+- `R = V / I`
+- simplified voltage drop from current and cable resistance
+- total parallel load as summed watts and `TotalCurrent = TotalPower / 220`
+
+### Bugs Found And Fixed
+
+No runtime bugs were found.
+
+Documentation and metadata issues fixed:
+
+- README still described early MVP Phase 1 scope instead of the current Phase 18 project.
+- package version still showed `0.1.0`.
+- app version marker still showed the Phase 8 lesson sandbox identifier.
+- release notes did not exist.
+- remote setup instructions were not consolidated in onboarding docs.
+- apply preview visual baseline captured the full overlay, so intentional background app-version metadata changes affected the snapshot. The test now captures the dialog surface and the approved baseline was regenerated locally.
+
+### Limitations
+
+- Remote is still not configured because the real GitHub URL is unknown.
+- CI badge remains a placeholder.
+- The release tag is local until pushed.
+- GitHub branch protection cannot be configured from this local workspace.
+- First real GitHub Actions run still needs review after the repository is pushed.
+
+### TODOs
+
+- Mehdi should create the GitHub repository `kia-electric-lab`.
+- Add `origin` with the real GitHub URL.
+- Push `develop`, `main`, and tags.
+- Add the real CI badge to README.
+- Review first GitHub Actions artifacts.
+- Configure branch protection requiring CI before merge to `develop`.
+
+### Risks
+
+- If an incorrect remote URL is used, pushes may go to the wrong repository. This is why the docs require the real GitHub-provided URL.
+- The `main` branch may lag behind `develop` if not pushed or merged intentionally.
+- GitHub Actions visual tests may expose platform-specific screenshot drift on first remote run.
+- A local tag does not protect release history until pushed to GitHub.
+
+### Scalability Concerns
+
+- Release notes should become per-version rather than one growing file if releases become frequent.
+- GitHub release automation may be useful after the first remote baseline.
+- Branch protection and required CI checks should be configured before multiple contributors begin work.
+- Future package metadata should be coordinated with app version and release notes in the same phase.
+
+### GitHub Remote Handoff
+
+Because no remote is configured, Mehdi should create:
+
+```text
+kia-electric-lab
+```
+
+Then run either HTTPS:
+
+```text
+git remote add origin https://github.com/<owner>/kia-electric-lab.git
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+or SSH:
+
+```text
+git remote add origin git@github.com:<owner>/kia-electric-lab.git
+git push -u origin develop
+git push origin main
+git push origin --tags
+```
+
+### Verification
+
+Commands to run before final merge/tag:
+
+- `npm run test:e2e:update -- --project=chromium tests/e2e/phase13-advanced.spec.ts -g "apply preview modal RTL layout"`: passed, approved dialog-only modal baseline regenerated.
+- `npm run verify:ci`: passed. This executed `npm test`, `npm run build`, and `npm run test:e2e`.
+
+Detailed result:
+
+- `npm test`: passed, 12 test files and 60 tests.
+- `npm run build`: passed, production bundle generated.
+- `npm run test:e2e`: passed, 26 Playwright tests.
+
+### Next Recommended Step
+
+After the real GitHub remote is created, push `develop`, `main`, and tags. Then review the first GitHub Actions run, add the real CI badge to README, and configure branch protection for `develop`.

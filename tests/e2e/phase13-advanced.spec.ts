@@ -276,7 +276,7 @@ test.describe('visual regression baseline', () => {
   test('apply preview modal RTL layout', async ({ page }) => {
     await page.getByTestId('start-lesson-button').click();
     await page.getByTestId('open-apply-modal-button').click();
-    await expect(page.getByTestId('apply-modal')).toHaveScreenshot('apply-preview-modal-rtl.png', visualTolerance);
+    await expect(page.getByTestId('apply-modal').getByRole('dialog')).toHaveScreenshot('apply-preview-modal-rtl.png', visualTolerance);
   });
 
   test('diagnostics panel baseline', async ({ page }) => {

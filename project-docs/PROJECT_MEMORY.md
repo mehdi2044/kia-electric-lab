@@ -893,3 +893,40 @@ Phase 17 created the first real GitHub Actions CI workflow for Kia Electric Lab.
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed in Phase 17. This phase is CI, workflow, documentation, and governance infrastructure only.
+
+## 2026-05-15 13:39 Europe/Istanbul - Phase 18 GitHub Remote, Release Baseline, README Badges, And Version Tagging
+
+### Change Summary
+
+Phase 18 prepared Kia Electric Lab as a properly versioned GitHub-ready project. The project now has upgraded onboarding documentation, release notes, explicit GitHub remote setup instructions, package/app version metadata for the Phase 18 baseline, and a local release tag.
+
+### New Completed Systems
+
+- README upgraded with:
+  - project vision
+  - safety disclaimer
+  - current phase status
+  - run/test/build commands
+  - CI behavior
+  - GitHub remote setup instructions
+  - screenshots and visual baseline notes
+  - project structure
+  - contribution workflow
+  - governance roles
+- Release notes added:
+  - `RELEASE_NOTES.md`
+- Version metadata:
+  - package version `0.18.0`
+  - app version marker `0.18-phase18-github-baseline`
+- Baseline tag:
+  - `v0.18-phase18-github-baseline`
+
+### Important Decisions
+
+- No remote URL was invented because no Git remote is configured locally.
+- README uses a CI badge placeholder until the real GitHub owner/repository path is known.
+- `CURRENT_SCHEMA_VERSION` remains unchanged because Phase 18 changes metadata only and does not alter project data shape.
+
+### Electrical Simulation Note
+
+No electrical simulation behavior changed in Phase 18.

@@ -1,7 +1,7 @@
 import type { ElectricalProject, ElectricalWire, LessonAttempt, LessonProgress, PanelBreakerSlot, Point2D } from '../types/electrical';
 
 export const CURRENT_SCHEMA_VERSION = 7;
-export const CURRENT_APP_VERSION = '0.8-phase8-lesson-sandbox';
+export const CURRENT_APP_VERSION = '0.18-phase18-github-baseline';
 export const PROJECT_STORAGE_KEY = 'kia-electric-lab-project';
 export const BACKUP_STORAGE_KEY = 'kia-electric-lab-project-backups';
 export const MIGRATION_ERROR_STORAGE_KEY = 'kia-electric-lab-project-migration-error';
