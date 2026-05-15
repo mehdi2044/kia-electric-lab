@@ -1300,3 +1300,48 @@ The release baseline tag exists locally but will not appear on GitHub until tags
 Recommended fix:
 
 - After configuring `origin`, run `git push origin --tags`.
+
+## 2026-05-15 14:04 Europe/Istanbul - Known Issues Update After GitHub Remote Setup
+
+### KI-053 Status Update - README CI Badge Activated
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- README now contains the real GitHub Actions badge for `mehdi2044/kia-electric-lab` on the `develop` branch.
+
+### KI-056 Status Update - GitHub Remote Configured
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- `origin` now points to `https://github.com/mehdi2044/kia-electric-lab.git`.
+- `develop` and `main` have been pushed and configured to track their remote branches.
+
+### KI-057 Status Update - Tags Pushed
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- Local tags were pushed to GitHub, including `v0.18-phase18-github-baseline`.
+
+### KI-058 - First GitHub Actions Run Requires Remote Observation
+
+Severity: Low.
+
+Description:
+
+The repository is pushed and the workflow should trigger on the `develop` push. Because the GitHub CLI is not installed locally, CI status is checked through GitHub web/API access instead of `gh`.
+
+Recommended fix:
+
+- Review the first workflow run in GitHub Actions and inspect artifacts if the run fails.

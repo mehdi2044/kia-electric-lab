@@ -1,6 +1,6 @@
 # Kia Electric Lab
 
-> CI badge placeholder: add the real GitHub Actions badge after the repository remote URL is configured.
+[![Kia Electric Lab CI](https://github.com/mehdi2044/kia-electric-lab/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/mehdi2044/kia-electric-lab/actions/workflows/ci.yml)
 
 Kia Electric Lab is a local Persian RTL educational simulator for learning the basics of 220V single-phase residential apartment wiring. It is designed for guided learning, experimentation, and engineering curiosity, not for approving real installations.
 

@@ -930,3 +930,33 @@ Phase 18 prepared Kia Electric Lab as a properly versioned GitHub-ready project.
 ### Electrical Simulation Note
 
 No electrical simulation behavior changed in Phase 18.
+
+## 2026-05-15 14:04 Europe/Istanbul - GitHub Remote Connected And README CI Badge Activated
+
+### Change Summary
+
+The local repository is now connected to the real GitHub repository:
+
+```text
+https://github.com/mehdi2044/kia-electric-lab.git
+```
+
+Both long-term branches and all local tags were pushed. README now uses the real GitHub Actions badge for the `develop` branch.
+
+### Completed Systems
+
+- `origin` remote configured.
+- `develop` pushed and tracking `origin/develop`.
+- `main` pushed and tracking `origin/main`.
+- tags pushed:
+  - `v0.1-phase1-baseline`
+  - `v0.18-phase18-github-baseline`
+- README CI badge activated.
+
+### Important Decision
+
+The CI badge targets `develop` because `develop` is the active integration branch and the CI workflow is triggered on pushes and pull requests around `develop`.
+
+### Electrical Simulation Note
+
+No runtime behavior changed. No electrical simulation behavior changed.

@@ -705,3 +705,20 @@ TODO policy: append new TODO entries with timestamps. Mark items complete with a
 - [ ] Review the first GitHub Actions run after pushing.
 - [ ] Configure branch protection on `develop`.
 - [ ] Decide whether `main` should receive the Phase 18 baseline immediately or after first remote CI pass.
+
+## 2026-05-15 14:04 Europe/Istanbul - GitHub Remote Setup TODO Update
+
+### Completed
+
+- [x] Configure `origin` remote.
+- [x] Push `develop`.
+- [x] Push `main`.
+- [x] Push all tags.
+- [x] Verify local remote tracking branches.
+- [x] Replace README CI badge placeholder with the real GitHub Actions badge.
+
+### New TODOs
+
+- [ ] Confirm the first GitHub Actions run result in the GitHub UI.
+- [ ] Configure GitHub branch protection requiring CI before merging to `develop`.
+- [ ] Add repository description/topics on GitHub if desired.

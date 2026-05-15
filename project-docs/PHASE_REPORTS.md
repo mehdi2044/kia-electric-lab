@@ -3526,3 +3526,151 @@ Detailed result:
 ### Next Recommended Step
 
 After the real GitHub remote is created, push `develop`, `main`, and tags. Then review the first GitHub Actions run, add the real CI badge to README, and configure branch protection for `develop`.
+
+## 2026-05-15 14:04 Europe/Istanbul - Engineering Report: GitHub Remote Push And CI Badge Activation
+
+### Completed Work
+
+The real GitHub repository URL was provided by Mehdi:
+
+```text
+https://github.com/mehdi2044/kia-electric-lab.git
+```
+
+The local repository was connected to GitHub, the long-term branches were pushed, all release tags were pushed, remote tracking was verified, and the README CI badge placeholder was replaced with the real GitHub Actions badge.
+
+### Modified Files
+
+- `README.md`
+- `project-docs/PROJECT_MEMORY.md`
+- `project-docs/PHASE_REPORTS.md`
+- `project-docs/TODO.md`
+- `project-docs/KNOWN_ISSUES.md`
+
+### Git Remote Configuration
+
+Configured remote:
+
+```text
+origin  https://github.com/mehdi2044/kia-electric-lab.git
+```
+
+Remote commands executed:
+
+```text
+git remote add origin https://github.com/mehdi2044/kia-electric-lab.git
+git push -u origin develop
+git push -u origin main
+git push origin --tags
+```
+
+### Branches Pushed
+
+- `develop` -> `origin/develop`
+- `main` -> `origin/main`
+
+### Tags Pushed
+
+- `v0.1-phase1-baseline`
+- `v0.18-phase18-github-baseline`
+
+### README Badge
+
+Badge added:
+
+```text
+[![Kia Electric Lab CI](https://github.com/mehdi2044/kia-electric-lab/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/mehdi2044/kia-electric-lab/actions/workflows/ci.yml)
+```
+
+Reason:
+
+- `develop` is the active integration branch.
+- The CI workflow runs on pushes to `develop` and pull requests targeting `develop`.
+
+### Architecture Changes
+
+No application architecture changed.
+
+Repository governance changed:
+
+- `origin` is now the canonical GitHub remote.
+- `develop` and `main` are tracking remote branches.
+- release tags are now available on GitHub.
+- README exposes GitHub Actions CI status.
+
+### Dependencies Added
+
+No dependency was added.
+
+### Electrical Logic Implemented
+
+No electrical logic was implemented or changed.
+
+Preserved systems:
+
+- topology engine
+- current engine
+- validation engine
+- safety engine
+- cost engine
+- migration engine
+- diagnostics engine
+- repair engine
+- lesson engine
+- lesson sandbox apply logic
+
+### Formulas Implemented
+
+No formulas were implemented or changed.
+
+### Bugs
+
+No runtime bugs were found.
+
+Operational note:
+
+- GitHub CLI is not installed locally, so workflow status cannot be checked with `gh run list`.
+
+### Limitations
+
+- First GitHub Actions run still needs to be reviewed in the GitHub UI or through GitHub API polling.
+- Branch protection is not configured from this local workspace.
+- The README badge may show pending/failing until the first workflow run completes.
+
+### TODOs
+
+- Confirm the first GitHub Actions run result.
+- Inspect artifacts if the first run fails.
+- Configure GitHub branch protection requiring CI before merge to `develop`.
+- Optionally add GitHub repository description and topics.
+
+### Risks
+
+- If GitHub Actions exposes Windows runner screenshot drift, visual baselines may need a reviewed adjustment.
+- If branch protection is not configured, contributors can still merge without CI enforcement.
+- If the repository default branch differs from the team policy, GitHub PR defaults may need adjustment.
+
+### Scalability Concerns
+
+- As contributors are added, branch protection and required reviews become important.
+- CI artifacts should be monitored for storage and retention needs.
+- Future releases may benefit from GitHub Releases generated from tags.
+
+### Verification
+
+Local verification after Phase 18 baseline:
+
+- `npm run verify:ci`: passed.
+- `npm test`: 60 tests passed.
+- `npm run build`: passed.
+- `npm run test:e2e`: 26 Playwright tests passed.
+
+Git verification:
+
+- `git branch -vv` shows `develop` tracking `origin/develop`.
+- `git branch -vv` shows `main` tracking `origin/main`.
+- `git remote -v` shows the real GitHub URL for fetch and push.
+
+### Next Recommended Step
+
+Open GitHub Actions for `mehdi2044/kia-electric-lab`, confirm the first workflow result, then enable branch protection on `develop` requiring the CI workflow to pass.
