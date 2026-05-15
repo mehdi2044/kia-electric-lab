@@ -960,3 +960,36 @@ The CI badge targets `develop` because `develop` is the active integration branc
 ### Electrical Simulation Note
 
 No runtime behavior changed. No electrical simulation behavior changed.
+
+## 2026-05-15 14:25 Europe/Istanbul - Phase 19 Branch Protection And Release Governance
+
+### Change Summary
+
+Phase 19 defined the protected-branch and release-governance policy for Kia Electric Lab. Automatic branch protection was investigated but could not be applied from the current environment because no authenticated GitHub administration channel is available.
+
+### Branch Protection Automation Check
+
+Checked:
+
+- GitHub CLI: unavailable.
+- `GITHUB_TOKEN`: missing.
+- `GH_TOKEN`: missing.
+- GitHub branch protection API without authentication: `401 Unauthorized`.
+
+Conclusion:
+
+- Branch protection must be configured manually by Mehdi in GitHub settings, or by providing an authenticated GitHub token with repository administration permissions in a future session.
+
+### Governance Added
+
+- Manual GitHub UI steps for protecting `develop`.
+- Required status check guidance.
+- Feature branch policy.
+- Pull request policy.
+- snapshot approval policy.
+- release tagging rule.
+- `main` versus `develop` strategy.
+
+### Electrical Simulation Note
+
+No runtime behavior changed. No electrical simulation behavior changed. No formulas changed.

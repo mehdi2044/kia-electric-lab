@@ -1345,3 +1345,39 @@ The repository is pushed and the workflow should trigger on the `develop` push. 
 Recommended fix:
 
 - Review the first workflow run in GitHub Actions and inspect artifacts if the run fails.
+
+## 2026-05-15 14:25 Europe/Istanbul - Known Issues Update After Phase 19
+
+### KI-058 Status Update - GitHub Actions Run Verified
+
+Status:
+
+- Resolved.
+
+Resolution:
+
+- The latest GitHub Actions run for `develop` completed successfully with job `Unit, build, and browser verification`.
+
+### KI-059 - Branch Protection Requires Manual GitHub Admin Action
+
+Severity: Medium.
+
+Description:
+
+Branch protection cannot be configured automatically from this environment. GitHub CLI is not installed, no GitHub token is available, and the unauthenticated branch protection API returns `401 Unauthorized`.
+
+Recommended fix:
+
+- Mehdi should configure the `develop` branch protection rule manually in GitHub settings using the steps documented in `DEVELOPMENT_WORKFLOW.md`.
+
+### KI-060 - Required Check Name Should Be Confirmed In GitHub UI
+
+Severity: Low.
+
+Description:
+
+GitHub may display either the job name `Unit, build, and browser verification` or the workflow name `Kia Electric Lab CI` when selecting required checks.
+
+Recommended fix:
+
+- When configuring branch protection, select the exact check name shown by GitHub after the successful CI run.
